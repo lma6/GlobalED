@@ -1,0 +1,11 @@
+NUM_SOIS 9
+
+Harvard     42.53   -72.18
+Hubbard     44.56   -71.45
+SanCarlos 	1.5	-67.5
+Paragominas	-2.5	-47.5
+Caatinga	-8.5	-40.5
+Rondonia	-10.5	-61.5
+Santana		-9.5	-50.5
+Manaus		-2.5	-60.5
+Llanos		6.5	-69.5 
