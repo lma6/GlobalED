@@ -247,10 +247,11 @@ void init_sites (site** firsts, UserData* data) {
 #endif
             update_landuse(new_site, *data);
 #endif
-    
+             
             /* calculate disturbance rates */
-            calculate_disturbance_rates(0, &(new_site->oldest_patch[LU_NTRL]), data);
-
+             //ml-modified
+            //calculate_disturbance_rates(0, &(new_site->oldest_patch[LU_NTRL]), data);
+             
             update_site(&new_site, data);
 
             /* link sites */
