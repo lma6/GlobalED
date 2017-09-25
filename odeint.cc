@@ -69,8 +69,8 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
                break;
             }
             else if ((flag==2)|(split_count>15)) {
-                if (flag==2) printf("Failed for flag=2\n");
-                if (split_count>15) printf("Failed for split_count>15\n");
+                //if (flag==2) printf("Failed for flag=2\n");
+                //if (split_count>15) printf("Failed for split_count>15\n");
                return 1;
             }
             //Otherwise split step
@@ -301,32 +301,38 @@ int patch::check_for_negatives(double dt){
 
    if ((water<0)|(fast_soil_C<0)|(structural_soil_C<0)|(slow_soil_C<0)|(mineralized_soil_N<0)|(fast_soil_N<0)|(structural_soil_L<0))
    {
-       //if (water<0) printf("Neg-wt ");
-       //if (fast_soil_C<0) printf("Neg-fsc ");
-       //if (structural_soil_C<0) printf("Neg-stsc ");
-       //if (slow_soil_C<0) printf("Neg-slsc ");
-       //if (mineralized_soil_N<0) printf("Neg-msn ");
-       //if (fast_soil_N<0) printf("Neg-fsn ");
-       //if (structural_soil_L<0) printf("Neg-stsl ");
+#if 0
+       if (water<0) printf("Neg-wt ");
+       if (fast_soil_C<0) printf("Neg-fsc ");
+       if (structural_soil_C<0) printf("Neg-stsc ");
+       if (slow_soil_C<0) printf("Neg-slsc ");
+       if (mineralized_soil_N<0) printf("Neg-msn ");
+       if (fast_soil_N<0) printf("Neg-fsn ");
+       if (structural_soil_L<0) printf("Neg-stsl ");
+#endif
        return 1;
    }
    
    if ((old_water+dwdt*dt<0)|(old_fast_soil_C+dfsc*dt<0)|(old_structural_soil_C+dstsc*dt<0)|(old_slow_soil_C+dssc*dt<0)|(old_mineralized_soil_N+dmsn*dt<0)|(old_fast_soil_N+dfsn*dt<0)|(old_passive_soil_C+dpsc*dt<0)|(old_structural_soil_L+dstsl*dt<0))
    {
-       //if (old_water+dwdt*dt<0) printf("Neg-wtder %f %f\n",old_water,dwdt);
-       //if (old_fast_soil_C+dfsc*dt<0) printf("Neg-fscder ");
-       //if (old_structural_soil_C+dstsc*dt<0) printf("Neg-stscder ");
-       //if (old_slow_soil_C+dssc*dt<0) printf("Neg-slscder ");
-       //if (old_mineralized_soil_N+dmsn*dt<0) printf("Neg-msnder ");
-       //if (old_fast_soil_N+dfsn*dt<0) printf("Neg-fsnder ");
-       //if (old_passive_soil_C+dpsc*dt<0) printf("Neg-pscder ");
-       //if (old_structural_soil_L+dstsl*dt<0) printf("Neg-stslder ");
+#if 0
+       if (old_water+dwdt*dt<0) printf("Neg-wtder %f %f\n",old_water,dwdt);
+       if (old_fast_soil_C+dfsc*dt<0) printf("Neg-fscder ");
+       if (old_structural_soil_C+dstsc*dt<0) printf("Neg-stscder ");
+       if (old_slow_soil_C+dssc*dt<0) printf("Neg-slscder ");
+       if (old_mineralized_soil_N+dmsn*dt<0) printf("Neg-msnder ");
+       if (old_fast_soil_N+dfsn*dt<0) printf("Neg-fsnder ");
+       if (old_passive_soil_C+dpsc*dt<0) printf("Neg-pscder ");
+       if (old_structural_soil_L+dstsl*dt<0) printf("Neg-stslder ");
+#endif
        return 1;
    }
    
    if (water+dwdt*dt<0)
    {
-       //printf("Neg-wtgerC ");
+#if 0
+       printf("Neg-wtgerC ");
+#endif
        return 1; //update_water uses old_water, not water, so check for negatives there as well.
    }
    
@@ -335,18 +341,22 @@ int patch::check_for_negatives(double dt){
       if ((cc->dndt+cc->ddbhdt+cc->dbalivedt+cc->dbdeaddt)*0!=0) return 2;
       if ((cc->nindivs<0)|(cc->dbh<0)|(cc->balive<0)|(cc->bdead<0))
       {
-          //if (cc->nindivs<0) printf("Neg-nind ");
-          //if (cc->dbh<0) printf("Neg-dbh ");
-          //if (cc->balive<0) printf("Neg-balive ");
-          //if (cc->bdead<0) printf("Neg-bdead ");
+#if 0
+          if (cc->nindivs<0) printf("Neg-nind ");
+          if (cc->dbh<0) printf("Neg-dbh ");
+          if (cc->balive<0) printf("Neg-balive ");
+          if (cc->bdead<0) printf("Neg-bdead ");
+#endif
           return 1;
       }
       if ((cc->nindivs+cc->dndt*dt<0)|(cc->dbh+cc->ddbhdt*dt<0)|(cc->balive+cc->dbalivedt*dt<0)|(cc->bdead+cc->dbdeaddt*dt<0))
       {
-          //if (cc->nindivs+cc->dndt*dt<0) printf("Neg-nindder ");
-          //if (cc->dbh+cc->ddbhdt*dt<0) printf("Neg-dbhder ");
-          //if (cc->balive+cc->dbalivedt*dt<0) printf("Neg-baliveder ");
-          //if (cc->bdead+cc->dbdeaddt*dt<0) printf("Neg-bdeadder ");
+#if 0
+          if (cc->nindivs+cc->dndt*dt<0) printf("Neg-nindder ");
+          if (cc->dbh+cc->ddbhdt*dt<0) printf("Neg-dbhder ");
+          if (cc->balive+cc->dbalivedt*dt<0) printf("Neg-baliveder ");
+          if (cc->bdead+cc->dbdeaddt*dt<0) printf("Neg-bdeadder ");
+#endif
           return 1;
       }
       cc = cc->taller;

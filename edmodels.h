@@ -197,8 +197,11 @@ struct UserData {
  
    const char *which_mech_to_use;
    const char *climate_file;
+   const char *climate_file_avg;
    const char *mech_c3_file;
    const char *mech_c4_file;
+   std::vector<std::string> mech_c3_file_avg;  ///< C3 mech file corresponding to each Vm0 bin when no yearly mech available
+   std::vector<std::string> mech_c4_file_avg;  //< C4 mech file corresponding to each Vm0 bin when no yearly mech available
 #if FTS
    const char *QAIR_FILE;
    const char *TAIR_FILE;

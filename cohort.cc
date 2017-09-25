@@ -150,6 +150,9 @@ void cohort_dynamics(unsigned int t, double t1, double t2,
          currentp->okint = cm_sodeint(&currentp,t, t1, t2, data); /* call ode intgrtr */
          if (currentp->okint) {
             printf("Fatal error integrating site %s. Site skipped okint No is %d\n", currents->sdata->name_,currentp->okint);
+#if 0
+             exit(0);
+#endif
             currents->skip_site = 1;
             return;
          }

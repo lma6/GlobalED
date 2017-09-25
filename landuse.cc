@@ -448,6 +448,12 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
                /* v2s will be dealt with in harvesting. skip */
                if ( !((dlu == LU_NTRL) && (tlu == LU_SCND)) ) {
                   double beta = currents->sdata->beta[dlu][tlu-1][lu_year];
+#if 1
+                   if (data->year < N_LANDUSE_YEARS) {
+                       printf("LU year exceeds 2005 \n");
+                       beta=0;
+                   }
+#endif
                   landuse_transition(&currents, data, dlu, tlu, beta);
                }
             }

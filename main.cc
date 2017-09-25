@@ -92,7 +92,7 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
 
    /* initialize site structures */
    if(data->do_yearly_mech) {
-   data->mechanism_year = 1901;  /*  Added to allow initial mech year  */
+   data->mechanism_year = 1500;  /*  Added to allow initial mech year  */
       if(data->m_string) {
          /* Added to read list of years we want */
          namefile = fopen("/Network/Xgrid/data/MSTMIP/model_driver/cru_ncep/file_lists/fl1.txt","r");
@@ -347,18 +347,30 @@ void model (UserData& data) {
       }
 
       // do_yearly_mech is deprecated in favor of FTS
-#if 0
+#if 1
       FILE *namefile;
       if(data.do_yearly_mech) {
           if(data.m_int) {
              if (t > 0 && t%12 == 0) {
-                ncclose(data.mech_c3_file_ncid);
-                ncclose(data.mech_c4_file_ncid);
-                ncclose(data.climate_file_ncid);
-                data.mech_c3_file_ncid =0;
-                data.mech_c4_file_ncid =0;
-                data.climate_file_ncid =0;
-                data.mechanism_year = 1901+t1;
+                 size_t i=0;
+                 for (; i< data.num_Vm0;i++) {
+                     ncclose(data.mech_c3_file_ncid[i]);
+                     ncclose(data.mech_c4_file_ncid[i]);
+                     
+        
+                     data.mech_c3_file_ncid[i] =0;
+                     data.mech_c4_file_ncid[i] =0;
+                     
+                 }
+                 ncclose(data.climate_file_ncid);
+                 data.climate_file_ncid =0;
+                //ncclose(data.mech_c3_file_ncid);
+                //ncclose(data.mech_c4_file_ncid);
+                //ncclose(data.climate_file_ncid);
+                //data.mech_c3_file_ncid =0;
+                //data.mech_c4_file_ncid =0;
+                //data.climate_file_ncid =0;
+                data.mechanism_year = 1500+t1;
                 printf("Mechanism_year_to use: %d\n" , data.mechanism_year);
                 site* siteptr = data.first_site;
                 while (siteptr != NULL) {
@@ -371,12 +383,23 @@ void model (UserData& data) {
 
           if(data.m_string) {
              if (t > 0 && t%12 == 0) {
-                ncclose(data.mech_c3_file_ncid);
-                ncclose(data.mech_c4_file_ncid);
-                ncclose(data.climate_file_ncid);
-                data.mech_c3_file_ncid =0;
-                data.mech_c4_file_ncid =0;
-                data.climate_file_ncid =0;
+                 size_t i=0;
+                 for (; i< data.num_Vm0;i++) {
+                     ncclose(data.mech_c3_file_ncid[i]);
+                     ncclose(data.mech_c4_file_ncid[i]);
+                     ncclose(data.climate_file_ncid);
+                     
+                     
+                     data.mech_c3_file_ncid[i] =0;
+                     data.mech_c4_file_ncid[i] =0;
+                     data.climate_file_ncid =0;
+                 }
+                //ncclose(data.mech_c3_file_ncid);
+                //ncclose(data.mech_c4_file_ncid);
+                //ncclose(data.climate_file_ncid);
+                //data.mech_c3_file_ncid =0;
+                //data.mech_c4_file_ncid =0;
+                //data.climate_file_ncid =0;
                 fscanf(namefile,"%s",data.mech_year_string);
                 printf("Mechanism_year_to use: %s\n" , data.mech_year_string);
                 if (strlen(data.mech_year_string)!= 4){

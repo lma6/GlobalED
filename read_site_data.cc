@@ -571,10 +571,15 @@ bool SiteData::readEnvironmentalData (UserData& data) {
    char climatename[256];   
    if (data.do_yearly_mech) {
       if (data.m_int) {
-         sprintf(convert, "%s%d", base, data.mechanism_year);  
-         strcpy(climatename, data.climate_file);
-         strcat(climatename, convert);
-         strcat(climatename, nc);
+          if (data.mechanism_year>1900) {
+              sprintf(convert, "%s%d", base, data.mechanism_year);
+              strcpy(climatename, data.climate_file);
+              strcat(climatename, convert);
+              strcat(climatename, nc);
+          }
+          else{
+              strcpy(climatename, data.climate_file_avg);
+          }
       }
     
       if(data.m_string) {
@@ -585,7 +590,10 @@ bool SiteData::readEnvironmentalData (UserData& data) {
    } else if(data.single_year) {
       strcpy(climatename, data.climate_file);
    }
-
+#if 1
+    printf("climate file used is %s\n",climatename);
+#endif
+    
    if (data.climate_file_ncid == 0) {
       if ((rv = nc_open(climatename, NC_NOWRITE, &ncid))) {
          NCERR(climatename, rv);
@@ -823,15 +831,101 @@ bool SiteData::readMechanismLUT (UserData& data) {
       // NOTE!!! do_yearly_mech does not work with the multiple Vm0 bins mechanism (currently)
       // Please use FTS
        if (data.m_int) {
-          sprintf(convert, "%s%d", base, data.mechanism_year);  
-          strcpy(c3name, data.mech_c3_file);
-          strcpy(c4name, data.mech_c4_file);
-     
-          strcat(c3name, convert);
-          strcat(c4name, convert);   
-    
-          strcat(c3name, nc);
-          strcat(c4name, nc); 
+           
+           size_t i=0;
+           for (; i< data.num_Vm0;i++) {
+               if (data.num_Vm0>1) {
+                   if (data.mechanism_year>1900) {
+                       sprintf(convert, "%s_%d", data.list_c3_files.at(i).c_str(), data.mechanism_year);
+                       
+
+                   }else{
+                       sprintf(convert, "%s_%s", data.list_c3_files.at(i).c_str(), data.mech_c3_file_avg.at(i).c_str());
+                   }
+                   strcpy(c3name, data.mech_c3_file);
+                   strcpy(c4name, data.mech_c4_file);
+                   
+                   strcat(c3name, convert);
+                   strcat(c4name, convert);
+                   
+                   strcat(c3name, nc);
+                   strcat(c4name, nc);
+
+#if 1
+                   printf("mech file used is %s\n",c3name);
+#endif
+                   if (data.mech_c3_file_ncid[i] == 0) {
+                       if ((rv = nc_open(c3name, NC_NOWRITE, &ncid))) {
+                           NCERR(c3name, rv);
+                       } else {
+                           data.mech_c3_file_ncid[i] = ncid;
+                       }
+                   }
+                   if (data.mech_c4_file_ncid[i] == 0) {
+                       if ((rv = nc_open(c4name, NC_NOWRITE, &ncid))) {
+                           NCERR(c4name, rv);
+                       } else {
+                           data.mech_c4_file_ncid[i] = ncid;
+                       }
+                   }
+                   
+                   for (size_t pt=0; pt<PT; pt++) {
+                       if (pt == 0) {
+                           ncid = data.mech_c3_file_ncid[i];
+                       } else {
+                           ncid = data.mech_c4_file_ncid[i];
+                       }
+                       // light levels
+                       // TODO: is this worth storing for each site? Same for everywhere.
+                       if ((rv = nc_inq_varid(ncid, "shade", &varid))) {
+                           NCERR("shade", rv);
+                       }
+                       if ((rv = nc_get_var_double(ncid, varid, &light_levels[pt][i][0]))) {
+                           NCERR("shade", rv);
+                       }
+                       
+                       // temp function
+                       if ((rv = nc_inq_varid(ncid, "tf", &varid))) {
+                           NCERR("tf", rv);
+                       }
+                       if ((rv = nc_get_vara_double(ncid, varid, index1, count1, &tf[pt][i][0]))) {
+                           NCERR("tf", rv);
+                       }
+                       
+                       // An
+                       if ((rv = nc_inq_varid(ncid, "An", &varid))) {
+                           NCERR("An", rv);
+                       }
+                       if ((rv = nc_get_vara_double(ncid, varid, index2, count2, &An[pt][i][0][0]))) {
+                           NCERR("An", rv);
+                       }
+                       
+                       // Anb
+                       if ((rv = nc_inq_varid(ncid, "Anb", &varid))) {
+                           NCERR("Anb", rv);
+                       }
+                       if ((rv = nc_get_vara_double(ncid, varid, index2, count2, &Anb[pt][i][0][0]))) {
+                           NCERR("Anb", rv);
+                       }
+                       
+                       // E 
+                       if ((rv = nc_inq_varid(ncid, "E", &varid))) {
+                           NCERR("E", rv);
+                       }
+                       if ((rv = nc_get_vara_double(ncid, varid, index2, count2, &E[pt][i][0][0]))) {
+                           NCERR("E", rv);
+                       }
+                       
+                       // Eb 
+                       if ((rv = nc_inq_varid(ncid, "Eb", &varid))) {
+                           NCERR("Eb", rv);
+                       }
+                       if ((rv = nc_get_vara_double(ncid, varid, index2, count2, &Eb[pt][i][0][0]))) {
+                           NCERR("Eb", rv);
+                       }
+                   }
+               }
+           }
        } else if (data.m_string) {
           strcpy(c3name, data.mech_c3_file);
           strcpy(c4name, data.mech_c4_file);
