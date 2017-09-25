@@ -1,8 +1,5 @@
 #include <cmath>
-#include <cstdio>
-#include <stdio.h>
-#include <string.h>
-#include <cstdlib>
+
 #include "netcdf.h"
 #include "edmodels.h"
 #include "site.h"

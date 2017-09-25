@@ -25,8 +25,10 @@ using namespace std;
 void calculate_disturbance_rates ( unsigned int t, 
                                    patch** current_patch, 
                                    UserData* data ) {
+  
    patch* cp= *current_patch;
    site* cs= cp->siteptr;
+
    /* CALCULATE DISTURBANCE RATES */
 
    /* CALCULATE FIRE DISTURBANCE RATES */

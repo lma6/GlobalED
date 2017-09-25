@@ -4,19 +4,11 @@
 
 
 CXX = g++
-#CXX = /gpfs/data1/hurttgp/gel1/opt/local/bin/g++
 
-INC = -I/apps/netcdf/4.1.3/include -I/apps/IntelTBB/2017U3/include -I/apps/BerkeleyDB/4.6.21NC/include
-
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/apps/netcdf/4.1.3/lib
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/apps/BerkeleyDB/4.6.21NC/lib
-export LD_LIBRARY_PATH
-
+INC = -I/opt/local/include -I/opt/local/include/db53
 #INC = -I$(DBXML_INCLUDE) -I/lustre/data/fisk/local/include -I$(NETCDFINC)
 
-LIB =-L/apps/netcdf/4.1.3/lib -L/apps/IntelTBB/2017U3/lib/intel64/gcc4.4 -L/apps/BerkeleyDB/4.6.21NC/lib
-
-
+LIB = -L/opt/local/lib -L/opt/local/lib/db53
 #LIB = -L$(DBXML_LIB) -L/lustre/data/fisk/local/lib -L$(NETCDFLIB)
 
 # add  -g for debug, -g3 for debug and optomize, -O2 for optimize

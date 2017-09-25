@@ -1,5 +1,4 @@
 #include <cmath>
-#include <cstring>
 
 #include "edmodels.h"
 #include "cohort.h"

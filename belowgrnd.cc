@@ -85,8 +85,6 @@ double patch::Dwdt (double time, UserData* data){
    dwdt = (currents->sdata->precip[(int) data->time_period] 
            - perc - total_water_uptake
            / area) - soil_evap;
-//    if (dwdt<-10000) printf("dwdt %f precip %f perc %f twu %f soev %f ksat %f theta %f tau %f\n",dwdt,currents->sdata->precip[(int) data->time_period],perc,total_water_uptake,soil_evap,currents->sdata->k_sat,theta,currents->sdata->tau);
-//    printf("dwdt %f precip %f perc %f twu %f soev %f ksat %f theta %f tau %f\n",dwdt,currents->sdata->precip[(int) data->time_period],perc,total_water_uptake,soil_evap,currents->sdata->k_sat,theta,currents->sdata->tau);
    return dwdt;
 }
 
