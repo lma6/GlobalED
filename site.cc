@@ -190,6 +190,7 @@ void init_sites (site** firsts, UserData* data) {
             new_site->finished = 0;
             new_site->skip_site = 0;
             
+             
             if ( ! new_site->sdata->readSiteData(*data) ) {
                // missing inputs... free memory and move on 
                delete new_site->sdata;

@@ -85,17 +85,17 @@ double patch::Dwdt (double time, UserData* data){
    dwdt = (currents->sdata->precip[(int) data->time_period] 
            - perc - total_water_uptake
            / area) - soil_evap;
-    if (dwdt<-100000) printf("water %f dwdt %f precip %f perc %f twu %f soev %f ksat %f theta %f tau %f\n",water,dwdt,currents->sdata->precip[(int) data->time_period],perc,total_water_uptake,soil_evap,currents->sdata->k_sat,theta,currents->sdata->tau);
+    //if (dwdt<-100000) printf("water %f dwdt %f precip %f perc %f twu %f soev %f ksat %f theta %f tau %f\n",water,dwdt,currents->sdata->precip[(int) data->time_period],perc,total_water_uptake,soil_evap,currents->sdata->k_sat,theta,currents->sdata->tau);
 #if 1
     if (dwdt*data->deltat+water<0)
     {
-        printf("Start adjust dwdt perco1 %f dwdt1 %f ",perc,dwdt);
+        //printf("Start adjust dwdt perco1 %f dwdt1 %f ",perc,dwdt);
         perc=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-(currents->sdata->soil_depth * currents->sdata->theta_max)-soil_evap;
         if (perc<0) perc=0;
         dwdt=(currents->sdata->precip[(int) data->time_period]
               - perc - total_water_uptake
               / area) - soil_evap;
-        printf("perco2 %f dwdt2 %f \n",perc,dwdt);
+        //printf("perco2 %f dwdt2 %f \n",perc,dwdt);
     }
 #endif
     //printf("dwdt %f precip %f perc %f twu %f soev %f ksat %f theta %f tau %f\n",dwdt,currents->sdata->precip[(int) data->time_period],perc,total_water_uptake,soil_evap,currents->sdata->k_sat,theta,currents->sdata->tau);

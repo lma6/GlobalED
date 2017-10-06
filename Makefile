@@ -3,7 +3,7 @@
 #------------------------------------------------------------------------------#
 
 
-CXX = g++
+CXX = gcc
 #CXX = /gpfs/data1/hurttgp/gel1/opt/local/bin/g++
 
 INC = -I/apps/netcdf/4.1.3/include -I/apps/IntelTBB/2017U3/include -I/apps/BerkeleyDB/4.6.21NC/include
@@ -23,7 +23,7 @@ LIB =-L/apps/netcdf/4.1.3/lib -L/apps/IntelTBB/2017U3/lib/intel64/gcc4.4 -L/apps
 #      -Wall for full warnings
 #      -pg for profiling
 CXXFLAGS = $(INC) -c -Wall -g
-LDFLAGS = $(LIB) -lm -lnetcdf -lnetcdf_c++ -ltbb -ldb_cxx -lconfig++
+LDFLAGS = $(LIB) -lm -lnetcdf -lnetcdf_c++ -ltbb -ldb_cxx -lconfig++ -lstdc++
 
 CMN_SRCS = site.cc patch.cc miami.cc belowgrnd.cc \
            disturbance.cc fire.cc landuse.cc read_site_data.cc init_data.cc \

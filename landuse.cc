@@ -449,8 +449,8 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
                if ( !((dlu == LU_NTRL) && (tlu == LU_SCND)) ) {
                   double beta = currents->sdata->beta[dlu][tlu-1][lu_year];
 #if 1
-                   if (data->year < N_LANDUSE_YEARS) {
-                       printf("LU year exceeds 2005 \n");
+                   if (data->year > N_LANDUSE_YEARS) {
+                       printf("LU year exceeds 2005 %d %d\n",data->year,N_LANDUSE_YEARS);
                        beta=0;
                    }
 #endif

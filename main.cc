@@ -92,7 +92,7 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
 
    /* initialize site structures */
    if(data->do_yearly_mech) {
-   data->mechanism_year = 1500;  /*  Added to allow initial mech year  */
+   data->mechanism_year = 1500+data->start_time;  /*  Added to allow initial mech year  */
       if(data->m_string) {
          /* Added to read list of years we want */
          namefile = fopen("/Network/Xgrid/data/MSTMIP/model_driver/cru_ncep/file_lists/fl1.txt","r");
@@ -295,7 +295,7 @@ void model (UserData& data) {
    for (unsigned int t=data.start_time; t<tsteps; t++) { /* absolute time offset */
 
       if(data.print_output_files) {
-          if (tsteps-t<106*N_SUB+1)
+          if (tsteps-t<111*N_SUB+1)
           {
               print_region_files(t,&data.first_site,&data);
           }
@@ -353,7 +353,13 @@ void model (UserData& data) {
           if(data.m_int) {
              if (t > 0 && t%12 == 0) {
                  size_t i=0;
-                 for (; i< data.num_Vm0;i++) {
+                 data.mechanism_year = 1500+t1;
+                 printf("Mechanism_year_to use: %d\n" , data.mechanism_year);
+#if 1         //Avoid repeating loading climate and mech data before 1900 when use avg climate data
+                 if ((data.mechanism_year>1900) or (data.mechanism_year==1500))
+                 {
+#endif
+                     for (; i< data.num_Vm0;i++) {
                      ncclose(data.mech_c3_file_ncid[i]);
                      ncclose(data.mech_c4_file_ncid[i]);
                      
@@ -361,23 +367,18 @@ void model (UserData& data) {
                      data.mech_c3_file_ncid[i] =0;
                      data.mech_c4_file_ncid[i] =0;
                      
+                     }
+                     ncclose(data.climate_file_ncid);
+                     data.climate_file_ncid =0;
+                
+
+                     site* siteptr = data.first_site;
+                     while (siteptr != NULL) {
+                         /* Now we have to read the site data again */
+                         siteptr->sdata->readSiteData(data);
+                         siteptr = siteptr->next_site;
+                     }
                  }
-                 ncclose(data.climate_file_ncid);
-                 data.climate_file_ncid =0;
-                //ncclose(data.mech_c3_file_ncid);
-                //ncclose(data.mech_c4_file_ncid);
-                //ncclose(data.climate_file_ncid);
-                //data.mech_c3_file_ncid =0;
-                //data.mech_c4_file_ncid =0;
-                //data.climate_file_ncid =0;
-                data.mechanism_year = 1500+t1;
-                printf("Mechanism_year_to use: %d\n" , data.mechanism_year);
-                site* siteptr = data.first_site;
-                while (siteptr != NULL) {
-                   /* Now we have to read the site data again */
-                   siteptr->sdata->readSiteData(data); 
-                   siteptr = siteptr->next_site;
-                }    
              }
           }
 
