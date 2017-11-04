@@ -199,7 +199,11 @@ void update_patch (patch** current_patch, UserData* data) {
    cp->total_ag_biomass = 0.0;
    cp->total_biomass    = 0.0;
    cp->basal_area       = 0.0;            
-   cp->lai              = 0.0; 
+   cp->lai              = 0.0;
+    for (size_t i=0;i<N_LAI;i++)
+    {
+        cp->lai_profile[i]=0;
+    }
    cohort* cc = cp->shortest;
    while (cc != NULL) {
       if ((cc->dbh >= data->min_dbh_class) && (cc->hite > data->min_hgt_class)) {
@@ -210,6 +214,21 @@ void update_patch (patch** current_patch, UserData* data) {
          cp->basal_area                     += (M_PI/4.0) * pow(cc->dbh, 2.0) * cc->nindivs;
          cp->basal_area_spp[cc->species]    += (M_PI/4.0) * pow(cc->dbh, 2.0) * cc->nindivs;      
          cp->lai += cc->lai;
+          if (cc->hite>LAI_INTERVAL[N_LAI-1])
+          {
+              cp->lai_profile[N_LAI-1]+=cc->lai;
+          }
+          else
+          {
+              for (size_t i=0;i<N_LAI-1;i++)
+              {
+                  if (cc->hite>LAI_INTERVAL[i] && cc->hite<LAI_INTERVAL[i+1])
+                  {
+                      cp->lai_profile[i]+=cc->lai;
+                      break;
+                  }
+              }
+          }
       } /* end if */
       cc = cc->taller;
    } /* end loop over cohorts */
@@ -237,7 +256,11 @@ void update_patch (patch** current_patch, UserData* data) {
 
    /* c fluxes */
    if (data->time_period == 0) { /* reset annual averages */
-      cp->aa_lai  = 0.0; 
+      cp->aa_lai  = 0.0;
+       for (size_t i=0;i<N_LAI;i++)
+       {
+           cp->aa_lai_profile[i]=0;
+       }
       cp->aa_npp  = 0.0; 
       cp->aa_nep  = 0.0; 
       cp->aa_rh   = 0.0;
@@ -276,6 +299,10 @@ void update_patch (patch** current_patch, UserData* data) {
 
    /* acculmulate annual averages */
    cp->aa_lai  += cp->lai * data->deltat;
+    for (size_t i=0;i<N_LAI;i++)
+    {
+        cp->aa_lai_profile[i]+=cp->lai_profile[i]*data->deltat;
+    }
    cp->aa_npp  += cp->npp * data->deltat;
    cp->aa_nep  += (cp->npp - cp->rh) * data->deltat;
    cp->aa_rh   += cp->rh * data->deltat;

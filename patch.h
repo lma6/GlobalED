@@ -35,6 +35,7 @@ struct patch {
    double aa_npp2;                     ///< Annual average npp kgC/(timestep*m^2)
 #endif
    double aa_lai;           ///< Annual average LAI m^2/m^2
+   double aa_lai_profile[N_LAI];
    double total_ag_biomass; ///< Total above gnd biomass in patch (kgC/m2)
    double total_biomass;    ///< Total plant biomass in patch (kgC/m2)
    double npp;              ///< npp kgC/(yr m^2)
@@ -79,6 +80,7 @@ struct patch {
    double fstd;              ///< fractional rate of structural C decomp
 
    double lai;               ///< leaf area index of patch dimensionless
+   double lai_profile[N_LAI];
 
    // profiles of various quantities
    double spp_density_profile[NSPECIES][N_DBH_BINS];

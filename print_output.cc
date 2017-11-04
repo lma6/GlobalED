@@ -41,6 +41,10 @@ float getGPP (site* cs)              { return cs->site_gpp; }
 float getGPPAA (site* cs)            { return cs->site_aa_gpp;}
 #endif
 float getLAIAA (site* cs)            { return cs->site_aa_lai;}
+float getLAIAA0 (site* cs)           { return cs->site_aa_lai_profile[0];}
+float getLAIAA1 (site* cs)           { return cs->site_aa_lai_profile[1];}
+float getLAIAA2 (site* cs)           { return cs->site_aa_lai_profile[2];}
+float getLAIAA3 (site* cs)           { return cs->site_aa_lai_profile[3];}
 float getNPP (site* cs)              { return cs->site_npp; }
 float getRH (site* cs)               { return cs->site_rh; }
 float getNEP (site* cs)              { return cs->site_nep; }
@@ -57,6 +61,10 @@ float getNEP2 (site* cs)             { return cs->site_nep2; }
 float getSiteSoilN (site* cs)        { return cs->site_total_soil_N; }
 float getSiteMineralizedN (site* cs) { return cs->site_mineralized_soil_N; }
 float getLAI (site* cs)              { return cs->site_lai; }
+float getLAI0 (site* cs)             { return cs->site_lai_profile[0]; }
+float getLAI1 (site* cs)             { return cs->site_lai_profile[1]; }
+float getLAI2 (site* cs)             { return cs->site_lai_profile[2]; }
+float getLAI3 (site* cs)             { return cs->site_lai_profile[3]; }
 float getBasalArea (site* cs)        { return cs->site_basal_area; }
 float getWater (site* cs)            { return cs->site_total_water; }
 float getPercolation (site* cs)      { return cs->site_total_perc; }
@@ -189,6 +197,10 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("perc_spp6", &getPercSPP6, "kg/m2", -9999.0F, ncFloat);   
 #endif   
    o->registerVar("aa_LAI", &getLAIAA, "kg/m2/yr", -9999.0F, ncFloat);
+    o->registerVar("aa_LAI0", &getLAIAA0, "", -9999.0F, ncFloat);
+    o->registerVar("aa_LAI1", &getLAIAA1, "", -9999.0F, ncFloat);
+    o->registerVar("aa_LAI2", &getLAIAA2, "", -9999.0F, ncFloat);
+    o->registerVar("aa_LAI3", &getLAIAA3, "", -9999.0F, ncFloat);
    o->registerVar("area_burned", &getAreaBurned, "km2", -9999.0F, ncFloat);
    o->registerVar("dryness_index", &getDrynessIndex, "", -9999.0F, ncFloat);
    o->registerVar("soil_C", &getSiteSoilC, "kg/m2", -9999.0F, ncFloat);
@@ -205,6 +217,10 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("soil_N", &getSiteSoilN, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("mineralized_soil_N", &getSiteMineralizedN, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("LAI", &getLAI, "", -9999.0F, ncFloat);
+    o->registerVar("LAI0", &getLAI0, "", -9999.0F, ncFloat);
+    o->registerVar("LAI1", &getLAI1, "", -9999.0F, ncFloat);
+    o->registerVar("LAI2", &getLAI2, "", -9999.0F, ncFloat);
+    o->registerVar("LAI3", &getLAI3, "", -9999.0F, ncFloat);
    o->registerVar("max_height", &getMaxHeight, "m", -9999.0F, ncFloat);
    o->registerVar("basal_area", &getBasalArea, "", -9999.0F, ncFloat);
    o->registerVar("water", &getWater, "", -9999.0F, ncFloat);

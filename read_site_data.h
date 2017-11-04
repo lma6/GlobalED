@@ -130,5 +130,11 @@ struct SiteData {
 bool is_soi(double lat,double lon, UserData& data); ///< flag sites of interest
 size_t read_input_data_layers (UserData* data);
 int read_hurricane_disturbance (site** siteptr, UserData* data);
+char lu2charname2 (int lu);
+bool loabGlobalLUData (UserData* data);
+bool loadGlobalEnvironmentData(UserData* data);
+bool loadGlobalMechanismLUT(UserData* data);
+bool freeGlobalEnvironmentData(UserData* data);
+bool freeGlobalMechanismLUT(UserData* data);
 
 #endif // EDM_READ_SITE_DATA_H_ 

@@ -552,6 +552,10 @@ void update_site (site** current_site, UserData* data) {
    }
    cs->site_basal_area              = 0.0;
    cs->site_lai                     = 0.0;
+   for (size_t i=0;i<N_LAI;i++)
+   {
+       cs->site_lai_profile[i]=0;
+   }
 #endif
    /* soil pools */
    cs->site_total_soil_c            = 0.0;
@@ -574,6 +578,10 @@ void update_site (site** current_site, UserData* data) {
    cs->site_rh                      = 0.0;
    cs->site_dndt                    = 0.0;
    cs->site_aa_lai                  = 0.0;
+   for (size_t i=0;i<N_LAI;i++)
+   {
+       cs->site_aa_lai_profile[i]=0;
+   }
    cs->site_aa_npp                  = 0.0;
    cs->site_aa_nep                  = 0.0;
    cs->site_aa_rh                   = 0.0;
@@ -606,7 +614,11 @@ void update_site (site** current_site, UserData* data) {
       cs->site_total_biomass      += cs->total_biomass[lu] * cs->area_fraction[lu];
 #ifdef ED
       cs->site_basal_area         += cs->basal_area[lu] * cs->area_fraction[lu];         
-      cs->site_lai                += cs->lai[lu] * cs->area_fraction[lu];         
+      cs->site_lai                += cs->lai[lu] * cs->area_fraction[lu];
+      for (size_t i=0;i<N_LAI;i++)
+      {
+          cs->site_lai_profile[i]+=cs->lai_profile[lu][i]*cs->area_fraction[lu];
+      }
       for(size_t i=0;i<NSPECIES;i++){
          cs->site_total_spp_biomass[i] += cs->total_spp_biomass[i][lu] * cs->area_fraction[lu];
          cs->site_total_spp_babove[i]  += cs->total_spp_babove[i][lu] * cs->area_fraction[lu];
@@ -625,6 +637,10 @@ void update_site (site** current_site, UserData* data) {
       cs->site_structural_soil_L  += cs->structural_soil_L[lu] * cs->area_fraction[lu];
 #endif
       cs->site_aa_lai             += cs->aa_lai[lu] * cs->area_fraction[lu];
+      for (size_t i=0;i<N_LAI;i++)
+      {
+         cs->site_aa_lai_profile[i]+=cs->aa_lai_profile[i]*cs->area_fraction[lu];
+      }
       /* total c */
       cs->site_total_c            += cs->total_c[lu] * cs->area_fraction[lu];         
       /* c fluxes */
@@ -710,7 +726,11 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
    cs->fast_soil_N[lu]             = 0.0;
    cs->structural_soil_L[lu]       = 0.0;
 #endif
-   cs->aa_lai[lu]                  = 0.0; 
+   cs->aa_lai[lu]                  = 0.0;
+    for (size_t i=0;i<N_LAI;i++)
+    {
+        cs->aa_lai_profile[i]=0;
+    }
    /* total c */
    cs->total_c[lu]                 = 0.0;
    /* c fluxes */
@@ -737,6 +757,10 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
    cs->lu_avg_height[lu]           = 0.0;
    cs->basal_area[lu]              = 0.0;
    cs->lai[lu]                     = 0.0;
+    for (size_t i=0;i<N_LAI;i++)
+    {
+        cs->lai_profile[lu][i]=0;
+    }
    for (size_t i=0; i<NSPECIES; i++) {
       cs->total_spp_biomass[i][lu] = 0.0;
       cs->total_spp_babove[i][lu]  = 0.0;
@@ -772,6 +796,10 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
          cs->structural_soil_L[lu]  += cp->structural_soil_L * frac;
 #endif
          cs->aa_lai[lu]             += cp->aa_lai * frac;
+          for (size_t i=0;i<N_LAI;i++)
+          {
+              cs->aa_lai_profile[i]+=cp->aa_lai_profile[i]*frac;
+          }
          /* total_c */
          cs->total_c[lu]            += cp->total_c * frac;
          /* c fluxes */
@@ -802,6 +830,10 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
 
          cs->basal_area[lu]         += cp->basal_area * frac;
          cs->lai[lu]                += cp->lai * frac;
+          for (size_t i=0;i<N_LAI;i++)
+          {
+              cs->lai_profile[lu][i]+=cp->lai_profile[i]*frac;
+          }
          for (size_t i=0; i<NSPECIES; i++) {
             cs->total_spp_biomass[i][lu] += cp->total_spp_biomass[i] * frac;
             cs->total_spp_babove[i][lu]  += cp->total_spp_babove[i] * frac;

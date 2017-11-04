@@ -92,7 +92,7 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
 
    /* initialize site structures */
    if(data->do_yearly_mech) {
-   data->mechanism_year = 1500+data->start_time;  /*  Added to allow initial mech year  */
+   data->mechanism_year = INI_Year+data->start_time;  /*  Added to allow initial mech year  */
       if(data->m_string) {
          /* Added to read list of years we want */
          namefile = fopen("/Network/Xgrid/data/MSTMIP/model_driver/cru_ncep/file_lists/fl1.txt","r");
@@ -101,6 +101,14 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
    }
 
    read_input_data_layers(data);
+    
+#if FASTLOAD
+   loadGlobalEnvironmentData(data);
+   loadGlobalMechanismLUT(data);
+#if LANDUSE
+   loabGlobalLUData(data);
+#endif
+#endif
 
    /* setup netcdf output */
    data->outputter = new Outputter(data);
@@ -131,7 +139,7 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
    }
 
 #if TBB
-   task_scheduler_init init;
+   task_scheduler_init init(500);
 #endif
 
 #if GCD || TBB 
@@ -295,7 +303,7 @@ void model (UserData& data) {
    for (unsigned int t=data.start_time; t<tsteps; t++) { /* absolute time offset */
 
       if(data.print_output_files) {
-          if (tsteps-t<111*N_SUB+1)
+          if (tsteps-t<110*N_SUB+1)
           {
               print_region_files(t,&data.first_site,&data);
           }
@@ -353,23 +361,35 @@ void model (UserData& data) {
           if(data.m_int) {
              if (t > 0 && t%12 == 0) {
                  size_t i=0;
-                 data.mechanism_year = 1500+t1;
+                 data.mechanism_year = INI_Year+t1;
                  printf("Mechanism_year_to use: %d\n" , data.mechanism_year);
 #if 1         //Avoid repeating loading climate and mech data before 1900 when use avg climate data
                  if ((data.mechanism_year>1900) or (data.mechanism_year==1500))
                  {
 #endif
                      for (; i< data.num_Vm0;i++) {
-                     ncclose(data.mech_c3_file_ncid[i]);
-                     ncclose(data.mech_c4_file_ncid[i]);
-                     
-        
-                     data.mech_c3_file_ncid[i] =0;
-                     data.mech_c4_file_ncid[i] =0;
-                     
+                         if (data.mech_c3_file_ncid[i]>0)    ncclose(data.mech_c3_file_ncid[i]);
+                         if (data.mech_c4_file_ncid[i]>0)   ncclose(data.mech_c4_file_ncid[i]);
+                         
+                         data.mech_c3_file_ncid[i] =0;
+                         data.mech_c4_file_ncid[i] =0;
+                         
                      }
-                     ncclose(data.climate_file_ncid);
+                     if (data.climate_file_ncid>0)  ncclose(data.climate_file_ncid);
                      data.climate_file_ncid =0;
+                     
+#if FASTLOAD
+                     
+                     if (!data.is_site)
+                     {
+                         printf("Start load Envir\n");
+                         loadGlobalEnvironmentData(&data);
+                         printf("Start load mech\n");
+                         loadGlobalMechanismLUT(&data);
+                         //No need to load LU data sa it has been loaded for 506 yrs in read_input_data_layers->readLUData,
+                         //and just need to be assigned to each site. --Lei
+                     }
+#endif
                 
 
                      site* siteptr = data.first_site;
@@ -409,6 +429,19 @@ void model (UserData& data) {
                    fscanf(namefile,"%s",data.mech_year_string);
                    printf("Mechanism_year_to use: %s\n" , data.mech_year_string);
                 }
+                 
+#if FASTLOAD
+                 if (!data.is_site)
+                 {
+                     freeGlobalEnvironmentData(&data);
+                     freeGlobalMechanismLUT(&data);
+                     loadGlobalEnvironmentData(&data);
+                     loadGlobalMechanismLUT(&data);
+                     //No need to load LU data sa it has been loaded for 506 yrs in read_input_data_layers->readLUData,
+                     //and just need to be assigned to each site. --Lei
+                 }
+#endif
+                 
                 site* siteptr = data.first_site;
                 while (siteptr != NULL) {
                    /* Now we have to read the site data again */
@@ -425,7 +458,7 @@ void model (UserData& data) {
          update_site(&(site_arr[i]), &data); 
       }); 
 #elif TBB
-      parallel_for(blocked_range<size_t>(0,data.number_of_sites,100), 
+      parallel_for(blocked_range<size_t>(0,data.number_of_sites,3),
                    UpdateSites(data.site_arr, t, t1, t2, &data) );
 #endif
       site* siteptr = data.first_site;

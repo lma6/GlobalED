@@ -56,10 +56,15 @@ struct site {
    double basal_area_spp[NSPECIES][N_LANDUSE_TYPES]; ///< site level total stem basal
                                                      ///< area for each spp (cm2/m2)
    double lai[N_LANDUSE_TYPES];                      ///< site-level leaf area index
+   double lai_profile[N_LANDUSE_TYPES][N_LAI];       ///LAI profile --Lei
 #endif
    double site_lai;
    double site_aa_lai;             ///< annual average LAI
    double aa_lai[N_LANDUSE_TYPES]; ///< annual average LAI by land use
+    
+   double site_lai_profile[N_LAI];   ///LAI profile --Lei
+   double site_aa_lai_profile[N_LAI];
+   double aa_lai_profile[N_LAI];
   
    // cfluxes
    double site_npp;                ///< total npp (kgC/m2/yr)

@@ -171,109 +171,176 @@ char lu2charname (int lu) {
 //! @return 
 ////////////////////////////////////////////////////////////////////////////////
 int read_transition_rates (site** current_site, UserData* data) {
-   int rv, ncid, varid, dlu, tlu, i;
-   char dn, tn;
-   char varname[10];
-   size_t index[3], count[3];
-   double factor;
-
-   site* cs = *current_site;
-
-   index[0] = 0;
-   index[1] = cs->sdata->globY_;
-   index[2] = cs->sdata->globX_;
-
-   count[0] = N_LANDUSE_YEARS;
-   count[1] = 1;
-   count[2] = 1;
-
-   if (data->lu_file_ncid == 0) {
-      if ((rv = nc_open(data->lu_file, NC_NOWRITE, &ncid)))
-         NCERR(data->lu_file, rv);
-      data->lu_file_ncid = ncid;
-   } else {
-      ncid = data->lu_file_ncid;
-   }
-
-   for (dlu=0; dlu<N_LANDUSE_TYPES; dlu++) {
-      for (tlu=1; tlu<N_LANDUSE_TYPES; tlu++) {
-         /* skip transitions self->self and v->s (v->s dealt with in sbh/vbh) */
-         if ((dlu != tlu) && !( (dlu == LU_NTRL) && (tlu == LU_SCND) ) ) { 
-            if ((dn = lu2charname(dlu)) && (tn = lu2charname(tlu))) {
-               sprintf(varname, "gfl%c%c", dn, tn);
-               if ((rv = nc_inq_varid(ncid, varname, &varid)))
-                  NCERR(varname, rv);
-               if ((rv = nc_get_vara_double(ncid, varid, index, count, 
-                                            &(cs->sdata->beta[dlu][tlu-1][0]))))
-                  NCERR(varname, rv);
+    int rv, ncid, varid, dlu, tlu, i,ylu;
+    char dn, tn;
+    char varname[10];
+    size_t index[3], count[3];
+    double factor;
+    
+    site* cs = *current_site;
+    
+    index[0] = 0;
+    index[1] = cs->sdata->globY_;
+    index[2] = cs->sdata->globX_;
+    
+    count[0] = N_LANDUSE_YEARS;
+    count[1] = 1;
+    count[2] = 1;
+    
+#if FASTLOAD
+    for (dlu=0; dlu<N_LANDUSE_TYPES; dlu++) {
+        for (tlu=1; tlu<N_LANDUSE_TYPES; tlu++) {
+            for (ylu=0;ylu<N_LANDUSE_YEARS;ylu++)
+            {
+                if ((dlu != tlu) && !( (dlu == LU_NTRL) && (tlu == LU_SCND) ) ) {
+                    if ((dn = lu2charname(dlu)) && (tn = lu2charname(tlu))) {
+                        cs->sdata->beta[dlu][tlu-1][ylu]=data->gfl[dlu][tlu-1][ylu][cs->sdata->globY_][cs->sdata->globX_];
+                    }
+                }
+                
             }
-         }
-      }
-   }
-
-   for (dlu=0; dlu<N_VBH_TYPES; dlu++) {
-      sprintf(varname, "gfvh%d", dlu+1);
-      if ((rv = nc_inq_varid(ncid, varname, &varid)))
-         NCERR(varname, rv);
-
-      if ((rv = nc_get_vara_double(ncid, varid, index, count, 
-                                   &(cs->sdata->vbh[dlu][0]))))
-         NCERR(varname, rv);
-   }
-
-   for (dlu=0; dlu<N_SBH_TYPES; dlu++) {
-      sprintf(varname, "gfsh%d", dlu+1);
-      if ((rv = nc_inq_varid(ncid, varname, &varid)))
-         NCERR(varname, rv);
-
-      if ((rv = nc_get_vara_double(ncid, varid, index, count, 
-                                   &(cs->sdata->sbh[dlu][0]))))
-         NCERR(varname, rv);
-   }
-
-   /*re-normalize from fraction of grid cell area to fraction of the land area*/
-   if (cs->sdata->grid_cell_area_total != cs->sdata->grid_cell_area) {
-      factor = cs->sdata->grid_cell_area_total / cs->sdata->grid_cell_area;
-      for (dlu=0; dlu<N_LANDUSE_TYPES; dlu++)
-         for (tlu=0; tlu<N_LANDUSE_TYPES-1; tlu++) 
-            for (i=0; i<N_LANDUSE_YEARS; i++) 
-               cs->sdata->beta[dlu][tlu][i] *= factor;
-      for (dlu=0; dlu<N_VBH_TYPES; dlu++)
-         for (i=0; i<N_LANDUSE_YEARS; i++) 
-            cs->sdata->vbh[dlu][i] *= factor;
-      for (dlu=0; dlu<N_SBH_TYPES; dlu++)
-         for (i=0; i<N_LANDUSE_YEARS; i++) 
-            cs->sdata->sbh[dlu][i] *= factor;      
-   } 
-
+            /* skip transitions self->self and v->s (v->s dealt with in sbh/vbh) */
+        }
+    }
+    
+    for (dlu=0; dlu<N_VBH_TYPES; dlu++) {
+        for (ylu=0;ylu<N_LANDUSE_YEARS;ylu++)
+        {
+            cs->sdata->vbh[dlu][0]=data->gfvh[dlu][ylu][cs->sdata->globY_][cs->sdata->globX_];
+        }
+    }
+    for (dlu=0; dlu<N_SBH_TYPES; dlu++) {
+        for (ylu=0;ylu<N_LANDUSE_YEARS;ylu++)
+        {
+            cs->sdata->sbh[dlu][ylu]=data->gfsh[dlu][ylu][cs->sdata->globY_][cs->sdata->globX_];
+        }
+    }
+    
+    if (cs->sdata->grid_cell_area_total != cs->sdata->grid_cell_area) {
+        factor = cs->sdata->grid_cell_area_total / cs->sdata->grid_cell_area;
+        for (dlu=0; dlu<N_LANDUSE_TYPES; dlu++)
+            for (tlu=0; tlu<N_LANDUSE_TYPES-1; tlu++)
+                for (i=0; i<N_LANDUSE_YEARS; i++)
+                    cs->sdata->beta[dlu][tlu][i] *= factor;
+        for (dlu=0; dlu<N_VBH_TYPES; dlu++)
+            for (i=0; i<N_LANDUSE_YEARS; i++)
+                cs->sdata->vbh[dlu][i] *= factor;
+        for (dlu=0; dlu<N_SBH_TYPES; dlu++)
+            for (i=0; i<N_LANDUSE_YEARS; i++)
+                cs->sdata->sbh[dlu][i] *= factor;
+    }
+#else
+    if (data->lu_file_ncid == 0) {
+        if ((rv = nc_open(data->lu_file, NC_NOWRITE, &ncid)))
+            NCERR(data->lu_file, rv);
+        data->lu_file_ncid = ncid;
+    } else {
+        ncid = data->lu_file_ncid;
+    }
+    
+    for (dlu=0; dlu<N_LANDUSE_TYPES; dlu++) {
+        for (tlu=1; tlu<N_LANDUSE_TYPES; tlu++) {
+            /* skip transitions self->self and v->s (v->s dealt with in sbh/vbh) */
+            if ((dlu != tlu) && !( (dlu == LU_NTRL) && (tlu == LU_SCND) ) ) {
+                if ((dn = lu2charname(dlu)) && (tn = lu2charname(tlu))) {
+                    sprintf(varname, "gfl%c%c", dn, tn);
+                    if ((rv = nc_inq_varid(ncid, varname, &varid)))
+                        NCERR(varname, rv);
+                    if ((rv = nc_get_vara_double(ncid, varid, index, count,
+                                                 &(cs->sdata->beta[dlu][tlu-1][0]))))
+                        NCERR(varname, rv);
+#if FASTLOAD
+                    if (abs(cs->sdata->beta[dlu][tlu-1][100]-data->gfl[dlu][tlu-1][100][cs->sdata->globY_][cs->sdata->globX_])>0)
+                    {
+                        printf("Diff in gfl %d %d %f %f",cs->sdata->globY_,cs->sdata->globX_,cs->sdata->beta[dlu][tlu-1][100],data->gfl[dlu][tlu-1][100][cs->sdata->globY_][cs->sdata->globX_]);
+                        exit(0);
+                    }
+#endif
+                }
+            }
+        }
+    }
+    
+    for (dlu=0; dlu<N_VBH_TYPES; dlu++) {
+        sprintf(varname, "gfvh%d", dlu+1);
+        if ((rv = nc_inq_varid(ncid, varname, &varid)))
+            NCERR(varname, rv);
+        
+        if ((rv = nc_get_vara_double(ncid, varid, index, count,
+                                     &(cs->sdata->vbh[dlu][0]))))
+            NCERR(varname, rv);
+#if FASTLOAD
+        if (abs(cs->sdata->vbh[dlu][100]-data->gfvh[dlu][100][cs->sdata->globY_][cs->sdata->globX_])>0)
+        {
+            printf("Diff in gfvh %d %d %f %f",cs->sdata->globY_,cs->sdata->globX_,cs->sdata->vbh[dlu][100],data->gfvh[dlu][100][cs->sdata->globY_][cs->sdata->globX_]);
+            exit(0);
+        }
+#endif
+    }
+    
+    for (dlu=0; dlu<N_SBH_TYPES; dlu++) {
+        sprintf(varname, "gfsh%d", dlu+1);
+        if ((rv = nc_inq_varid(ncid, varname, &varid)))
+            NCERR(varname, rv);
+        
+        if ((rv = nc_get_vara_double(ncid, varid, index, count,
+                                     &(cs->sdata->sbh[dlu][0]))))
+            NCERR(varname, rv);
+#if FASTLOAD
+        if (abs(cs->sdata->sbh[dlu][100]-data->gfsh[dlu][100][cs->sdata->globY_][cs->sdata->globX_])>0)
+        {
+            printf("Diff in gfsh %d %d %f %f",cs->sdata->globY_,cs->sdata->globX_,cs->sdata->sbh[dlu][100],data->gfsh[dlu][100][cs->sdata->globY_][cs->sdata->globX_]);
+            exit(0);
+        }
+#endif
+    }
+    
+    /*re-normalize from fraction of grid cell area to fraction of the land area*/
+    if (cs->sdata->grid_cell_area_total != cs->sdata->grid_cell_area) {
+        factor = cs->sdata->grid_cell_area_total / cs->sdata->grid_cell_area;
+        for (dlu=0; dlu<N_LANDUSE_TYPES; dlu++)
+            for (tlu=0; tlu<N_LANDUSE_TYPES-1; tlu++)
+                for (i=0; i<N_LANDUSE_YEARS; i++)
+                    cs->sdata->beta[dlu][tlu][i] *= factor;
+        for (dlu=0; dlu<N_VBH_TYPES; dlu++)
+            for (i=0; i<N_LANDUSE_YEARS; i++)
+                cs->sdata->vbh[dlu][i] *= factor;
+        for (dlu=0; dlu<N_SBH_TYPES; dlu++)
+            for (i=0; i<N_LANDUSE_YEARS; i++)
+                cs->sdata->sbh[dlu][i] *= factor;
+    }
+#endif
+    
+    
+    
 #if 0
-   /* TODO: this needs to be adjusted to use the multi-D lutype indexed arrays - justin */
-   /* average last ten years transistion rates for bau */
-   cs->sdata->beta_vs_bau = cs->sdata->beta_vc_bau = 
-      cs->sdata->beta_vp_bau = cs->sdata->beta_sp_bau = 
-      cs->sdata->beta_sc_bau = cs->sdata->beta_cs_bau = 
-      cs->sdata->beta_ps_bau = cs->sdata->beta_gc_bau = 
-      cs->sdata->beta_gp_bau = cs->sdata->beta_pg_bau = 
-      cs->sdata->beta_cg_bau = cs->sdata->beta_cp_bau = 
-      cs->sdata->beta_pc_bau = 0.00;
-
-   for(j=N_LANDUSE_YEARS-11; j<N_LANDUSE_YEARS; j++){
-      cs->sdata->beta_vs_bau += cs->sdata->beta_vs[j] / 10.0; 
-      cs->sdata->beta_vc_bau += cs->sdata->beta_vc[j] / 10.0; 
-      cs->sdata->beta_vp_bau += cs->sdata->beta_vp[j] / 10.0; 
-      cs->sdata->beta_sp_bau += cs->sdata->beta_sp[j] / 10.0; 
-      cs->sdata->beta_sc_bau += cs->sdata->beta_sc[j] / 10.0; 
-      cs->sdata->beta_cs_bau += cs->sdata->beta_cs[j] / 10.0; 
-      cs->sdata->beta_ps_bau += cs->sdata->beta_ps[j] / 10.0; 
-      cs->sdata->beta_gc_bau += cs->sdata->beta_gc[j] / 10.0; 
-      cs->sdata->beta_gp_bau += cs->sdata->beta_gp[j] / 10.0; 
-      cs->sdata->beta_pg_bau += cs->sdata->beta_pg[j] / 10.0; 
-      cs->sdata->beta_cg_bau += cs->sdata->beta_cg[j] / 10.0;
-      cs->sdata->beta_cp_bau += cs->sdata->beta_cp[j] / 10.0; 
-      cs->sdata->beta_pc_bau += cs->sdata->beta_pc[j] / 10.0; 
-   }    
-#endif  
-   return 1;
+    /* TODO: this needs to be adjusted to use the multi-D lutype indexed arrays - justin */
+    /* average last ten years transistion rates for bau */
+    cs->sdata->beta_vs_bau = cs->sdata->beta_vc_bau =
+    cs->sdata->beta_vp_bau = cs->sdata->beta_sp_bau =
+    cs->sdata->beta_sc_bau = cs->sdata->beta_cs_bau =
+    cs->sdata->beta_ps_bau = cs->sdata->beta_gc_bau =
+    cs->sdata->beta_gp_bau = cs->sdata->beta_pg_bau =
+    cs->sdata->beta_cg_bau = cs->sdata->beta_cp_bau =
+    cs->sdata->beta_pc_bau = 0.00;
+    
+    for(j=N_LANDUSE_YEARS-11; j<N_LANDUSE_YEARS; j++){
+        cs->sdata->beta_vs_bau += cs->sdata->beta_vs[j] / 10.0;
+        cs->sdata->beta_vc_bau += cs->sdata->beta_vc[j] / 10.0;
+        cs->sdata->beta_vp_bau += cs->sdata->beta_vp[j] / 10.0;
+        cs->sdata->beta_sp_bau += cs->sdata->beta_sp[j] / 10.0;
+        cs->sdata->beta_sc_bau += cs->sdata->beta_sc[j] / 10.0;
+        cs->sdata->beta_cs_bau += cs->sdata->beta_cs[j] / 10.0;
+        cs->sdata->beta_ps_bau += cs->sdata->beta_ps[j] / 10.0;
+        cs->sdata->beta_gc_bau += cs->sdata->beta_gc[j] / 10.0;
+        cs->sdata->beta_gp_bau += cs->sdata->beta_gp[j] / 10.0;
+        cs->sdata->beta_pg_bau += cs->sdata->beta_pg[j] / 10.0;
+        cs->sdata->beta_cg_bau += cs->sdata->beta_cg[j] / 10.0;
+        cs->sdata->beta_cp_bau += cs->sdata->beta_cp[j] / 10.0;
+        cs->sdata->beta_pc_bau += cs->sdata->beta_pc[j] / 10.0;
+    }
+#endif
+    return 1;
 }
 
 

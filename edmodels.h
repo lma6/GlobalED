@@ -23,6 +23,10 @@
 //    LAND USE
 ////////////////////////////////////////
 #define LANDUSE 1 ///< Flag to turn on land use dynamics
+#define FASTLOAD 1
+#define INI_Year 1500
+#define N_LAI 4
+const int LAI_INTERVAL[]={0, 10, 20, 30}; //The elements number should be same as N_LAI
 
 #define FTS 0
 
@@ -510,7 +514,28 @@ struct UserData {
    double Eb[2][136][30][1300];
 #endif
 
+#if FASTLOAD
+#if LANDUSE
+    float gfl[N_LANDUSE_TYPES][N_LANDUSE_TYPES-1][N_LANDUSE_YEARS][360][720];
+    float gfvh[N_VBH_TYPES][N_LANDUSE_YEARS][360][720];
+    float gfsh[N_SBH_TYPES][N_LANDUSE_YEARS][360][720];
+#endif
+    float **soil_depth;
+    float **theta_max;
+    float **k_sat;
+    float **tau;
     
+    float ***climate_temp;
+    float ***climate_precip;
+    float ***climate_soil;
+    float *light_levels;
+    float *****tf;
+    float ******An;
+    float ******Anb;
+    float ******E;
+    float ******Eb;
+    
+#endif
 
 #ifdef COUPLED
    double lastTotalC;
