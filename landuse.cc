@@ -186,7 +186,6 @@ int read_transition_rates (site** current_site, UserData* data) {
     count[0] = N_LANDUSE_YEARS;
     count[1] = 1;
     count[2] = 1;
-    
 #if FASTLOAD
     for (dlu=0; dlu<N_LANDUSE_TYPES; dlu++) {
         for (tlu=1; tlu<N_LANDUSE_TYPES; tlu++) {
@@ -505,7 +504,6 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
          /* TODO: probably not the right assumption for all transitions. -justin */
          lu_year = N_LANDUSE_YEARS-1;
       }
-
       /************************************************/
       /*****            lu transistions            ****/
       /************************************************/
@@ -616,6 +614,7 @@ void landuse_transition (site** siteptr, UserData* data,
                          int donor_lu, int target_lu, double beta) {
 
    site* currents = *siteptr;
+    
 
    if (beta == 0.0) {
       return;
@@ -648,6 +647,7 @@ void landuse_transition (site** siteptr, UserData* data,
    }
       
    double change_in_area = beta * total_area;
+    
 
    if ( (change_in_area > data->min_landuse_change_fraction * data->area) 
         && (total_area - change_in_area > data->min_landuse_area_fraction * data->area)) {
@@ -665,6 +665,7 @@ void landuse_transition (site** siteptr, UserData* data,
          if (change_in_area > data->min_change_in_area_patch) {
             /* INCREASE NEW PATCH AREA */
             currents->new_patch[target_lu]->area += change_in_area;
+
    
             /* ACCUMULATE LITTER */
             /* abondoned cropland (to pasture or secondary) abondoned pasture *
@@ -690,7 +691,7 @@ void landuse_transition (site** siteptr, UserData* data,
             aggregate_in_soil_state_from_disturbance(&(currents->new_patch[target_lu]),
                                                    &currentp, change_in_area, data);
    
-            /* update area of donor patch */ 
+            /* update area of donor patch */
             currentp->area -= change_in_area;
    
             if (currentp->area < data->min_patch_area) {
@@ -723,7 +724,6 @@ void landuse_transition (site** siteptr, UserData* data,
              currents->name, data->year, donor_lu, target_lu, 
              change_in_area, beta);*/
    }
-      
 }
 
 /* cut forest based on fraction */

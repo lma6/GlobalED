@@ -222,6 +222,7 @@ void patch::Dsdt (unsigned int time_period, double time, UserData* data) {
    /* loss of C to atmosphere and leaching */
    rh = r_fsc * fast_C_loss + r_stsc*structural_C_loss 
       + r_ssc*slow_C_loss + r_psc*passive_C_loss;
+    
 
    /* NITROGEN POOLS */
    dfsn = fsn_in - fast_N_loss;

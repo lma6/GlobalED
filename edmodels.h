@@ -25,8 +25,9 @@
 #define LANDUSE 1 ///< Flag to turn on land use dynamics
 #define FASTLOAD 1
 #define INI_Year 1500
-#define N_LAI 4
-const int LAI_INTERVAL[]={0, 10, 20, 30}; //The elements number should be same as N_LAI
+#define N_LAI 6
+#define WT_Abg_PROFILE 1
+const int LAI_INTERVAL[]={0,1.5,5, 10, 20, 30}; //The elements number should be same as N_LAI
 
 #define FTS 0
 

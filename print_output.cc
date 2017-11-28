@@ -45,6 +45,8 @@ float getLAIAA0 (site* cs)           { return cs->site_aa_lai_profile[0];}
 float getLAIAA1 (site* cs)           { return cs->site_aa_lai_profile[1];}
 float getLAIAA2 (site* cs)           { return cs->site_aa_lai_profile[2];}
 float getLAIAA3 (site* cs)           { return cs->site_aa_lai_profile[3];}
+float getLAIAA4 (site* cs)           { return cs->site_aa_lai_profile[4];}
+float getLAIAA5 (site* cs)           { return cs->site_aa_lai_profile[5];}
 float getNPP (site* cs)              { return cs->site_npp; }
 float getRH (site* cs)               { return cs->site_rh; }
 float getNEP (site* cs)              { return cs->site_nep; }
@@ -65,6 +67,8 @@ float getLAI0 (site* cs)             { return cs->site_lai_profile[0]; }
 float getLAI1 (site* cs)             { return cs->site_lai_profile[1]; }
 float getLAI2 (site* cs)             { return cs->site_lai_profile[2]; }
 float getLAI3 (site* cs)             { return cs->site_lai_profile[3]; }
+float getLAI4 (site* cs)             { return cs->site_lai_profile[4]; }
+float getLAI5 (site* cs)             { return cs->site_lai_profile[5]; }
 float getBasalArea (site* cs)        { return cs->site_basal_area; }
 float getWater (site* cs)            { return cs->site_total_water; }
 float getPercolation (site* cs)      { return cs->site_total_perc; }
@@ -72,6 +76,29 @@ float getEvaporation (site* cs)      { return cs->site_total_soil_evap; }
 float getTranspiration (site* cs)    { return cs->site_total_water_uptake; }
 float getTheta (site* cs)            { return cs->site_total_theta; }
 float getMeanHeight (site* cs)       { return cs->site_avg_height; }
+
+#if WT_Abg_PROFILE
+float getAGB0 (site* cs)             { return cs->agb_profile[0]; }
+float getAGB1 (site* cs)             { return cs->agb_profile[1]; }
+float getAGB2 (site* cs)             { return cs->agb_profile[2]; }
+float getAGB3 (site* cs)             { return cs->agb_profile[3]; }
+float getAGB4 (site* cs)             { return cs->agb_profile[4]; }
+float getAGB5 (site* cs)             { return cs->agb_profile[5]; }
+float getAGB6 (site* cs)             { return cs->agb_profile[6]; }
+float getAGB7 (site* cs)             { return cs->agb_profile[7]; }
+float getAGB8 (site* cs)             { return cs->agb_profile[8]; }
+float getAGB9 (site* cs)             { return cs->agb_profile[9]; }
+float getAGB10 (site* cs)             { return cs->agb_profile[10]; }
+float getAGB11 (site* cs)             { return cs->agb_profile[11]; }
+float getAGB12 (site* cs)             { return cs->agb_profile[12]; }
+float getAGB13 (site* cs)             { return cs->agb_profile[13]; }
+float getAGB14 (site* cs)             { return cs->agb_profile[14]; }
+float getAGB15 (site* cs)             { return cs->agb_profile[15]; }
+float getAGB16 (site* cs)             { return cs->agb_profile[16]; }
+float getAGB17 (site* cs)             { return cs->agb_profile[17]; }
+float getAGB18 (site* cs)             { return cs->agb_profile[18]; }
+float getAGB19 (site* cs)             { return cs->agb_profile[19]; }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 //! getMaxHeight
@@ -201,6 +228,8 @@ void registerOutputVars(Outputter *o) {
     o->registerVar("aa_LAI1", &getLAIAA1, "", -9999.0F, ncFloat);
     o->registerVar("aa_LAI2", &getLAIAA2, "", -9999.0F, ncFloat);
     o->registerVar("aa_LAI3", &getLAIAA3, "", -9999.0F, ncFloat);
+    o->registerVar("aa_LAI4", &getLAIAA4, "", -9999.0F, ncFloat);
+    o->registerVar("aa_LAI5", &getLAIAA5, "", -9999.0F, ncFloat);
    o->registerVar("area_burned", &getAreaBurned, "km2", -9999.0F, ncFloat);
    o->registerVar("dryness_index", &getDrynessIndex, "", -9999.0F, ncFloat);
    o->registerVar("soil_C", &getSiteSoilC, "kg/m2", -9999.0F, ncFloat);
@@ -221,6 +250,8 @@ void registerOutputVars(Outputter *o) {
     o->registerVar("LAI1", &getLAI1, "", -9999.0F, ncFloat);
     o->registerVar("LAI2", &getLAI2, "", -9999.0F, ncFloat);
     o->registerVar("LAI3", &getLAI3, "", -9999.0F, ncFloat);
+    o->registerVar("LAI4", &getLAI4, "", -9999.0F, ncFloat);
+    o->registerVar("LAI5", &getLAI5, "", -9999.0F, ncFloat);
    o->registerVar("max_height", &getMaxHeight, "m", -9999.0F, ncFloat);
    o->registerVar("basal_area", &getBasalArea, "", -9999.0F, ncFloat);
    o->registerVar("water", &getWater, "", -9999.0F, ncFloat);
@@ -230,6 +261,29 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("transpiration", &getTranspiration, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("n_cohorts", &getNCohorts, "", -99, ncInt);
    o->registerVar("mean_height", &getMeanHeight, "m", -9999.0F, ncFloat);
+    
+#if WT_Abg_PROFILE
+    o->registerVar("AGB0", &getAGB0, "", -9999.0F, ncFloat);
+    o->registerVar("AGB1", &getAGB1, "", -9999.0F, ncFloat);
+    o->registerVar("AGB2", &getAGB2, "", -9999.0F, ncFloat);
+    o->registerVar("AGB3", &getAGB3, "", -9999.0F, ncFloat);
+    o->registerVar("AGB4", &getAGB4, "", -9999.0F, ncFloat);
+    o->registerVar("AGB5", &getAGB5, "", -9999.0F, ncFloat);
+    o->registerVar("AGB6", &getAGB6, "", -9999.0F, ncFloat);
+    o->registerVar("AGB7", &getAGB7, "", -9999.0F, ncFloat);
+    o->registerVar("AGB8", &getAGB8, "", -9999.0F, ncFloat);
+    o->registerVar("AGB9", &getAGB9, "", -9999.0F, ncFloat);
+    o->registerVar("AGB10", &getAGB10, "", -9999.0F, ncFloat);
+    o->registerVar("AGB11", &getAGB11, "", -9999.0F, ncFloat);
+    o->registerVar("AGB12", &getAGB12, "", -9999.0F, ncFloat);
+    o->registerVar("AGB13", &getAGB13, "", -9999.0F, ncFloat);
+    o->registerVar("AGB14", &getAGB14, "", -9999.0F, ncFloat);
+    o->registerVar("AGB15", &getAGB15, "", -9999.0F, ncFloat);
+    o->registerVar("AGB16", &getAGB16, "", -9999.0F, ncFloat);
+    o->registerVar("AGB17", &getAGB17, "", -9999.0F, ncFloat);
+    o->registerVar("AGB18", &getAGB18, "", -9999.0F, ncFloat);
+    o->registerVar("AGB19", &getAGB19, "", -9999.0F, ncFloat);
+#endif
 #endif
    o->registerVar("n_patches", &getNPatches, "", -99, ncInt);
 #if DOES_COMPILE

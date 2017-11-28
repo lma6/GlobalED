@@ -346,7 +346,23 @@ size_t read_gridspec (UserData* data) {
 
 char lu2charname2 (int lu) {
     char name;
-    
+    switch (lu) {
+        case LU_NTRL:
+            name = 'v';
+            break;
+        case LU_SCND:
+            name = 's';
+            break;
+        case LU_CROP:
+            name = 'c';
+            break;
+        case LU_PAST:
+            name = 'p';
+            break;
+        default:
+            fprintf(stderr, "unkown landuse type: %d\n", lu);
+            return 0;
+    }
     return name;
 }
 
@@ -609,7 +625,7 @@ bool loabGlobalLUData (UserData* data)
     index[2] = 0;
     
     count[0] = N_LANDUSE_YEARS;
-    count[1] = 361;
+    count[1] = 360;
     count[2] = 720;
     
     if (data->lu_file_ncid == 0) {
@@ -619,7 +635,7 @@ bool loabGlobalLUData (UserData* data)
     } else {
         ncid = data->lu_file_ncid;
     }
-    
+
     for (dlu=0; dlu<N_LANDUSE_TYPES; dlu++) {
         for (tlu=1; tlu<N_LANDUSE_TYPES; tlu++) {
             /* skip transitions self->self and v->s (v->s dealt with in sbh/vbh) */

@@ -151,6 +151,9 @@ void create_patch (site** siteptr, patch** pnewp, int landuse,
    newpatch->theta              = newpatch->water / (current_site->sdata->soil_depth 
                                                      * current_site->sdata->theta_max);
    newpatch->total_water_uptake = 0.0;
+    
+    //ml-modified: Load restart files, pero is infinite sometimes
+    newpatch->perc=0.0;
 
    /* assign elements of integration array */
    newpatch->fsc_e  = 1;

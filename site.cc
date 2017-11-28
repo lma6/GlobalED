@@ -665,8 +665,8 @@ void update_site (site** current_site, UserData* data) {
       cs->site_total_theta        += cs->theta[lu] * cs->area_fraction[lu];
       cs->site_total_water_uptake += cs->total_water_uptake[lu] * cs->area_fraction[lu];         
       cs->site_total_water_demand += cs->total_water_demand[lu] * cs->area_fraction[lu];         
-      cs->site_total_perc         += cs->perc[lu] * cs->area_fraction[lu];         
-      cs->site_total_soil_evap    += cs->soil_evap[lu] * cs->area_fraction[lu];     
+      cs->site_total_perc         += cs->perc[lu] * cs->area_fraction[lu];
+      cs->site_total_soil_evap    += cs->soil_evap[lu] * cs->area_fraction[lu];
       /* height */
       cs->site_avg_height         += cs->lu_avg_height[lu] * cs->area_fraction[lu];
 #endif
@@ -767,7 +767,7 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
       cs->basal_area_spp[i][lu]    = 0.0;
    }
 #endif
-   
+    
    patch* cp = cs->youngest_patch[lu];
    while (cp != NULL) {
       update_patch(&cp, data);
@@ -820,8 +820,13 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
          cs->theta[lu]              += cp->theta * frac;
          /* TODO: why are these different? -justin */
          cs->total_water_uptake[lu] += cp->total_water_uptake / (cs->area_fraction[lu]*data->area);
-         cs->total_water_demand[lu] += cp->total_water_demand / (cs->area_fraction[lu]*data->area);
          cs->perc[lu]               += cp->perc * frac;
+          //Modified add check
+          if (cp->perc>1e18)
+          {
+              printf("Wrong in perc 1: perc-%f frac-%f\n",cp->perc,lu,frac);
+              exit(1);
+          }
          cs->soil_evap[lu]          += cp->soil_evap * frac;
          /* height */
          /* insulate against empty patches */

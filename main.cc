@@ -122,7 +122,6 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
    if (data->restart && data->new_restart_read) {
       data->restartReader = new Restart(data->restart_dir);
    }
-
    site* first_site = NULL;
    init_sites(&first_site, data);
 
