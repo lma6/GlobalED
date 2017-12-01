@@ -1,4 +1,4 @@
- #ifndef EDM_DOMAIN_H_
+#ifndef EDM_DOMAIN_H_
 #define EDM_DOMAIN_H_
 
 #include <cstdlib>
@@ -22,7 +22,7 @@
 ////////////////////////////////////////
 //    LAND USE
 ////////////////////////////////////////
-#define LANDUSE 1 ///< Flag to turn on land use dynamics
+#define LANDUSE 0 ///< Flag to turn on land use dynamics
 
 #define FTS 0
 
@@ -95,7 +95,7 @@
 //    PRINTING                    
 ////////////////////////////////////////
 #ifdef ED
-#define PRINTFREQ 1 ///< Timesteps bewteen output, 1=1month
+#define PRINTFREQ N_CLIMATE ///< Timesteps bewteen output, 1=1month
 #elif defined MIAMI_LU
 #define PRINTFREQ  1        ///< Timesteps between output, 1=1yr
 #endif

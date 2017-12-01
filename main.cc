@@ -71,8 +71,7 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
    FILE *namefile;
 
    /* allocate data storage structure */
-   //UserData* data = (UserData*) malloc(sizeof *data);  /* Allocate data memory */
-   struct UserData* data = new UserData;
+   UserData* data = (UserData*) malloc(sizeof *data);  /* Allocate data memory */ 
    if (data == NULL) {
       fprintf(stderr, "main: out of memory - can't allocate UserData\n");
       exit(1);;
@@ -294,11 +293,8 @@ void model (UserData& data) {
 
    for (unsigned int t=data.start_time; t<tsteps; t++) { /* absolute time offset */
 
-      if(data.print_output_files) {
-          if (tsteps-t<106*N_SUB+1)
-          {
-              print_region_files(t,&data.first_site,&data);
-          }
+      if(data.print_output_files) {        
+         print_region_files(t,&data.first_site,&data);
       }
 
       double t1 = t * TIMESTEP;

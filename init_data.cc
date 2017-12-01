@@ -21,7 +21,7 @@ void init_data (const char* cfgFile, UserData* data) {
 
    // Get the list of PFTs which we will simulate
 #ifdef ED
-   get_list(data, PFTS, "", "list_pfts", data->list_of_pfts);
+   get_list(data, PFTS, "", "list_pfts", data->list_of_pfts);   
    data->nspecies = data->list_of_pfts.size();
    if(data->nspecies != NSPECIES) {
        printf("Number of PFTs in config file does not match that in edmodels.h\n");

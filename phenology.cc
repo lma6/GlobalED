@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "edmodels.h"
 #include "site.h"
 #include "patch.h"

@@ -529,9 +529,7 @@ void read_patch_distribution (site** siteptr, UserData* data) {
    int last_lu = -1;
    /* read in data elements */
    int count = 0;
-    
 #if defined ED
-    printf("ED mode\n");
    while( fscanf( infile, "%lf%s%d%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%d",
                   &old_time, old_address, &track, &age, &area, &water,
                   &fsc, &stsc, &stsl, &ssc, &psc, &msn, &fsn, &lu ) != EOF ){    
@@ -562,7 +560,6 @@ void read_patch_distribution (site** siteptr, UserData* data) {
 #if defined ED
       create_patch( &cs, &newp, lu, track, age, area, water,
                     fsc, stsc, stsl, ssc, psc, msn, fsn, data);
-#if 0 //switch to 1 if line 431 is on indicating history are output
       if (lu == LU_SCND) {
          double tmp = 0.0;
          for(size_t i=0; i<start_time+1; i++){
@@ -571,8 +568,6 @@ void read_patch_distribution (site** siteptr, UserData* data) {
             /*printf("tmp %f\t patch %f\n",tmp,*(newp->phistory+i));*/
          }
       }
-#endif
-       
 #elif defined MIAMI_LU
       create_patch(&cs, &newp, lu, track, age, area, fsc, stsc, tb, data);
 #endif    
