@@ -215,6 +215,13 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
         double water_supply;
         double wilt_factor;
         water_supply=data->water1*currentc->br*water*data->mass_of_water;
+          //ml-modified: to test why limited water supply could depress grass in Crop and Pasture.
+          //Need to change back once test is done.
+//        if (data->is_grass[currentc->species])
+//        {
+//            water_supply=data->water1*currentc->br*water*data->mass_of_water*0.25;
+//        }
+        
         currentc->fsw = (water_supply-currentc->E_shut)/(currentc->E_pot + water_supply-currentc->E_shut);
         if (currentc->fsw<0) {
            //If demand>supply, stomates shut and leaves wilt to the extent that supply := demand
