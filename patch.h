@@ -24,7 +24,7 @@ struct patch {
    double total_water_uptake;          ///< Total plant water uptake in mm kg/yr
    double total_water_demand;          ///< Total plant water uptake in mm kg/yr
    double perc;                        ///< Rate of percolation mm/yr
-   double soil_evap;                   ///< Rate of percolation mm/yr
+   double soil_evap;                   ///< Rate of evapotation mm/yr
 
    double total_spp_biomass[NSPECIES]; ///< Biomass of each spp in patch (kgC/m2)
    double total_spp_babove[NSPECIES];  ///< Agb of each spp in patch (kgC/m2)

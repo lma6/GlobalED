@@ -129,6 +129,509 @@ double compute_dyl_factor (double lat, double day) {
    return factor;
 }
 
+#if COUPLE_FAR
+bool SiteData::compute_mech(int pt, double Vm0, int Vm0_bin, int time_period, int light_index, UserData* data)
+{
+    double farquhar_results[5];
+    double shade=light_levels[pt][Vm0_bin][light_index];
+    double Vcmax25=Vm0;
+    double CA=350.0/1e6;
+    tf[pt][Vm0_bin][time_period]=0;
+    An[pt][Vm0_bin][time_period][light_index]=0;
+    E[pt][Vm0_bin][time_period][light_index]=0;
+    Anb[pt][Vm0_bin][time_period][light_index]=0;
+    Eb[pt][Vm0_bin][time_period][light_index]=0;
+    
+    double farquhar_results2[5],farquhar_results3[5],tmp,hum,swd;
+    hum=0.03;
+    swd=600;
+//
+//    farquhar(Vcmax25/1e6,CA,tmp,hum,swd,shade,pt,farquhar_results);
+//
+//    farquhar_collatz(Vcmax25/1e6,CA,tmp,hum,swd,shade,pt,farquhar_results2);
+//
+//    Farquhar_couple(pt,tmp,hum,swd,CA*1e6,0.8,100.0,shade,Vcmax25,farquhar_results3);
+//    printf("Comp %d %d vc %f tmp %f hum %f swd %f __ %f %f %f == %f %f %f == %f %f %f\n",globY_,globX_,Vcmax25,tmp,hum,swd,farquhar_results[1]*1e6,farquhar_results2[1]*1e6,farquhar_results3[1]*1e6,farquhar_results[2]*1e6,farquhar_results2[2]*1e6,farquhar_results3[2]*1e6,farquhar_results[3]*1e6,farquhar_results2[3]*1e6,farquhar_results3[3]*1e6);
+    
+//    int lat=120,lon=437,mon=6;
+    //for (lat=0;lat<360;lat++)
+    //for (Vcmax25=3;Vcmax25<100;Vcmax25++)
+//    {
+//
+//        tmp=data->global_tmp[mon][lat][lon];
+//        hum=data->global_hum[mon][lat][lon];
+//        swd=data->global_swd[mon][lat][lon];
+//
+//        farquhar(Vcmax25/1e6,CA,tmp,hum,swd,shade,pt,farquhar_results);
+//
+//        farquhar_collatz(Vcmax25/1e6,CA,tmp,hum,swd,shade,pt,farquhar_results2);
+//
+//        Farquhar_couple(pt,tmp,hum,swd,CA*1e6,0.8,100.0,shade,Vcmax25,farquhar_results3);
+//        printf("Comp %d %d __ vc %f %f %f %f __ %.4f %.4f %.4f == %.4f %.4f %.4f == %.4f %.4f %.4f\n",lat,lon,Vcmax25,tmp,hum,swd,farquhar_results[1]*1e6,farquhar_results2[1]*1e6,farquhar_results3[1]*1e6,farquhar_results[2]*1e6,farquhar_results2[2]*1e6,farquhar_results3[2]*1e6,farquhar_results[3]*1e6,farquhar_results2[3]*1e6,farquhar_results3[3]*1e6);
+//    }
+//
+        for (tmp=2;tmp<50;tmp+=2)
+        {
+            Farquhar_couple(0,tmp,hum,swd,CA*1e6,0.8,100.0,shade,Vcmax25,farquhar_results2);
+            Farquhar_couple(1,tmp,hum,swd,CA*1e6,0.8,100.0,shade,Vcmax25/3.0,farquhar_results3);
+            printf("Comp vc %f %f %f %f __ %.4f %.4f == %.4f %.4f == %.4f %.4f\n",Vcmax25,tmp,hum,swd,farquhar_results2[1]*1e6,farquhar_results3[1]*1e6,farquhar_results2[2]*1e6,farquhar_results3[2]*1e6,farquhar_results2[3]*1e6,farquhar_results3[3]*1e6);
+        }
+
+    exit(0);
+    
+    
+    for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
+    {
+        //Currently, ambient CO2 concentration is 350 umol
+        
+//        farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],
+//                                 data->global_hum[mon][globY_][globX_],
+//                                 data->global_swd[mon][globY_][globX_],
+//                                 shade,pt,farquhar_results);
+        
+        Farquhar_couple(pt,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],CA*1e6,0.8,100.0,shade,Vcmax25,farquhar_results);
+        
+        tf[pt][Vm0_bin][time_period]+=farquhar_results[0];
+        An[pt][Vm0_bin][time_period][light_index]+=farquhar_results[1];
+        E[pt][Vm0_bin][time_period][light_index]+=farquhar_results[2];
+        Anb[pt][Vm0_bin][time_period][light_index]+=farquhar_results[3];
+        Eb[pt][Vm0_bin][time_period][light_index]+=farquhar_results[4];
+    }
+    tf[pt][Vm0_bin][time_period]/=24.0;
+    An[pt][Vm0_bin][time_period][light_index]*=3600.0*360.0;
+    E[pt][Vm0_bin][time_period][light_index]*=3600.0*540.0;
+    Anb[pt][Vm0_bin][time_period][light_index]*=3600.0*360.0;
+    Eb[pt][Vm0_bin][time_period][light_index]*=3600.0*540.0;
+
+    return 1;
+}
+
+bool SiteData::farquhar (double Vmax,double CA, double ta, double ea, double q, double shade, int C4, double outputs[5]) {
+    //printf("Cal farquhar V %f Ca %f ta %f ea %f q %f shade %f C4 %f\n",Vmax,CA,ta,ea,q,shade,C4);
+    double shade_thresh, shade_thresh2;
+    /* Scalers for turning boundary resitance */
+    double gh_adj;
+    double an;
+    double g_adj;
+    double capgam, vm, kc, ko, ds, v;
+    double ci, tl, gg_adj, gg2, maxg, hta, hdriv, hl, lite;
+    double f1, f2, f3, ginc, lasta, laste, lasttf, lastg, lastfunc, maxfunc;
+    int flagv, flagg, gmax, j;
+    double g;
+    double M;
+    double B=0.01;
+    double rn;
+    double tf, a, e, ab, eb;
+    
+    
+    double GB=3.0,KAPPA=0.5,LAM=45000.0,CP=1280.1,GH=0.03,DO1=0.01,ALPHA3=0.08,ALPHA4=0.06;
+    int PRECISION=10,BND=0;
+    
+    if (C4)
+    {
+        M = 4.0;
+    }
+    else
+    {
+        M = 8.0;
+    }
+    
+    /* Meteorological conditions */
+    rn = q * shade;
+    
+    
+    /* Conversion of Solar influx from W/(m^2s) to mole_of_quanta/(m^2s) PAR, *
+     * empirical relationship from McCree is lite = rn * 0.0000023            *
+     * Prentice's relationship lite = rn / 540000.0 is ~25% - 30% lower       *
+     * lite = rn * 0.0000023; converts watts short wave to Einsteins PAR      *
+     * 1/540000 ~ 0.0000018                                                   */
+
+    lite = rn * 0.0000023; /* assuming par 400-700nm, 0.5 sw is par */
+    
+    hta = 2541400.0 * exp(-5415.0 / (ta + 273.2)); //mol per mol humidity of air if it were saturated
+    hdriv = 5415.0 * hta / ((ta + 273.2) * (ta + 273.2)); //Note in tropical this had an extra *hta in denomintaor - I belive this to be incorrect
+    
+    ginc = 1.0;
+    gmax = B + 10.0 * ginc;
+    g = B;
+    
+    shade_thresh = exp(-1.0 * KAPPA * 1.);
+    shade_thresh2 = exp(-1.0 * KAPPA * 4.);
+
+    v = Vmax;
+    
+    if(C4) {
+        gg2 = 0.04;// gg_adj / v;
+    } else {
+        gg2 = 0.02;
+    }
+    
+    flagv = 0;
+    for (j=0; j<PRECISION; j++) {
+        if (flagv == 0)
+            flagg = 0;
+        else
+            flagg = 1;
+        while ((flagg == 0) && (g < gmax)) {
+            if (BND) {
+                g_adj = GB / (g + GB);
+                gh_adj = GB / 1.275 * 0.029 / GH;
+            } else {
+                g_adj = 1.;
+                gh_adj = 1.;
+            }
+            tl = ta + (rn * KAPPA - LAM * g * g_adj * (hta - ea)) / (CP * GH * gh_adj + LAM * g * g_adj * hdriv);
+            if (tl < ta)
+                tl = ta;
+            hl = 2541400.0 * exp(-5415.0 / (tl + 273.2));
+            
+            /* CO2 compenstaion point */
+            capgam = 0.209 / (9000.0 * exp(-5000.0 * (1.0 / 288.2 - 1.0 / (tl + 273.2)))); //Equation 3 in Foley
+            
+            /* Temperature dependent Michaelis-Menten coefficients */
+            ko = 0.25 * exp(1400.0 * (1.0 / 288.2 - 1.0 / (tl + 273.2)));
+            kc = 0.00015 * exp(6000.0 * (1.0 / 288.2 - 1.0 / (tl + 273.2)));
+            
+            /* Saturation defficit */
+            ds = hl - ea;
+            
+            /* Temperature dependence of Vmax */
+            vm = v * exp(3000.0 * (1.0 / 288.2 - 1.0 / (tl + 273.2))); //A2 ED or 12 Foley
+            
+            /* Cold and warm shutdown- 092998 - GCH FROM SWP */
+
+            if (C4)
+            /* 4/25/00 coorected t func from foley to limit c4s */
+                vm /= (1.0 + exp(0.4 * (10.0 - ta))) * (1.0 + exp(0.4 * (ta - 50.0)));
+            else
+                vm /= (1.0 + exp(0.4 * (5.0 - ta))) * (1.0 + exp(0.4 * (ta - 45.0)));
+            
+            /* Substomatal moler fraction of CO2 */
+            if (BND) {
+                ci = (g - B) * (1 + ds / DO1) * (capgam * (g + GB) - CA * GB) + M * CA * GB * g / 1.6;
+                ci = ci / ((g - B) * (1 + ds / DO1) * g + M * GB * g / 1.6);
+            } else {
+                ci = (g - B) * (CA - capgam) * (1.0 + ds / DO1) / M;//13 Foley
+                ci = CA - 1.6 * ci / g; //15 foley - note no boundary layer CO2 conductance
+            }
+            if (C4) {
+                f1 = ALPHA4 * lite * KAPPA * 1.00;
+                f2 = vm;
+                f3 = 18000.0 * vm * ci;
+                
+                if (f1 < f2)
+                    an = f1;
+                else
+                    an = f2;
+                
+                if (f3 < an)
+                    an = f3;
+                
+            } else {
+                /* Limiting rates of gross photosynthesis for C3 plants */
+                f1 = ALPHA3 * lite * 1.0 * KAPPA * (ci - capgam) / (ci + 1.0 * capgam); //A1 in ED (main bit)
+                f2 = vm * (ci - capgam) / (ci + kc * (1.0 + 0.209 / ko));
+                
+                if (f1 < f2)
+                    an = f1;
+                else
+                    an = f2;
+            }
+            
+            /* Dark "day" respiration */
+
+            an -= gg2 * vm; /* this must equal gg * conts * tf */
+            
+            
+            if (BND)
+                f1 = an - g * g_adj * (CA - ci);
+            else
+                f1 = an - g * g_adj * (CA - ci) / 1.6;
+            
+            if (g == B) {
+                maxfunc = f1;
+                maxg = B;
+                e = g * g_adj * ds;
+
+                a = -gg2 * vm;
+                tf = exp(3000.0 * (1.0 / 288.2 - 1.0 / (ta + 273.2)));
+                
+                if (C4)
+                /* 4/25/00 coorected t func from foley to limit c4s */
+                    tf /= (1.0 + exp(0.4 * (10.0 - ta))) * (1.0 + exp(0.4 * (ta - 50.0)));
+                else
+                    tf /= (1.0 + exp(0.4 * (5.0 - ta))) * (1.0 + exp(0.4 * (ta - 45.0)));
+                
+                /* tl changed to ta and denominator added  by gch 09/29/99 */
+                eb = e;
+                ab = a;
+                flagv = 1;
+                lastg = g;
+                lastfunc = f1;
+                laste = e;
+                lasta = an;
+                lasttf = tf;
+                if (lite < 0.00000001)
+                    flagg = 1;
+                g += ginc / exp(j * log(10.0));
+            } else {
+                if (((f1 < 0.0) && (lastfunc >= 0.0)) || ((f1 > 0.0) && (lastfunc <= 0.0))) {
+                    maxg = lastg;
+                    maxfunc = lastfunc;
+                    e = laste;
+                    a = lasta;
+                    tf = lasttf;
+                    flagg = 1;
+                    flagv = 0;
+                } else {
+                    lastg = g;
+                    lastfunc = f1;
+                    laste = g * g_adj * ds;
+                    lasta = an;
+                    lasttf = exp(3000.0 * (1.0 / 288.2 - 1.0 / (ta + 273.2)));
+                    
+                    if (C4)
+                        lasttf /= (1.0 + exp(0.4 * (10.0 - ta))) * (1.0 + exp(0.4 * (ta - 50.0)));
+                    else
+                    /* tl changed to ta and denominator added, gch 09/29/99 */
+                        lasttf /= (1.0 + exp(0.4 * (5.0 - ta))) * (1.0 + exp(0.4 * (ta - 45.0)));
+                    
+                    g += ginc / exp(j * log(10.0));
+                }
+            }
+        }
+        g = maxg + ginc / exp((j + 1.0) * log(10.0));
+    }
+    //outputs[0] = tf; outputs[1] = a; outputs[2] = e; outputs[3] = ab; outputs[4] = eb;
+    outputs[0] = tf; outputs[1] = a; outputs[2] = e; outputs[3] = ab; outputs[4] = eb;
+    //printf("capgam %f kc %f ko %f vm %f \n",capgam,kc,ko,vm);
+    return 1;
+}
+
+ bool SiteData::farquhar_collatz (double Vmax,double CA, double ta, double ea, double q, double shade, int C4, double outputs[5]) {
+    double shade_thresh, shade_thresh2;
+    /* Scalers for turning boundary resitance */
+    double gh_adj;
+    double an;
+    double g_adj;
+    double capgam, vm, kc, ko, ds, v,Rd;
+    double ci, tl, gg_adj, gg2, maxg, hta, hdriv, hl, lite;
+    double f1, f2, f3, ginc, lasta, laste, lasttf, lastg, lastfunc, maxfunc;
+    int flagv, flagg, gmax, j;
+    double g;
+    double M,B;
+    double rn;
+    double tf, a, e, ab, eb;
+    double theta,beta,leaf_abs,alpha;
+    double kt,A_M,Jp,Je,Jc,Js;
+    
+     double GB=3.0,KAPPA=0.5,LAM=45000.0,CP=1280.1,GH=0.03,DO1=0.01,ALPHA3=0.08,ALPHA4=0.06;
+     int PRECISION=10,BND=0;
+     
+     
+    if (C4)
+    {
+        M = 3.0;
+        B=0.08;
+        theta=0.83;
+        beta=0.93;
+        alpha=0.04;
+    }
+    else
+    {
+        M=9.0;
+        B=0.01;
+        theta=0.95;
+        beta=0.98;
+        leaf_abs=0.86;
+        alpha=0.08;
+    }
+    
+    /* Meteorological conditions */
+    rn = q * shade;
+#if no_downreg
+    shade = 1;
+#endif
+    
+    /* Conversion of Solar influx from W/(m^2s) to mole_of_quanta/(m^2s) PAR, *
+     * empirical relationship from McCree is lite = rn * 0.0000023            *
+     * Prentice's relationship lite = rn / 540000.0 is ~25% - 30% lower       *
+     * lite = rn * 0.0000023; converts watts short wave to Einsteins PAR      *
+     * 1/540000 ~ 0.0000018                                                   */
+#if TROPICAL
+    lite = rn / 540000.0;
+#else
+    lite = rn * 0.0000023; /* assuming par 400-700nm, 0.5 sw is par */
+#endif
+    
+    hta = 2541400.0 * exp(-5415.0 / (ta + 273.2)); //mol per mol humidity of air if it were saturated
+    hdriv = 5415.0 * hta / ((ta + 273.2) * (ta + 273.2)); //Note in tropical this had an extra *hta in denomintaor - I belive this to be incorrect
+    
+    ginc = 1.0;
+    gmax = B + 10.0 * ginc;
+    g = B;
+    
+    shade_thresh = exp(-1.0 * KAPPA * 1.);
+    shade_thresh2 = exp(-1.0 * KAPPA * 4.);
+    
+    v = Vmax;
+    
+    flagv = 0;
+    for (j=0; j<PRECISION; j++) {
+        if (flagv == 0)
+            flagg = 0;
+        else
+            flagg = 1;
+        while ((flagg == 0) && (g < gmax)) {
+            if (BND) {
+                g_adj = GB / (g + GB);
+                gh_adj = GB / 1.275 * 0.029 / GH;
+            } else {
+                g_adj = 1.;
+                gh_adj = 1.;
+            }
+            tl = ta + (rn * KAPPA - LAM * g * g_adj * (hta - ea)) / (CP * GH * gh_adj + LAM * g * g_adj * hdriv);
+            if (tl < ta)
+                tl = ta;
+            //hl = 2541400.0 * exp(-5415.0 / (tl + 273.2));
+            hl=0.6078*exp(17.269*tl/(273.3+tl))/1e2;
+            
+            /* Saturation defficit */
+            ds = hl - ea;
+            
+            /* Saturation defficit */
+            //            ds = hl - ea;
+            //            ci=((g-B)*(CA*GB-capgam*GB)*(1+ds/DO1))/(M*GB+(g-B)*(1+ds/DO1));
+            //            ci=CA-ci/GB-1.6*ci/g;
+            
+            double hs=ea/hl;
+            ci=(g-B)*CA*GB/((g-B)+M*hs*GB);
+            ci=CA-ci/GB-1.6*ci/g;
+            
+            
+            if (C4)
+            {
+                vm=v*pow(2,(tl-25.0)/10.0);
+                vm/=((1+exp(0.3*(13.0-tl)))*(1+exp(0.3*(tl-36.0))));
+                Rd=0.02*v*pow(2,(tl-25)/10);
+                Rd/=(1+exp(1.3*(tl-55)));
+                kt=0.7*pow(2,(tl-25)/10.0);
+                
+                A_M=((vm+alpha*lite)-sqrt(pow(vm+alpha*lite,2.0)-4*theta*vm*alpha*lite))/2/theta;
+                
+                an=((A_M+kt*ci)-sqrt(pow(A_M+kt*ci,2.0)-4*beta*A_M*kt*ci))/2.0/beta;
+                an-=Rd;
+                
+                //printf("g %f ci %f tl %f vm %f Rd %f kt %f A_M %f an %f v1 %f v2 %f v3 %f hs %f ",g,ci*1e6,tl,vm*1e6,Rd*1e6,kt*1e6,A_M*1e6,an*1e6,vm*1e6,alpha*lite*1e6,kt*ci*1e6,hs);
+            }else
+            {
+                kc=30/1e5*pow(2.1,(tl-25.0)/10.0);
+                ko=30*1e3/1e5*pow(1.2,(tl-25.0)/10.0);
+                capgam=0.209/2/(2600*pow(0.57,(tl-25.0)/10.0));
+                vm=v*pow(2.4,(tl-25.0)/10.0);
+                vm/=(1+exp((-220*1e3+703*(tl+273.2))/(8.3146*(tl+273.2))));
+                
+                Rd=0.015*v*pow(2.0,(tl-25.0)/10.0);
+                Rd/=1+exp(1.3*(tl-55.0));
+                
+                Je=leaf_abs*alpha*lite*(ci-capgam)/(ci+2.0*capgam);
+                Jc=vm*(ci-capgam)/(ci+kc*(1+0.209/ko));
+                Js=vm/2.0;
+                
+                Jp=((Je+Jc)-sqrt(pow(Je+Jc,2.0)-4*theta*Je*Jc))/2/theta;
+                an=((Jp+Js)-sqrt(pow(Jp+Js,2.0)-4*beta*Jp*Js))/2/beta;
+                
+                an-=Rd;
+                
+                //printf("g %f ci %f tl %f Je %f Jc %f Js %f Jp %f an %f vm %f Rd %f capgam %f ",g,ci*1e6,tl,Je*1e6,Jc*1e6,Js*1e6,Jp*1e6,an*1e6,vm*1e6,Rd*1e6,capgam*1e6);
+            }
+            
+            
+            f1=an-GB*g/(g+1.6*GB)*(CA-ci);
+            
+            //printf("an_1 %f an_2 %f f1 %f\n",an*1e6,GB*g/(g+1.6*GB)*(CA-ci)*1e6,f1*1e6);
+            
+            
+            if (g == B) {
+                maxfunc = f1;
+                maxg = B;
+                e =(g*GB)/(g+GB) * ds;
+                //double gv=(g*GB)/(g+GB)*(8.314*(tl+273.2)/1e5);
+                //2.454e6 is latend hear of vaporisation of water  (J kg-1)
+                //1.204 is density of dry air  (kg m-3)
+                //1004 is specific heat capacity of dry air  (J kg-1 k-1)
+                //hs*1e5 is gradient of partical pressure of water vapro between air and stomach (Pa)
+                //66.1 is psychrometric constant  (Pa K-1)
+                //e =1/(2.454*1e6)*1.204*1004*gv*ds*1e5/66.1;
+#if TROPICAL
+                tf = exp(3000.0 * (1.0 / 288.2 - 1.0 / (tl + 273.2)));
+#else
+                tf = exp(3000.0 * (1.0 / 288.2 - 1.0 / (ta + 273.2)));
+#endif
+                
+                a=-Rd;
+                if (C4)
+                /* 4/25/00 coorected t func from foley to limit c4s */
+                    tf /= (1.0 + exp(0.4 * (10.0 - ta))) * (1.0 + exp(0.4 * (ta - 50.0)));
+                else
+                    tf /= (1.0 + exp(0.4 * (5.0 - ta))) * (1.0 + exp(0.4 * (ta - 45.0)));
+                
+                /* tl changed to ta and denominator added  by gch 09/29/99 */
+                eb = e;
+                ab = a;
+                flagv = 1;
+                lastg = g;
+                lastfunc = f1;
+                laste = e;
+                lasta = an;
+                lasttf = tf;
+                if (lite < 0.00000001)
+                    flagg = 1;
+                g += ginc / exp(j * log(10.0));
+            } else {
+                if (((f1 < 0.0) && (lastfunc >= 0.0) && abs(f1)<3) || ((f1 > 0.0) && (lastfunc <= 0.0) && abs(f1)<3)) {
+                    maxg = lastg;
+                    maxfunc = lastfunc;
+                    e = laste;
+                    a = lasta;
+                    tf = lasttf;
+                    flagg = 1;
+                    flagv = 0;
+                } else {
+                    lastg = g;
+                    lastfunc = f1;
+                    laste = (g*GB)/(g+GB) * ds;
+                    //double gv=(g*GB)/(g+GB)*(8.314*(tl+273.2)/1e5);
+                    //2.454e6 is latend hear of vaporisation of water  (J kg-1)
+                    //1.204 is density of dry air  (kg m-3)
+                    //1004 is specific heat capacity of dry air  (J kg-1 k-1)
+                    //hs*1e5 is gradient of partical pressure of water vapro between air and stomach (Pa)
+                    //66.1 is psychrometric constant  (Pa K-1)
+                    //laste =1/(2.454*1e6)*1.204*1004*gv*ds*1e5/66.1;
+                    
+                    lasta = an;
+                    lasttf = exp(3000.0 * (1.0 / 288.2 - 1.0 / (ta + 273.2)));
+                    
+                    if (C4)
+                        lasttf /= (1.0 + exp(0.4 * (10.0 - ta))) * (1.0 + exp(0.4 * (ta - 50.0)));
+                    else
+                    /* tl changed to ta and denominator added, gch 09/29/99 */
+                        lasttf /= (1.0 + exp(0.4 * (5.0 - ta))) * (1.0 + exp(0.4 * (ta - 45.0)));
+                    
+                    g += ginc / exp(j * log(10.0));
+                }
+            }
+        }
+        g = maxg + ginc / exp((j + 1.0) * log(10.0));
+    }
+    outputs[0] = tf; outputs[1] = a; outputs[2] = e; outputs[3] = ab; outputs[4] = eb;
+    return 1;
+}
+
+
+
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 //! init_sites
 //! 
@@ -824,8 +1327,8 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
           //Modified add check
           if (cp->perc>1e18)
           {
-              printf("Wrong in perc 1: perc-%f frac-%f\n",cp->perc,lu,frac);
-              exit(1);
+              printf("Wrong in perc 1: lat-%f lon-%f perc-%f lu-%d frac-%f\n",cs->sdata->lat_,cs->sdata->lon_,cp->perc,lu,frac);
+              //exit(1);
           }
          cs->soil_evap[lu]          += cp->soil_evap * frac;
          /* height */

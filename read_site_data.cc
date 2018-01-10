@@ -869,6 +869,7 @@ bool loadGlobalEnvironmentData(UserData* data)
     printf("Finish loading global environment data\n");
     return 1;
 }
+#ifndef COUPLE_FAR
 bool loadGlobalMechanismLUT(UserData* data)
 {
     int rv, ncid, varid;
@@ -1197,9 +1198,65 @@ bool loadGlobalMechanismLUT(UserData* data)
             }
         }
     }
+    
     printf("Finish loading global mechnism data\n");
     return 1;
 }
+#endif
+
+#if COUPLE_FAR
+bool loadPREMECH (UserData* data)
+{
+    char premech[256], tairname[256], swname[256];
+    int rv,ncid,varid;
+    
+    size_t index3[3] = { 0, 0, 0 };
+    size_t count3[3]  = {288, 360, 720 };
+    
+    if (data->mechanism_year>1900) {
+        strcpy(premech, data->PREMECH);
+        sprintf(premech, "%s%d", premech, data->mechanism_year);
+        strcat(premech, ".nc");
+        printf("Test flag 1 in readCoupleFARdata %s",premech);
+    }
+    else{
+        strcpy(premech, data->PREMECH_avg);
+    }
+    
+    if ((rv = nc_open(premech, NC_NOWRITE, &ncid))){
+        NCERR(premech, rv);
+    }
+    else{
+        data->premech_file_ncid = ncid;
+    }
+    
+    if ((rv = nc_inq_varid(ncid, "temperature", &varid))) NCERR("temperature", rv);
+    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("temperature", rv);
+    
+    if ((rv = nc_inq_varid(ncid, "specific_humidity", &varid))) NCERR("specific_humidity", rv);
+    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_hum[0][0][0]))) NCERR("specific_humidity", rv);
+    
+    if ((rv = nc_inq_varid(ncid, "swdown", &varid))) NCERR("swdown", rv);
+    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_swd[0][0][0]))) NCERR("swdown", rv);
+    
+    for (size_t mon=0;mon<288;mon++)
+    {
+        for (size_t lat_n=0;lat_n<360;lat_n++)
+        {
+            for (size_t lon_n=0;lon_n<720;lon_n++)
+            {
+                if (data->global_tmp[mon][lat_n][lon_n]>0) data->global_tmp[mon][lat_n][lon_n]-=273.2;
+                if (data->global_hum[mon][lat_n][lon_n]>0) data->global_hum[mon][lat_n][lon_n]=data->global_hum[mon][lat_n][lon_n]*28.96/18.02;
+            }
+        }
+    }
+    rv = nc_close(ncid);
+    printf("Test flag 2 in readCoupleFARdata %s",premech);
+    return true;
+}
+#endif
+
+
 bool freeGlobalEnvironmentData(UserData* data)
 {
     dealloc_2d_float(data->soil_depth,360,720);
@@ -1210,6 +1267,7 @@ bool freeGlobalEnvironmentData(UserData* data)
     dealloc_3d_float(data->climate_precip,N_CLIMATE,360,720);
     dealloc_3d_float(data->climate_soil,N_CLIMATE,360,720);
 }
+#ifndef COUPLE_FAR
 bool freeGlobalMechanismLUT(UserData* data)
 {
     dealloc_6d_float(data->An,data->num_Vm0,2,3670,720,N_CLIMATE,N_LIGHT);
@@ -1218,6 +1276,8 @@ bool freeGlobalMechanismLUT(UserData* data)
     dealloc_6d_float(data->Eb,data->num_Vm0,2,3670,720,N_CLIMATE,N_LIGHT);
     dealloc_5d_float(data->tf,data->num_Vm0,2,3670,720,N_CLIMATE);
 }
+#endif
+
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1292,6 +1352,11 @@ bool SiteData::readSiteData (UserData& data) {
    if (! readFTSdata(data) ) {
       return false;
    }
+    
+#elif COUPLE_FAR
+    if (!SetMECHdefault(data)) {
+        return false;
+    }
 #else
    if (! readMechanismLUT(data) ) {
          return false;
@@ -1429,7 +1494,7 @@ bool SiteData::readEnvironmentalData (UserData& data)
             soil_temp[i] = data.climate_soil[i*12/N_CLIMATE][globY_][globX_] - 273.15; // convert Kelvin to C
             soil_temp_average += soil_temp[i] / N_CLIMATE;
         }
-#endif
+#endif //FASTLOAD
     }
     else
     {
@@ -1727,7 +1792,8 @@ bool SiteData::readFTSdata (UserData& data) {
    // End averaging  
    return true;
 }
-#else
+#endif //FTS
+
 ////////////////////////////////////////////////////////////////////////////////
 //! readMechanismLUT
 //! 
@@ -1739,7 +1805,7 @@ bool SiteData::readMechanismLUT (UserData& data)
 {
     if (FASTLOAD && !data.is_site)
     {
-#if FASTLOAD
+#if FASTLOAD && !COUPLE_FAR
         for (size_t i=0;i<data.num_Vm0;i++)
         {
             for (size_t pt=0;pt<PT;pt++)
@@ -1991,6 +2057,33 @@ bool SiteData::readMechanismLUT (UserData& data)
     }
     // TODO: check for bad inputs
     
+    return true;
+}
+
+#if COUPLE_FAR
+bool SiteData::SetMECHdefault(UserData& data)
+{
+    //printf("Test flag 3 reset all mech var to -9999\n");
+    int QRES=20;
+    for (size_t i=0;i<data.num_Vm0;i++)
+    {
+        for (size_t pt=0;pt<PT;pt++)
+        {
+            for (size_t x=0;x<N_CLIMATE;x++)
+            {
+                for (size_t y=0;y<N_LIGHT;y++)
+                {
+                    An[pt][i][x][y]=-9999.0;
+                    Anb[pt][i][x][y]=-9999.0;
+                    E[pt][i][x][y]=-9999.0;
+                    Eb[pt][i][x][y]=-9999.0;
+                    light_levels[pt][i][y]= exp(-1.0 * y / (1.0 * QRES));
+                }
+                tf[pt][i][x]=-9999.0;
+                light_levels[pt][i][N_LIGHT-1]=0;
+            }
+        }
+    }
     return true;
 }
 #endif

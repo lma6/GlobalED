@@ -22,8 +22,9 @@
 ////////////////////////////////////////
 //    LAND USE
 ////////////////////////////////////////
-#define LANDUSE 1 ///< Flag to turn on land use dynamics
+#define LANDUSE 0 ///< Flag to turn on land use dynamics
 #define FASTLOAD 1
+#define COUPLE_FAR 1
 #define INI_Year 1500
 #define N_LAI 6
 #define WT_Abg_PROFILE 1
@@ -214,6 +215,13 @@ struct UserData {
    const char *C3_FILE;
    const char *C4_FILE;
 #endif
+    
+#if COUPLE_FAR
+    const char *PREMECH;
+    const char *PREMECH_avg;
+    
+#endif
+    
    int single_year;
    int do_yearly_mech;
    int m_int;
@@ -344,6 +352,7 @@ struct UserData {
    int climate_file_ncid;        ///< Stores the handle to the climate file to avoid re-opening
    int soil_file_ncid;
    int lu_file_ncid;             ///< Stores the handle to the landuse file to avoid re-opening
+   int premech_file_ncid;
    int qair_file_ncid;
    int sw_file_ncid;
    int tair_file_ncid;
@@ -514,7 +523,13 @@ struct UserData {
    double E[2][136][30][1300];
    double Eb[2][136][30][1300];
 #endif
-
+    
+#if COUPLE_FAR
+    double global_tmp[288][360][720];
+    double global_hum[288][360][720];
+    double global_swd[288][360][720];
+#endif
+    
 #if FASTLOAD
 #if LANDUSE
     float gfl[N_LANDUSE_TYPES][N_LANDUSE_TYPES-1][N_LANDUSE_YEARS][360][720];
@@ -530,11 +545,14 @@ struct UserData {
     float ***climate_precip;
     float ***climate_soil;
     float *light_levels;
+    
+#ifndef COUPLE_FAR
     float *****tf;
     float ******An;
     float ******Anb;
     float ******E;
     float ******Eb;
+#endif
     
 #endif
 

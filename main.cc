@@ -104,10 +104,17 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
     
 #if FASTLOAD
    loadGlobalEnvironmentData(data);
-   loadGlobalMechanismLUT(data);
+    
+#if COUPLE_FAR
+    loadPREMECH(data);
+#else
+    loadGlobalMechanismLUT(data);
+#endif
+    
 #if LANDUSE
    loabGlobalLUData(data);
 #endif
+    
 #endif
 
    /* setup netcdf output */
@@ -383,8 +390,15 @@ void model (UserData& data) {
                      {
                          printf("Start load Envir\n");
                          loadGlobalEnvironmentData(&data);
+                         
+#if COUPLE_FAR
+                         printf("Start load pre_mech\n");
+                         loadPREMECH(&data);
+#else
                          printf("Start load mech\n");
                          loadGlobalMechanismLUT(&data);
+#endif
+                         
                          //No need to load LU data sa it has been loaded for 506 yrs in read_input_data_layers->readLUData,
                          //and just need to be assigned to each site. --Lei
                      }
@@ -433,9 +447,11 @@ void model (UserData& data) {
                  if (!data.is_site)
                  {
                      freeGlobalEnvironmentData(&data);
-                     freeGlobalMechanismLUT(&data);
                      loadGlobalEnvironmentData(&data);
+#ifndef COUPLE_FAR
+                     freeGlobalMechanismLUT(&data);
                      loadGlobalMechanismLUT(&data);
+#endif
                      //No need to load LU data sa it has been loaded for 506 yrs in read_input_data_layers->readLUData,
                      //and just need to be assigned to each site. --Lei
                  }

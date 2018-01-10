@@ -3,6 +3,8 @@
 
 #include "edmodels.h"
 
+class cohort;
+
 ////////////////////////////////////////
 //    SiteData contains site-related 
 //    environmental data
@@ -66,7 +68,64 @@ struct SiteData {
    double Input_Specific_Humidity[N_CLIMATE_INPUT*CLIMATE_INPUT_INTERVALS];
    double Input_Par[N_CLIMATE_INPUT*CLIMATE_INPUT_INTERVALS];
 #else
-   double An[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];  ///< pot. net photosynthesis (gC/(m2 mo)) 
+#if COUPLE_FAR
+
+    /// The following varaibles are used for photosynthesis.cc that couple Farqhuar with stomactal conductance and leaf energy balance model.
+    int C4,iter1, iter2,iter_Ci;
+    double Vcm25,Jm25,Vpm25,TPU25,Rd25,Theta,EaVc,Eaj,Hj,Sj,Hv,EaVp,Sv,Eap,Ear,g0,g1,stomaRatio,LfWidth,LfAngFact;
+    double  PhotoFluxDensity,  //!< Photosynthetic Flux Density (umol photons m-2 s-1
+    R_abs, //!< Absorbed incident radiation (watts m-2)
+    Tair,  //!< Air temperature at 2m, (C)
+    CO2,   //!< CO2 concentration (umol mol-1 air)
+    RH,   //!<  Relative Humidity (%, i.e., 80)
+    wind, //!<  Windspeed at 2 meters (km s-1)
+    width, //!< Leaf width (m)
+    Press;  //!<  Air pressure (kPa)
+    
+    double errTolerance; /*!< Error tolerance for iterations */
+    double eqlTolerance; /*!< Equality tolerance */
+    
+    double AssimilationNet,    //!< Net photosynthesis (umol CO2 m-2 s-1)
+    AssimilationGross, //!< Gross photosynthesis (umol CO2 m-2 s-1) (Adjusted for respiration)
+    Transpiration,     //!< Transpiration mol H2O m-2 s-1
+    Tleaf,  //!< Leaf temperature C
+    Ci,     //!< Internal CO2 concentration umol mol-1
+    StomatalConductance,     //!< Stomatal conductance umol m-2 s-1
+    BoundaryLayerConductance,    //!< Boundary layer conductance umol m-2 s-1
+    DarkRespiration,    //!< Plant respiration    umol m-2 s-1
+    VPD,    //!< Vapor Pressure Density, kPa */
+    Ci_Ca,  //!< Ratio of internal to external CO2, unitless
+    iter_total;
+    ///
+    
+    
+    
+    bool SetMECHdefault(UserData& data);
+    bool farquhar (double Vmax,double CA, double ta, double ea, double q, double shade, int C4, double outputs[5]);
+    bool farquhar_collatz (double Vmax,double CA, double ta, double ea, double q, double shade, int C4, double outputs[5]);
+    bool compute_mech(int pt, double Vm0,int Vm0_bin, int time_period, int light_index, UserData* data);
+    
+    
+    //The following functions are used for photosynthesis.cc that couple Farqhuar with stomactal conductance and leaf energy balance model.
+    void Initilize(int pt);
+    double minh(double fn1,double fn2,double theta2);
+    double Square(double a);
+    double Min(double a, double b, double c);
+    double Es(double Temperature);
+    double Slope(double Temperature);
+    double QuadSolnUpper (double a, double b, double c );
+    double QuadSolnLower (double a, double b, double c );
+    double SearchCi(double CO2i);
+    double EvalCi(double Ci);
+    double CalcStomatalConductance();
+    double CalcTurbulentVaporConductance(void);
+    void PhotosynthesisC3(double Ci);
+    void PhotosynthesisC4(double Ci);
+    void EnergyBalance();
+    void GasEx(void);
+    void Farquhar_couple(int pt, double Tair, double ea, double shortwaveRad, double Ca, double wind, double Press, double shade, double Vm25, double outputs[5]);
+#endif
+   double An[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];  ///< pot. net photosynthesis (gC/(m2 mo))
    double E[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];   ///< potential transpitation (gW/(m2 mo))
    double Anb[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT]; ///< pot. psyn when shut (g/(m2 mo))
    double Eb[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];  ///< pot. transp when shut (gW/(m2 mo)) 
@@ -134,6 +193,7 @@ char lu2charname2 (int lu);
 bool loabGlobalLUData (UserData* data);
 bool loadGlobalEnvironmentData(UserData* data);
 bool loadGlobalMechanismLUT(UserData* data);
+bool loadPREMECH (UserData* data);
 bool freeGlobalEnvironmentData(UserData* data);
 bool freeGlobalMechanismLUT(UserData* data);
 

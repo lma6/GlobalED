@@ -185,6 +185,20 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
       currentc->E_pot *= currentc->leaf_area*12/1000.0;
       currentc->E_shut = currents->E_shut[pt][120];
       currentc->E_shut *= currentc->leaf_area*12/1000.0;
+#elif COUPLE_FAR
+       if (currents->sdata->E[pt][currentc->Vm0_bin][time_index][light_index]<-1000)
+       {
+           currents->sdata->compute_mech(pt,currentc->Vm0,currentc->Vm0_bin,time_index,light_index,data);
+       }
+       if (currents->sdata->Eb[pt][currentc->Vm0_bin][time_index][N_LIGHT-1]<-1000)
+       {
+           currents->sdata->compute_mech(pt,currentc->Vm0,currentc->Vm0_bin,time_index,N_LIGHT-1,data);
+       }
+       
+       currentc->E_pot = currents->sdata->E[pt][currentc->Vm0_bin][time_index][light_index];
+       currentc->E_pot *= currentc->leaf_area*N_CLIMATE/1000.0;
+       currentc->E_shut = currents->sdata->Eb[pt][currentc->Vm0_bin][time_index][N_LIGHT-1];
+       currentc->E_shut *= currentc->leaf_area*N_CLIMATE/1000.0;
 #else
       //potential transpiration (gH20/m2(leaf)/mon)
       currentc->E_pot = currents->sdata->E[pt][currentc->Vm0_bin][time_index][light_index]; 
@@ -234,6 +248,17 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
 #if FTS
            currentc->E_pot = currents->E[pt][light_index];
            currentc->E_shut = currents->E_shut[pt][120];
+#elif COUPLE_FAR
+            if (currents->sdata->E[pt][currentc->Vm0_bin][time_index][light_index]<-1000)
+            {
+                currents->sdata->compute_mech(pt,currentc->Vm0,currentc->Vm0_bin,time_index,light_index,data);
+            }
+            if (currents->sdata->Eb[pt][currentc->Vm0_bin][time_index][N_LIGHT-1]<-1000)
+            {
+                currents->sdata->compute_mech(pt,currentc->Vm0,currentc->Vm0_bin,time_index,N_LIGHT-1,data);
+            }
+            currentc->E_pot = currents->sdata->E[pt][currentc->Vm0_bin][time_index][light_index];
+            currentc->E_shut = currents->sdata->Eb[pt][currentc->Vm0_bin][time_index][N_LIGHT-1];
 #else
            currentc->E_pot = currents->sdata->E[pt][currentc->Vm0_bin][time_index][light_index];
            currentc->E_shut = currents->sdata->Eb[pt][currentc->Vm0_bin][time_index][N_LIGHT-1];

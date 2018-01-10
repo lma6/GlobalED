@@ -27,7 +27,7 @@ LDFLAGS = $(LIB) -lm -lnetcdf -lnetcdf_c++ -ltbb -ldb_cxx -lconfig++ -lstdc++
 
 CMN_SRCS = site.cc patch.cc miami.cc belowgrnd.cc \
            disturbance.cc fire.cc landuse.cc read_site_data.cc init_data.cc \
-           outputter.cc print_output.cc restart.cc readconfiguration.cc
+           outputter.cc print_output.cc restart.cc readconfiguration.cc photosynthesis.cc
 
 EDM_SRCS = cohort.cc growth.cc allometry.cc phenology.cc mortality.cc \
            mechanism.cc odeint.cc

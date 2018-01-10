@@ -31,6 +31,12 @@ void cohort::plant_respiration(UserData* data){
 
 #if FTS
    double tf = currents->tf[pt];
+#elif COUPLE_FAR
+    if (currents->sdata->tf[pt][NUM_Vm0s-1][tindex]<-1000)
+    {
+        currents->sdata->compute_mech(pt,Vm0,NUM_Vm0s-1,tindex,0,data);
+    }
+    double tf = currents->sdata->tf[pt][NUM_Vm0s-1][tindex];
 #else
    double tf = currents->sdata->tf[pt][NUM_Vm0s-1][tindex];
 #endif
@@ -87,8 +93,25 @@ void cohort::npp_function(UserData* data){
    An_max = 0.001*cs->An[pt][0];
    An_shut = 0.001*cs->An_shut[pt][120];
    An_shut_max = 0.001*cs->An_shut[pt][120];
+#elif COUPLE_FAR
+    if (cs->sdata->An[pt][Vm0_bin][time_index][light_index]<-1000)
+    {
+        cs->sdata->compute_mech(pt,Vm0,Vm0_bin,time_index,light_index,data);
+    }
+    if (cs->sdata->Anb[pt][Vm0_bin][time_index][N_LIGHT-1]<-1000)
+    {
+        cs->sdata->compute_mech(pt,Vm0,Vm0_bin,time_index,N_LIGHT-1,data);
+    }
+    if (cs->sdata->An[pt][Vm0_bin][time_index][0]<-1000)
+    {
+        cs->sdata->compute_mech(pt,Vm0,Vm0_bin,time_index,0,data);
+    }
+    An_pot = 0.001*cs->sdata->An[pt][Vm0_bin][time_index][light_index];
+    An_max = 0.001*cs->sdata->An[pt][Vm0_bin][time_index][0];  // TODO, should we use current Vm0_bin or 0
+    An_shut = 0.001*cs->sdata->Anb[pt][Vm0_bin][time_index][N_LIGHT-1];
+    An_shut_max = 0.001*cs->sdata->Anb[pt][Vm0_bin][time_index][N_LIGHT-1];
 #else
-   //calc potential and max photosynthesis (KgC/m2/mon) 
+   //calc potential and max photosynthesis (KgC/m2/mon)
    An_pot = 0.001*cs->sdata->An[pt][Vm0_bin][time_index][light_index];
    An_max = 0.001*cs->sdata->An[pt][Vm0_bin][time_index][0];  // TODO, should we use current Vm0_bin or 0
    //4/24/00 dowregulation idea, note Anb[120] below 
