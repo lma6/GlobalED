@@ -25,6 +25,7 @@
 #define LANDUSE 0 ///< Flag to turn on land use dynamics
 #define FASTLOAD 1
 #define COUPLE_FAR 1
+#define COUPLE_HYDRO 1
 #define INI_Year 1500
 #define N_LAI 6
 #define WT_Abg_PROFILE 1
@@ -219,7 +220,10 @@ struct UserData {
 #if COUPLE_FAR
     const char *PREMECH;
     const char *PREMECH_avg;
-    
+#endif
+
+#if COUPLE_HYDRO
+    const char *TranRatio;
 #endif
     
    int single_year;
@@ -528,6 +532,10 @@ struct UserData {
     double global_tmp[288][360][720];
     double global_hum[288][360][720];
     double global_swd[288][360][720];
+#endif
+    
+#if COUPLE_HYDRO
+    float global_tranRatio[12][360][720];
 #endif
     
 #if FASTLOAD

@@ -71,9 +71,20 @@ double patch::Dwdt (double time, UserData* data){
    //For Update_Water to work this function must be monotonically increasing w.r.t water
    site* currents = siteptr;
    
-   /* calculate water evaporation from the soil, scale by plant cover */
-   soil_evap = (currents->sdata->soil_evap_conductivity)
-      * (radiative_flux(data)) * water;
+#if COUPLE_HYDRO
+    double r_Et2E=data->global_tranRatio[(int) data->time_period][currents->sdata->globY_][currents->sdata->globX_];
+    if (r_Et2E>1e-1) {
+        soil_evap=total_water_uptake*(1-r_Et2E)/r_Et2E;
+        soil_evap/=area;
+    }else{
+        soil_evap=0;
+    }
+#else
+    /* calculate water evaporation from the soil, scale by plant cover */
+    soil_evap = (currents->sdata->soil_evap_conductivity)
+    * (radiative_flux(data)) * water;
+#endif
+    
   
    /* calculate water loss per unit area from patch */
    theta = water / (currents->sdata->soil_depth * currents->sdata->theta_max);

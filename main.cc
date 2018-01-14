@@ -111,6 +111,11 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
     loadGlobalMechanismLUT(data);
 #endif
     
+#if COUPLE_HYDRO
+    printf("Start load TranRio\n");
+    loadTranRatio(data);
+#endif
+    
 #if LANDUSE
    loabGlobalLUData(data);
 #endif
@@ -398,10 +403,14 @@ void model (UserData& data) {
                          printf("Start load mech\n");
                          loadGlobalMechanismLUT(&data);
 #endif
-                         
                          //No need to load LU data sa it has been loaded for 506 yrs in read_input_data_layers->readLUData,
                          //and just need to be assigned to each site. --Lei
                      }
+#endif
+                     
+#if COUPLE_HYDRO
+                     printf("Start load TranRio\n");
+                     loadTranRatio(&data);
 #endif
                 
 
@@ -455,6 +464,11 @@ void model (UserData& data) {
                      //No need to load LU data sa it has been loaded for 506 yrs in read_input_data_layers->readLUData,
                      //and just need to be assigned to each site. --Lei
                  }
+#endif
+                 
+#if COUPLE_HYDRO
+                 printf("Start load TranRio\n");
+                 loadTranRatio(&data);
 #endif
                  
                 site* siteptr = data.first_site;

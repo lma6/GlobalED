@@ -194,6 +194,7 @@ bool loabGlobalLUData (UserData* data);
 bool loadGlobalEnvironmentData(UserData* data);
 bool loadGlobalMechanismLUT(UserData* data);
 bool loadPREMECH (UserData* data);
+bool loadTranRatio (UserData* data);
 bool freeGlobalEnvironmentData(UserData* data);
 bool freeGlobalMechanismLUT(UserData* data);
 

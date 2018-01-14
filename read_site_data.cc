@@ -1280,6 +1280,30 @@ bool freeGlobalMechanismLUT(UserData* data)
 
 #endif
 
+#if COUPLE_HYDRO
+bool loadTranRatio (UserData* data)
+{
+    char TranRatio[256];
+    int rv,ncid,varid;
+    strcpy(TranRatio, data->TranRatio);
+    
+    size_t index[3] = { 0, 0, 0 };
+    size_t count[3]  = {12,360, 720};
+    
+    if ((rv = nc_open(TranRatio, NC_NOWRITE, &ncid))){
+        NCERR(TranRatio, rv);
+    }
+    
+    if ((rv = nc_inq_varid(ncid, "ratio_Transpiration2TotalET", &varid))) NCERR("ratio_Transpiration2TotalET", rv);
+    if ((rv = nc_get_vara_float(ncid, varid, index, count, &data->global_tranRatio[0][0][0]))) NCERR("ratio_Transpiration2TotalET", rv);
+    
+    rv = nc_close(ncid);
+    printf("Finish loading TranspirationRatio\n");
+    return true;
+}
+
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 //! SiteData
 //! 

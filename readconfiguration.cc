@@ -229,6 +229,9 @@ void initialize_model_params(UserData* data) {
     data->PREMECH         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH");
     data->PREMECH_avg         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH_avg");
 #endif
+#if COUPLE_HYDRO
+    data->TranRatio= get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "TranRatio");
+#endif
     data->single_year       = get_val<int>(data, MODEL_IO, data->which_mech_to_use, "single_year");   
     data->do_yearly_mech    = get_val<int>(data, MODEL_IO, data->which_mech_to_use, "do_yearly_mech");
     if (data->do_yearly_mech) {
