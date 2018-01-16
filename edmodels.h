@@ -25,7 +25,7 @@
 #define LANDUSE 0 ///< Flag to turn on land use dynamics
 #define FASTLOAD 1
 #define COUPLE_FAR 1
-#define COUPLE_HYDRO 1
+#define COUPLE_HYDRO 0
 #define INI_Year 1500
 #define N_LAI 6
 #define WT_Abg_PROFILE 1
