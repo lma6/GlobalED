@@ -170,26 +170,26 @@ bool SiteData::compute_mech(int pt, double Vm0, int Vm0_bin, int time_period, in
 //        printf("Comp %d %d __ vc %f %f %f %f __ %.4f %.4f %.4f == %.4f %.4f %.4f == %.4f %.4f %.4f\n",lat,lon,Vcmax25,tmp,hum,swd,farquhar_results[1]*1e6,farquhar_results2[1]*1e6,farquhar_results3[1]*1e6,farquhar_results[2]*1e6,farquhar_results2[2]*1e6,farquhar_results3[2]*1e6,farquhar_results[3]*1e6,farquhar_results2[3]*1e6,farquhar_results3[3]*1e6);
 //    }
 //
-        for (tmp=2;tmp<50;tmp+=2)
-        {
-            Farquhar_couple(0,tmp,hum,swd,CA*1e6,0.8,100.0,shade,Vcmax25,farquhar_results2);
-            Farquhar_couple(1,tmp,hum,swd,CA*1e6,0.8,100.0,shade,Vcmax25/3.0,farquhar_results3);
-            printf("Comp vc %f %f %f %f __ %.4f %.4f == %.4f %.4f == %.4f %.4f\n",Vcmax25,tmp,hum,swd,farquhar_results2[1]*1e6,farquhar_results3[1]*1e6,farquhar_results2[2]*1e6,farquhar_results3[2]*1e6,farquhar_results2[3]*1e6,farquhar_results3[3]*1e6);
-        }
-
-    exit(0);
+//        for (tmp=2;tmp<50;tmp+=2)
+//        {
+//            Farquhar_couple(0,tmp,hum,swd,CA*1e6,0.8,100.0,shade,Vcmax25,farquhar_results2);
+//            Farquhar_couple(1,tmp,hum,swd,CA*1e6,0.8,100.0,shade,Vcmax25/3.0,farquhar_results3);
+//            printf("Comp vc %f %f %f %f __ %.4f %.4f == %.4f %.4f == %.4f %.4f\n",Vcmax25,tmp,hum,swd,farquhar_results2[1]*1e6,farquhar_results3[1]*1e6,farquhar_results2[2]*1e6,farquhar_results3[2]*1e6,farquhar_results2[3]*1e6,farquhar_results3[3]*1e6);
+//        }
+//
+//    exit(0);
     
     
     for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
     {
         //Currently, ambient CO2 concentration is 350 umol
         
-//        farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],
-//                                 data->global_hum[mon][globY_][globX_],
-//                                 data->global_swd[mon][globY_][globX_],
-//                                 shade,pt,farquhar_results);
+        farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],
+                                 data->global_hum[mon][globY_][globX_],
+                                 data->global_swd[mon][globY_][globX_],
+                                 shade,pt,farquhar_results);
         
-        Farquhar_couple(pt,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],CA*1e6,0.8,100.0,shade,Vcmax25,farquhar_results);
+//        Farquhar_couple(pt,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],CA*1e6,0.8,100.0,shade,Vcmax25,farquhar_results);
         
         tf[pt][Vm0_bin][time_period]+=farquhar_results[0];
         An[pt][Vm0_bin][time_period][light_index]+=farquhar_results[1];
