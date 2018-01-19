@@ -52,15 +52,15 @@ double cohort::Hite (UserData *data ) {
    if ((!strcmp(data->title[species],"evergreen")) and data->allometry_type == 0) { /* spruce allometry */
       if (dbh <= data->max_dbh[species] )
          /* canadian forest service report */
-         h = exp( 0.94 * log(dbh) + 0.04); 
+         h = exp( 0.94 * log(dbh) + 0.04);
       else
          h = exp( 0.94 * log(data->max_dbh[species]) + 0.04 );
    } else if(data->is_tropical[species] or data->is_grass[species] or 
            (!strcmp(data->title[species],"cold_decid") 
            and data->allometry_type == 0)) { /* all other species allometry */
-      if (dbh <= data->max_dbh[species]) 
+      if (dbh <= data->max_dbh[species])
          h = pow( 10.0, (log10(dbh) * m + c) );
-      else 
+      else
          h = pow( 10.0, (log10(data->max_dbh[species]) * m + c) );
    }
    else {
@@ -124,6 +124,7 @@ double cohort::Bleaf (UserData *data ) {
       else 
          bleaf = (1.0 / data->c2b) * 
             ( exp(p) * pow(data->max_dbh[spp], q) + data->bl_min[spp] );
+
       }
    else {
       dbh   = (dbh < data->max_dbh[species])? dbh : data->max_dbh[species];
