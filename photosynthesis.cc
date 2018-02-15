@@ -19,7 +19,7 @@
 #define O 205.0     //!<  Oxygen partial pressure gas units are mbar
 #define Q10 2.0        //!< Q10 factor
 
-void SiteData::Initilize(int pt)
+void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
 {
     C4=pt;
     
@@ -47,46 +47,69 @@ void SiteData::Initilize(int pt)
     Ci_Ca=0;  //!< Ratio of internal to external CO2, unitless
     
     Theta=0.7;
+    
+#if COUPLE_TemAccm
     if (C4==0)
     {
-//        EaVc=65330;  //Delta_Ha in Bonan 2011 Table.B3
-//        Eaj=43540;   //Delta_Ja
-//        Eap=53100;   //Delta_Ja
-//        Ear=46390;
-//
-//        Sv=485;
-//        Sj=495;
-//
-//        Hv=149250;
-//        Hj=152040;
+        EaVc=71513;  //Need to find value, now use same with C3
+        Eaj=49884;   //Delta_Ja
+        Ear=66400;  //Need to check. from photo...master paramater.xls
+        Eap=47100;
         
+        Sv=668.39-1.07*Tg;
+        Sj=659.70-0.75*Tg;
         
-        EaVc=64800;  //Delta_Ha in PhotoSynthesisModule-master parameters.xls Potato
-        Eaj=37000;   //Delta_Ja
-        Eap=47100;   //Delta_Ja
-        Ear=66400;
+        Hv=200000;
+        Hj=200000;
         
-        Sv=640;
-        Sj=710;
+        rJ2V=2.59-0.035*Tg;
         
-        Hv=219400;
+        Q10R=3.22-0.045*Tg;
+        
+        if (!strcmp(data->title[spp],"evergreen"))
+            rJ2V=1.07;
+    }
+    else
+    {
+        EaVc=55900;
+        EaVp=75100;
+        Ear=39800;
+        Eaj=32800;
+        
+        Sj=702.6;
         Hj=220000;
     }
-    if (C4==1)
+#else
+    if (C4==0)
     {
-        EaVc=22125;  //Need to find value, now use same with C3
-        Eaj=28100;   //Delta_Ja
-        EaVp=42600;
-        Eap=-1;   //Delta_Ja
-        Ear=25800;
+        EaVc=71513;  //Need to find value, now use same with C3
+        Eaj=49884;   //Delta_Ja
+        Ear=66400;
         
-        Sv=700;
-        Sj=860;
+        Sv=649.12;
+        Sj=646.22;
         
-        Hv=-1;
-        Hj=26900;
+        Hv=200000;
+        Hj=200000;
+        
+        if (!strcmp(data->title[spp],"evergreen"))
+            rJ2V=1.07;
+        else
+            rJ2V=1.97;
+        
     }
-    
+    else
+    {
+        EaVc=55900;
+        EaVp=75100;
+        Ear=39800;
+        Eaj=32800;
+        
+        Sj=702.6;
+        Hj=220000;
+    }
+#endif
+
     iter_total=0,
     Jm25=0,
     Vpm25=0,
@@ -105,13 +128,15 @@ void SiteData::Initilize(int pt)
 //Vm25 Maxmimum Rubisco campacity at 25 ceilus
 //wind: Windspeed at 2.5 m, m s-1
 //Press Atmospheric pressure (kpa m-2)
-void SiteData::Farquhar_couple(int pt, double Ta, double ea, double swd, double Ca, double speed, double Pa, double shade, double Vm25, double outputs[5])
+void SiteData::Farquhar_couple(int pt, int spp,UserData* data,double Ta, double ea, double swd, double Tg,double Ca, double speed, double Pa, double shade, double Vm25, double outputs[5])
 {
-    Initilize(pt);
+    Initilize(pt,spp,Tg,data);
+    
     if(C4==0)
     {
         Vcm25=Vm25;
-        Jm25=Vcm25*1.67;      //Medlyn 2002 Fig.3
+        Jm25=Vcm25*rJ2V;      //Medlyn 2002 Fig.3
+        
         TPU25=Jm25*0.06;
         Rd25=Vcm25*0.015;
     }else
@@ -124,7 +149,7 @@ void SiteData::Farquhar_couple(int pt, double Ta, double ea, double swd, double 
         Vcm25=Vm25;
         Jm25=Vcm25*5;
         Vpm25=Vcm25*1.4;
-        Rd25=Vcm25*0.015;
+        Rd25=Vcm25*0.01;
     }
     
     
@@ -164,7 +189,7 @@ void SiteData::Farquhar_couple(int pt, double Ta, double ea, double swd, double 
     outputs[1]/=1e6;
     outputs[3]/=-1e6;
     
-    Initilize(pt);
+    Initilize(pt,spp,Tg,data);
 }
 
 void SiteData::GasEx(void)
@@ -193,15 +218,17 @@ void SiteData::PhotosynthesisC3(double Ci)
     //parameters for C3 Photosythesis;
     const double curvature=0.999 ; //!< \b Curvature -factor of Av and Aj colimitation
     
-    const int        Kc25 = 404;//!< \b Kc25, MM Constant of rubisco for CO2 of C3 plants (de Pury and Farquar, 1997) (umol m-2 s-1)
-    const int        Ko25 = 278;//!< \b Ko25, MM Constant of rubiscuo for O2 from above reference (umol m-2 s-1)
-    const long      Eac = 59400;//!< \b Eac, Energy Activation kJ mol-1
+    const int        Kc25 = 404.4;//!< \b Kc25, MM Constant of rubisco for CO2 of C3 plants (de Pury and Farquar, 1997) (umol m-2 s-1)
+    const int        Ko25 = 278.4;//!< \b Ko25, MM Constant of rubiscuo for O2 from above reference (umol m-2 s-1)
+    const long      Eac = 79430;//!< \b Eac, Energy Activation kJ mol-1
     
-    const long       Eao = 36000;//!< \b Eao, activation energy values
+    const long       Eao = 36380;//!< \b Eao, activation energy values
     //** \endcode
     // These variables hold temporary calculations
     double alpha, Kc, Ko, gamma, Ia,Jmax, Vcmax, TPU, J, Av, Aj, Ap, Ac, Km, Ca, Cc, P;
-    gamma = 36.9 + 1.88*(Tleaf-25)+0.036*Square(Tleaf-25);  // CO2 compensation point in the absence of mitochondirial respiration, in ubar}
+    //gamma = 36.9 + 1.88*(Tleaf-25)+0.036*Square(Tleaf-25);  // CO2 compensation point in the absence of mitochondirial respiration, in ubar}
+    gamma=42.75*exp(37830*(Tleaf-25)/298/R_gas/(Tleaf+273));
+    
     //* Light response function parameters */
     Ia = PhotoFluxDensity*(1-scatt);    //* absorbed irradiance */
     alpha = (1-f_abs)/2; // *!apparent quantum efficiency, params adjusted to get value 0.3 for average C3 leaf
@@ -214,7 +241,13 @@ void SiteData::PhotosynthesisC3(double Ci)
     Kc = Kc25*exp(Eac*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
     Ko = Ko25*exp(Eao*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
     Km = Kc*(1+O/Ko); //* effective M-M constant for Kc in the presence of O2 */
+#if COUPLE_TemAccm
+    DarkRespiration=Rd25*pow(Q10R,(Tleaf-25)/10.0);
+#else
     DarkRespiration = Rd25*exp(Ear*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
+#endif
+    
+    
     Jmax = Jm25*exp(((Tleaf-25)*Eaj)/(R_gas*(Tleaf+273)*298))*
     (1+exp((Sj*298-Hj)/(R_gas*298)))/
     (1+exp((Sj*(Tleaf+273)-Hj)/(R_gas*(Tleaf+273)))); // de Pury 1997
@@ -223,7 +256,7 @@ void SiteData::PhotosynthesisC3(double Ci)
     (1+exp((Sv*(Tleaf+273)-Hv)/(R_gas*(Tleaf+273)))); // Used peaked response, DHF
     TPU = TPU25*exp(Eap*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
     Cc = Ci; // assume infinite gi
-
+    
     
     StomatalConductance = CalcStomatalConductance(); // Initial value
     BoundaryLayerConductance=  CalcTurbulentVaporConductance();
@@ -239,6 +272,7 @@ void SiteData::PhotosynthesisC3(double Ci)
     {
         AssimilationNet = Av-DarkRespiration;
     }
+    
     
     AssimilationGross = fmax(AssimilationNet+DarkRespiration,0.0);
     StomatalConductance = CalcStomatalConductance(); // Update StomatalConductance using new value of AssimilationNet
@@ -320,7 +354,7 @@ void SiteData::PhotosynthesisC4(double Ci)
     Gamma = (DarkRespiration*Km + Vcmax*GammaStar)/(Vcmax-DarkRespiration);
     AssimilationGross = fmax(0, AssimilationNet + DarkRespiration);
     
-    //printf("Ci-%f Vcm25-%f Vpm25-%f Jm25-%f Vcmax-%f Vpmax-%f Jmax-%f Rm-%f Vp1-%f Vp2-%f Ac1-%f Ac2-%f Aj1-%f Aj2-%f An-%f\n",Ci,Vcm25,Vpm25,Jm25,Vcmax,Vpmax,Jmax,Rm,Vp1,Vp2,Ac1,Ac2,Aj1,Aj2,AssimilationNet);
+//    printf("Ci-%f Tleaf-%f Vcm25-%f Vpm25-%f Jm25-%f Vcmax-%f Vpmax-%f Jmax-%f Rm-%f Vp1-%f Vp2-%f Ac1-%f Ac2-%f Aj1-%f Aj2-%f An-%f\n",Ci,Tleaf,Vcm25,Vpm25,Jm25,Vcmax,Vpmax,Jmax,Rm,Vp1,Vp2,Ac1,Ac2,Aj1,Aj2,AssimilationNet);
     
 }
 
@@ -374,7 +408,7 @@ void SiteData::EnergyBalance()
     
     Transpiration =VaporConductance*(Es(Tleaf)-Ea)/Press; //Don't need Lambda - cancels out see eq 14.10 in Campbell and Norman, 1998
     // umol m-2 s-1. note 1000 converts from moles to umol since units of VaporConductance are moles.
-    //printf("ml marks flag RH %f %f %f %f\n",VaporConductance,Es(Tleaf),Ea,Tleaf);
+    //printf("ml marks flag Tr %f %f %f %f %f %f %f\n",Transpiration,VaporConductance,StomatalConductance,BoundaryLayerConductance,Es(Tleaf),Ea,Tleaf);
 }
 
 

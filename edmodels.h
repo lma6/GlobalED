@@ -25,6 +25,9 @@
 #define LANDUSE 0 ///< Flag to turn on land use dynamics
 #define FASTLOAD 1
 #define COUPLE_FAR 1
+#define COUPLE_PFTspecific 1
+#define COUPLE_MERRA2 0
+#define COUPLE_TemAccm 0
 #define INI_Year 1500
 #define N_LAI 6
 #define WT_Abg_PROFILE 1
@@ -203,6 +206,7 @@ struct UserData {
  
    const char *which_mech_to_use;
    const char *climate_file;
+   const char *climate_file_MERRA2;
    const char *climate_file_avg;
    const char *mech_c3_file;
    const char *mech_c4_file;
@@ -219,6 +223,7 @@ struct UserData {
 #if COUPLE_FAR
     const char *PREMECH;
     const char *PREMECH_avg;
+    const char *PREMECH_MERRA2;
     
 #endif
     
@@ -528,7 +533,13 @@ struct UserData {
     double global_tmp[288][360][720];
     double global_hum[288][360][720];
     double global_swd[288][360][720];
-#endif
+    
+#if COUPLE_MERRA2
+    double global_windspeed[288][360][720];
+    double global_soiltmp[288][360][720];
+#endif  //COUPLE_MERRA2
+    
+#endif //COUPLE_FAR
     
 #if FASTLOAD
 #if LANDUSE

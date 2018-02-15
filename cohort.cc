@@ -60,7 +60,8 @@ void cohort::get_cohort_vm0(UserData *data) {
 ////////////////////////////////////////////////////////////////////////////////
 int cohort::get_cohort_vm0_bin(double Vm0, UserData* data) {
    unsigned int index = 0;
-   double high, low;          
+   double high, low;
+    
 
    // Only execute if number of Vm0 bins is > 1
    if (data->num_Vm0 > 1) {

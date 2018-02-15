@@ -130,21 +130,35 @@ double compute_dyl_factor (double lat, double day) {
 }
 
 #if COUPLE_FAR
-bool SiteData::compute_mech(int pt, double Vm0, int Vm0_bin, int time_period, int light_index, UserData* data)
+bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_period, int light_index, UserData* data)
 {
     double farquhar_results[5];
-    double shade=light_levels[pt][Vm0_bin][light_index];
+    double shade=0;
     double Vcmax25=Vm0;
     double CA=350.0/1e6;
+    double CO2=CA*1e6,windspeed=0,Pa=100.0,Tg=25.0;
+    
+#if COUPLE_PFTspecific
+    shade=light_levels[spp][light_index];
+    tf[spp][time_period]=0;
+    An[spp][time_period][light_index]=0;
+    E[spp][time_period][light_index]=0;
+    Anb[spp][time_period][light_index]=0;
+    Eb[spp][time_period][light_index]=0;
+#else
+    shade=light_levels[pt][Vm0_bin][light_index];
     tf[pt][Vm0_bin][time_period]=0;
     An[pt][Vm0_bin][time_period][light_index]=0;
     E[pt][Vm0_bin][time_period][light_index]=0;
     Anb[pt][Vm0_bin][time_period][light_index]=0;
     Eb[pt][Vm0_bin][time_period][light_index]=0;
+#endif
     
-    double farquhar_results2[5],farquhar_results3[5],tmp,hum,swd;
-    hum=0.03;
-    swd=600;
+
+    
+//    double farquhar_results2[5],farquhar_results3[5],tmp,hum,swd;
+//    hum=0.03;
+//    swd=600;
 //
 //    farquhar(Vcmax25/1e6,CA,tmp,hum,swd,shade,pt,farquhar_results);
 //
@@ -170,26 +184,85 @@ bool SiteData::compute_mech(int pt, double Vm0, int Vm0_bin, int time_period, in
 //        printf("Comp %d %d __ vc %f %f %f %f __ %.4f %.4f %.4f == %.4f %.4f %.4f == %.4f %.4f %.4f\n",lat,lon,Vcmax25,tmp,hum,swd,farquhar_results[1]*1e6,farquhar_results2[1]*1e6,farquhar_results3[1]*1e6,farquhar_results[2]*1e6,farquhar_results2[2]*1e6,farquhar_results3[2]*1e6,farquhar_results[3]*1e6,farquhar_results2[3]*1e6,farquhar_results3[3]*1e6);
 //    }
 //
-//        for (tmp=2;tmp<50;tmp+=2)
+
+//    for (tmp=0;tmp<50;tmp+=2)
 //        {
-//            Farquhar_couple(0,tmp,hum,swd,CA*1e6,0.8,100.0,shade,Vcmax25,farquhar_results2);
-//            Farquhar_couple(1,tmp,hum,swd,CA*1e6,0.8,100.0,shade,Vcmax25/3.0,farquhar_results3);
+//            Farquhar_couple(0,4,data,tmp,hum,swd,Tg,CA*1e6,0.8,100.0,shade,96,farquhar_results2);
+//            Farquhar_couple(1,4,data,tmp,hum,swd,Tg,CA*1e6,0.8,100.0,shade,16,farquhar_results3);
 //            printf("Comp vc %f %f %f %f __ %.4f %.4f == %.4f %.4f == %.4f %.4f\n",Vcmax25,tmp,hum,swd,farquhar_results2[1]*1e6,farquhar_results3[1]*1e6,farquhar_results2[2]*1e6,farquhar_results3[2]*1e6,farquhar_results2[3]*1e6,farquhar_results3[3]*1e6);
 //        }
 //
 //    exit(0);
     
     
+        
+#if COUPLE_PFTspecific
+    for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
+    {
+
+        
+#if COUPLE_MERRA2
+        if(data->global_windspeed[mon][globY_][globX_]>0)
+        {
+            windspeed=data->global_windspeed[mon][globY_][globX_];
+        }
+        else
+        {
+            windspeed=0.8;
+        }
+#else
+        windspeed=0.8;
+#endif
+        
+        
+        if (time_period==0)
+        {
+            for (size_t mon1=0;mon1<24;mon1++)
+            {
+                Tg+=data->global_tmp[mon1][globY_][globX_];
+            }
+            Tg/=24.0;
+        }
+        else
+        {
+            for (size_t mon1=time_period*24-24;mon1<time_period*24;mon1++)
+            {
+                Tg+=data->global_tmp[mon1][globY_][globX_];
+            }
+            Tg/=24.0;
+        }
+        
+        ////Currently, ambient CO2 concentration is 350 umol
+        farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],shade,pt,farquhar_results);
+        
+//        Farquhar_couple(pt,spp,data,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
+        
+        
+        tf[spp][time_period]+=farquhar_results[0];
+        An[spp][time_period][light_index]+=farquhar_results[1];
+        E[spp][time_period][light_index]+=farquhar_results[2];
+        Anb[spp][time_period][light_index]+=farquhar_results[3];
+        Eb[spp][time_period][light_index]+=farquhar_results[4];
+        //printf("WUE %f An %f E %f Eb %f\n",farquhar_results[1]*1e6/(farquhar_results[2]*1e3),farquhar_results[1],farquhar_results[2],farquhar_results[4]);
+    }
+    tf[spp][time_period]/=24.0;
+    An[spp][time_period][light_index]*=3600.0*360.0;
+    E[spp][time_period][light_index]*=3600.0*540.0;
+    Anb[spp][time_period][light_index]*=3600.0*360.0;
+    Eb[spp][time_period][light_index]*=3600.0*540.0;
+    
+    //printf("spp %d light_idx %d shade %f An %f E %f Eb %f\n",spp,light_index,shade,An[spp][time_period][light_index],E[spp][time_period][light_index]);
+#else
     for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
     {
         //Currently, ambient CO2 concentration is 350 umol
+                farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],
+        data->global_hum[mon][globY_][globX_],
+        data->global_swd[mon][globY_][globX_],
+        shade,pt,farquhar_results);
         
-        farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],
-                                 data->global_hum[mon][globY_][globX_],
-                                 data->global_swd[mon][globY_][globX_],
-                                 shade,pt,farquhar_results);
         
-//        Farquhar_couple(pt,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],CA*1e6,0.8,100.0,shade,Vcmax25,farquhar_results);
+//        Farquhar_couple(pt,spp,data,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
         
         tf[pt][Vm0_bin][time_period]+=farquhar_results[0];
         An[pt][Vm0_bin][time_period][light_index]+=farquhar_results[1];
@@ -202,6 +275,9 @@ bool SiteData::compute_mech(int pt, double Vm0, int Vm0_bin, int time_period, in
     E[pt][Vm0_bin][time_period][light_index]*=3600.0*540.0;
     Anb[pt][Vm0_bin][time_period][light_index]*=3600.0*360.0;
     Eb[pt][Vm0_bin][time_period][light_index]*=3600.0*540.0;
+#endif
+        
+
 
     return 1;
 }
@@ -953,15 +1029,17 @@ void site::Update_FTS(unsigned int t){
    unsigned int i;
    
    //Init everything to 0
-   for (pt=0;pt<2;pt++){
-      tf[pt]=0;
-      for (shade=0;shade<=120;shade++){
-         An[pt][shade] = 0;
-         An_shut[pt][shade] = 0;
-         E[pt][shade] = 0;
-         E_shut[pt][shade] = 0;
-      }
-   }
+    for (pt=0;pt<2;pt++){
+        tf[pt]=0;
+        for (shade=0;shade<=120;shade++){
+            An[pt][shade] = 0;
+            An_shut[pt][shade] = 0;
+            E[pt][shade] = 0;
+            E_shut[pt][shade] = 0;
+        }
+    }
+    
+
    
    //Loop through days and get the hourly value for each input using correct factor 
    //if the day is only partially weighted

@@ -386,8 +386,9 @@ void model (UserData& data) {
                      
 #if FASTLOAD
                      
-                     if (!data.is_site)
-                     {
+                     //if (!data.is_site)
+                     //{
+                     //MLreplace
                          printf("Start load Envir\n");
                          loadGlobalEnvironmentData(&data);
                          
@@ -401,7 +402,8 @@ void model (UserData& data) {
                          
                          //No need to load LU data sa it has been loaded for 506 yrs in read_input_data_layers->readLUData,
                          //and just need to be assigned to each site. --Lei
-                     }
+                     //}
+                    //MLreplace
 #endif
                 
 
@@ -444,8 +446,9 @@ void model (UserData& data) {
                 }
                  
 #if FASTLOAD
-                 if (!data.is_site)
-                 {
+                 //if (!data.is_site)
+                 //{
+                 //MLreplace
                      freeGlobalEnvironmentData(&data);
                      loadGlobalEnvironmentData(&data);
 #ifndef COUPLE_FAR
@@ -454,7 +457,8 @@ void model (UserData& data) {
 #endif
                      //No need to load LU data sa it has been loaded for 506 yrs in read_input_data_layers->readLUData,
                      //and just need to be assigned to each site. --Lei
-                 }
+                 //}
+                 //MLreplace
 #endif
                  
                 site* siteptr = data.first_site;

@@ -1,5 +1,6 @@
 #include <cmath>
 #include <cstring>
+#include <stdio.h>
 
 #include "edmodels.h"
 #include "cohort.h"
@@ -67,6 +68,7 @@ double cohort::Hite (UserData *data ) {
          dbh   = (dbh < data->max_dbh[species])? dbh : data->max_dbh[species];
          h = data->ref_hgt[species] + data->b1Ht[species] * (1 - exp( data->b2Ht[species] * dbh));
    }
+    
 
    return h; 
 }
@@ -129,7 +131,7 @@ double cohort::Bleaf (UserData *data ) {
       dbh   = (dbh < data->max_dbh[species])? dbh : data->max_dbh[species];
       bleaf = (1.0/data->c2b)*data->b1Bl[species] * pow(dbh,data->b2Bl[species]);
    }
-
+    
    return bleaf;
 }
 

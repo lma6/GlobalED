@@ -6,6 +6,7 @@
 #include "read_site_data.h"
 #include "cohort.h"
 #include "math.h"
+#include <stdio.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 //! plant_respiration
@@ -32,11 +33,21 @@ void cohort::plant_respiration(UserData* data){
 #if FTS
    double tf = currents->tf[pt];
 #elif COUPLE_FAR
+
+#if COUPLE_PFTspecific
+    if (currents->sdata->tf[species][tindex]<-1000)
+    {
+        currents->sdata->compute_mech(pt,species,Vm0,NUM_Vm0s-1,tindex,0,data);
+    }
+    double tf = currents->sdata->tf[species][tindex];
+#else
     if (currents->sdata->tf[pt][NUM_Vm0s-1][tindex]<-1000)
     {
-        currents->sdata->compute_mech(pt,Vm0,NUM_Vm0s-1,tindex,0,data);
+        currents->sdata->compute_mech(pt,species,Vm0,NUM_Vm0s-1,tindex,0,data);
     }
     double tf = currents->sdata->tf[pt][NUM_Vm0s-1][tindex];
+#endif //COUPLE_PFTspecific
+    
 #else
    double tf = currents->sdata->tf[pt][NUM_Vm0s-1][tindex];
 #endif
@@ -83,9 +94,16 @@ void cohort::npp_function(UserData* data){
   
    /*SET INDICIES*/
    size_t light_index = 0;
-      while(cs->sdata->light_levels[pt][Vm0_bin][light_index] > lite){
-      light_index++;
-   }
+#if COUPLE_PFTspecific
+    while(cs->sdata->light_levels[species][light_index] > lite){
+        light_index++;
+    }
+#else
+    while(cs->sdata->light_levels[pt][Vm0_bin][light_index] > lite){
+        light_index++;
+    }
+#endif
+    
    /*PHOTOSYNTHESIS**************************/
    
 #if FTS
@@ -94,22 +112,44 @@ void cohort::npp_function(UserData* data){
    An_shut = 0.001*cs->An_shut[pt][120];
    An_shut_max = 0.001*cs->An_shut[pt][120];
 #elif COUPLE_FAR
+
+#if COUPLE_PFTspecific
+    if (cs->sdata->An[species][time_index][light_index]<-1000)
+    {
+        cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,light_index,data);
+    }
+    if (cs->sdata->Anb[species][time_index][N_LIGHT-1]<-1000)
+    {
+        cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,N_LIGHT-1,data);
+    }
+    if (cs->sdata->An[species][time_index][0]<-1000)
+    {
+        cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,0,data);
+    }
+    An_pot = 0.001*cs->sdata->An[species][time_index][light_index];
+    An_max = 0.001*cs->sdata->An[species][time_index][0];  // TODO, should we use current Vm0_bin or 0
+    An_shut = 0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1];
+    An_shut_max = 0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1];
+#else
     if (cs->sdata->An[pt][Vm0_bin][time_index][light_index]<-1000)
     {
-        cs->sdata->compute_mech(pt,Vm0,Vm0_bin,time_index,light_index,data);
+        cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,light_index,data);
     }
     if (cs->sdata->Anb[pt][Vm0_bin][time_index][N_LIGHT-1]<-1000)
     {
-        cs->sdata->compute_mech(pt,Vm0,Vm0_bin,time_index,N_LIGHT-1,data);
+        cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,N_LIGHT-1,data);
     }
     if (cs->sdata->An[pt][Vm0_bin][time_index][0]<-1000)
     {
-        cs->sdata->compute_mech(pt,Vm0,Vm0_bin,time_index,0,data);
+        cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,0,data);
     }
     An_pot = 0.001*cs->sdata->An[pt][Vm0_bin][time_index][light_index];
     An_max = 0.001*cs->sdata->An[pt][Vm0_bin][time_index][0];  // TODO, should we use current Vm0_bin or 0
     An_shut = 0.001*cs->sdata->Anb[pt][Vm0_bin][time_index][N_LIGHT-1];
     An_shut_max = 0.001*cs->sdata->Anb[pt][Vm0_bin][time_index][N_LIGHT-1];
+#endif //COUPLE_PFTspecific
+    
+
 #else
    //calc potential and max photosynthesis (KgC/m2/mon)
    An_pot = 0.001*cs->sdata->An[pt][Vm0_bin][time_index][light_index];
@@ -157,6 +197,14 @@ void cohort::npp_function(UserData* data){
 
    if(npp_max > 0.00) /*only subtract growth resp if growing*/
       npp_max *= (1.0-data->growth_resp);
+    
+    
+//    printf("flag 1 spp %d hite %f light_index %d lite %f gpp %f\n",species,hite,light_index,lite,gpp);
+//    if (light_index==120)
+//    {
+//        printf("flag 1 exit\n");
+//        exit(0);
+//    }
 
 
 }

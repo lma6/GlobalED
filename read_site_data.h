@@ -58,9 +58,7 @@ struct SiteData {
    double k_sat;                     ///< conductivity of saturated soil (yr^-1) 
    double tau;                       ///< conductivity exponent 
     
-   // potential photosynthesis and evap 
-   double light_levels[PT][NUM_Vm0s][N_LIGHT];
-   double tf[PT][NUM_Vm0s][N_CLIMATE];           ///< value of temp function (used in resp calc) (Dimensionless???)
+   // potential photosynthesis and evap
 
 #if FTS
    bool readFTSdata (UserData& data);
@@ -68,11 +66,11 @@ struct SiteData {
    double Input_Specific_Humidity[N_CLIMATE_INPUT*CLIMATE_INPUT_INTERVALS];
    double Input_Par[N_CLIMATE_INPUT*CLIMATE_INPUT_INTERVALS];
 #else
+    
 #if COUPLE_FAR
-
     /// The following varaibles are used for photosynthesis.cc that couple Farqhuar with stomactal conductance and leaf energy balance model.
     int C4,iter1, iter2,iter_Ci;
-    double Vcm25,Jm25,Vpm25,TPU25,Rd25,Theta,EaVc,Eaj,Hj,Sj,Hv,EaVp,Sv,Eap,Ear,g0,g1,stomaRatio,LfWidth,LfAngFact;
+    double Vcm25,Jm25,Vpm25,TPU25,Rd25,Theta,EaVc,Eaj,Hj,Sj,Hv,EaVp,Sv,Eap,Ear,rJ2V,Q10R,g0,g1,stomaRatio,LfWidth,LfAngFact;
     double  PhotoFluxDensity,  //!< Photosynthetic Flux Density (umol photons m-2 s-1
     R_abs, //!< Absorbed incident radiation (watts m-2)
     Tair,  //!< Air temperature at 2m, (C)
@@ -98,16 +96,14 @@ struct SiteData {
     iter_total;
     ///
     
-    
-    
     bool SetMECHdefault(UserData& data);
     bool farquhar (double Vmax,double CA, double ta, double ea, double q, double shade, int C4, double outputs[5]);
     bool farquhar_collatz (double Vmax,double CA, double ta, double ea, double q, double shade, int C4, double outputs[5]);
-    bool compute_mech(int pt, double Vm0,int Vm0_bin, int time_period, int light_index, UserData* data);
+    bool compute_mech(int pt, int spp,double Vm0,int Vm0_bin, int time_period, int light_index, UserData* data);
     
     
     //The following functions are used for photosynthesis.cc that couple Farqhuar with stomactal conductance and leaf energy balance model.
-    void Initilize(int pt);
+    void Initilize(int pt,int spp,double Tg, UserData* data);
     double minh(double fn1,double fn2,double theta2);
     double Square(double a);
     double Min(double a, double b, double c);
@@ -123,12 +119,25 @@ struct SiteData {
     void PhotosynthesisC4(double Ci);
     void EnergyBalance();
     void GasEx(void);
-    void Farquhar_couple(int pt, double Tair, double ea, double shortwaveRad, double Ca, double wind, double Press, double shade, double Vm25, double outputs[5]);
+    void Farquhar_couple(int pt, int spp,UserData* data,double Tair, double ea, double shortwaveRad, double Tg, double Ca, double wind, double Press, double shade, double Vm25, double outputs[5]);
 #endif
-   double An[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];  ///< pot. net photosynthesis (gC/(m2 mo))
-   double E[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];   ///< potential transpitation (gW/(m2 mo))
-   double Anb[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT]; ///< pot. psyn when shut (g/(m2 mo))
-   double Eb[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];  ///< pot. transp when shut (gW/(m2 mo)) 
+    
+#if COUPLE_PFTspecific
+    double light_levels[NSPECIES][N_LIGHT];
+    double An[NSPECIES][N_CLIMATE][N_LIGHT];  ///< pot. net photosynthesis (gC/(m2 mo))
+    double E[NSPECIES][N_CLIMATE][N_LIGHT];   ///< potential transpitation (gW/(m2 mo))
+    double Anb[NSPECIES][N_CLIMATE][N_LIGHT]; ///< pot. psyn when shut (g/(m2 mo))
+    double Eb[NSPECIES][N_CLIMATE][N_LIGHT];  ///< pot. transp when shut (gW/(m2 mo))
+    double tf[NSPECIES][N_CLIMATE];           ///< value of temp function (used in resp calc)
+#else
+    double light_levels[PT][NUM_Vm0s][N_LIGHT];
+    double tf[PT][NUM_Vm0s][N_CLIMATE];           ///< value of temp function (used in resp calc) (Dimensionless???)
+    double An[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];  ///< pot. net photosynthesis (gC/(m2 mo))
+    double E[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];   ///< potential transpitation (gW/(m2 mo))
+    double Anb[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT]; ///< pot. psyn when shut (g/(m2 mo))
+    double Eb[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];  ///< pot. transp when shut (gW/(m2 mo))
+#endif //COUPLE_PFTspecific
+    
 #endif
    
 

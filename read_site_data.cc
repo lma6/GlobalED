@@ -778,10 +778,22 @@ bool loadGlobalEnvironmentData(UserData* data)
     if (data->do_yearly_mech) {
         if (data->m_int) {
             if (data->mechanism_year>1900) {
-                sprintf(convert, "%s%d", base, data->mechanism_year);
-                strcpy(climatename, data->climate_file);
-                strcat(climatename, convert);
-                strcat(climatename, nc);
+                if (COUPLE_MERRA2 && data->mechanism_year>1981)
+                {
+                    sprintf(convert, "%s%d", base, data->mechanism_year);
+                    strcpy(climatename, data->climate_file_MERRA2);
+                    strcat(climatename, convert);
+                    strcat(climatename, nc);
+                    printf("Loading Environmental data from MERRA2\n");
+                }
+                else
+                {
+                    sprintf(convert, "%s%d", base, data->mechanism_year);
+                    strcpy(climatename, data->climate_file);
+                    strcat(climatename, convert);
+                    strcat(climatename, nc);
+                    printf("Loading Environmental data from CRUNCEP\n");
+                }
             }
             else{
                 strcpy(climatename, data->climate_file_avg);
@@ -1214,10 +1226,20 @@ bool loadPREMECH (UserData* data)
     size_t count3[3]  = {288, 360, 720 };
     
     if (data->mechanism_year>1900) {
-        strcpy(premech, data->PREMECH);
-        sprintf(premech, "%s%d", premech, data->mechanism_year);
-        strcat(premech, ".nc");
-        printf("Test flag 1 in readCoupleFARdata %s",premech);
+        if (COUPLE_MERRA2 && data->mechanism_year>1981)
+        {
+            strcpy(premech, data->PREMECH_MERRA2);
+            sprintf(premech, "%s%d", premech, data->mechanism_year);
+            strcat(premech, ".nc");
+            printf("Loading premech file from MERRA2 %s\n",premech);
+        }
+        else
+        {
+            strcpy(premech, data->PREMECH);
+            sprintf(premech, "%s%d", premech, data->mechanism_year);
+            strcat(premech, ".nc");
+            printf("Loading premech file from CRUNCEP %s\n",premech);
+        }
     }
     else{
         strcpy(premech, data->PREMECH_avg);
@@ -1230,6 +1252,46 @@ bool loadPREMECH (UserData* data)
         data->premech_file_ncid = ncid;
     }
     
+//    if ((rv = nc_inq_varid(ncid, "temperature", &varid))) NCERR("temperature", rv);
+//    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("temperature", rv);
+//
+//    if ((rv = nc_inq_varid(ncid, "specific_humidity", &varid))) NCERR("specific_humidity", rv);
+//    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_hum[0][0][0]))) NCERR("specific_humidity", rv);
+//
+//    if ((rv = nc_inq_varid(ncid, "swdown", &varid))) NCERR("swdown", rv);
+//    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_swd[0][0][0]))) NCERR("swdown", rv);
+    
+    
+#if COUPLE_MERRA2
+    if (data->mechanism_year>1981)
+    {
+        if ((rv = nc_inq_varid(ncid, "AirTemp", &varid))) NCERR("AirTemp", rv);
+        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("AirTemp", rv);
+        
+        if ((rv = nc_inq_varid(ncid, "specific_humidity", &varid))) NCERR("specific_humidity", rv);
+        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_hum[0][0][0]))) NCERR("specific_humidity", rv);
+        
+        if ((rv = nc_inq_varid(ncid, "swdown", &varid))) NCERR("swdown", rv);
+        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_swd[0][0][0]))) NCERR("swdown", rv);
+        
+        if ((rv = nc_inq_varid(ncid, "wind", &varid))) NCERR("wind", rv);
+        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_windspeed[0][0][0]))) NCERR("wind", rv);
+        
+        if ((rv = nc_inq_varid(ncid, "SoilTemp", &varid))) NCERR("SoilTemp", rv);
+        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_soiltmp[0][0][0]))) NCERR("SoilTemp", rv);
+    }
+    else
+    {
+        if ((rv = nc_inq_varid(ncid, "temperature", &varid))) NCERR("temperature", rv);
+        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("temperature", rv);
+        
+        if ((rv = nc_inq_varid(ncid, "specific_humidity", &varid))) NCERR("specific_humidity", rv);
+        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_hum[0][0][0]))) NCERR("specific_humidity", rv);
+        
+        if ((rv = nc_inq_varid(ncid, "swdown", &varid))) NCERR("swdown", rv);
+        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_swd[0][0][0]))) NCERR("swdown", rv);
+    }
+#else
     if ((rv = nc_inq_varid(ncid, "temperature", &varid))) NCERR("temperature", rv);
     if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("temperature", rv);
     
@@ -1238,6 +1300,7 @@ bool loadPREMECH (UserData* data)
     
     if ((rv = nc_inq_varid(ncid, "swdown", &varid))) NCERR("swdown", rv);
     if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_swd[0][0][0]))) NCERR("swdown", rv);
+#endif
     
     for (size_t mon=0;mon<288;mon++)
     {
@@ -1251,7 +1314,6 @@ bool loadPREMECH (UserData* data)
         }
     }
     rv = nc_close(ncid);
-    printf("Test flag 2 in readCoupleFARdata %s",premech);
     return true;
 }
 #endif
@@ -1455,7 +1517,9 @@ bool SiteData::readEnvironmentalData (UserData& data) {
 bool SiteData::readEnvironmentalData (UserData& data)
 {
 
-    if (FASTLOAD && !data.is_site)
+    //if (FASTLOAD && !data.is_site)
+    //MLreplace
+    if (FASTLOAD)
     {
 #if FASTLOAD
         soil_depth=data.soil_depth[globY_][globX_];
@@ -1803,7 +1867,9 @@ bool SiteData::readFTSdata (UserData& data) {
 ////////////////////////////////////////////////////////////////////////////////
 bool SiteData::readMechanismLUT (UserData& data)
 {
-    if (FASTLOAD && !data.is_site)
+    //if (FASTLOAD && !data.is_site)
+    //MLreplace
+    if (FASTLOAD)
     {
 #if FASTLOAD && !COUPLE_FAR
         for (size_t i=0;i<data.num_Vm0;i++)
@@ -1822,16 +1888,13 @@ bool SiteData::readMechanismLUT (UserData& data)
                     }
                     tf[pt][i][x]=data.tf[i][pt][globY_][globX_][x];
                 }
-                if ((globY_==242) && (globX_==248))
-                {
-                    printf("Check before free [%d , %d] %f %f %f %f\n",globY_,globX_,An[pt][i][5][0],Anb[pt][i][5][0],E[pt][i][5][0],Eb[pt][i][5][0]);
-                }
             }
         }
 #endif
     }
     else
     {
+#if !COUPLE_PFTspecific
         int rv, ncid, varid;
         size_t index1[3] = { globY_, globX_, 0 };
         size_t count1[3] = { 1, 1, N_CLIMATE };
@@ -2054,6 +2117,7 @@ bool SiteData::readMechanismLUT (UserData& data)
                 }
             }
         }
+#endif
     }
     // TODO: check for bad inputs
     
@@ -2065,6 +2129,24 @@ bool SiteData::SetMECHdefault(UserData& data)
 {
     //printf("Test flag 3 reset all mech var to -9999\n");
     int QRES=20;
+#if COUPLE_PFTspecific
+    for (size_t spp=0;spp<NSPECIES;spp++)
+    {
+        for (size_t x=0;x<N_CLIMATE;x++)
+        {
+            for (size_t y=0;y<N_LIGHT;y++)
+            {
+                An[spp][x][y]=-9999.0;
+                Anb[spp][x][y]=-9999.0;
+                E[spp][x][y]=-9999.0;
+                Eb[spp][x][y]=-9999.0;
+                light_levels[spp][y]= exp(-1.0 * y / (1.0 * QRES));
+            }
+            tf[spp][x]=-9999.0;
+            light_levels[spp][N_LIGHT-1]=0;
+        }
+    }
+#else
     for (size_t i=0;i<data.num_Vm0;i++)
     {
         for (size_t pt=0;pt<PT;pt++)
@@ -2084,6 +2166,9 @@ bool SiteData::SetMECHdefault(UserData& data)
             }
         }
     }
+#endif
+    
+
     return true;
 }
 #endif

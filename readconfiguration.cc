@@ -211,6 +211,9 @@ void initialize_model_params(UserData* data) {
     data->which_mech_to_use = get_val<const char*>(data, MODEL_IO, "", "which_mech_to_use");
     data->gridspec          = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "gridspec");
     data->climate_file      = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "climate_file");
+#if COUPLE_MERRA2
+    data->climate_file_MERRA2      = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "climate_file_MERRA2");
+#endif
     data->soil_file         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "soil_file");
     data->mech_c3_file      = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "mech_c3_file");
     data->mech_c4_file      = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "mech_c4_file");      
@@ -227,6 +230,7 @@ void initialize_model_params(UserData* data) {
     
 #if COUPLE_FAR
     data->PREMECH         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH");
+    data->PREMECH_MERRA2         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH_MERRA2");
     data->PREMECH_avg         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH_avg");
 #endif
     data->single_year       = get_val<int>(data, MODEL_IO, data->which_mech_to_use, "single_year");   

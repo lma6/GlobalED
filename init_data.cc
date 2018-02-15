@@ -224,7 +224,7 @@ void init_data (const char* cfgFile, UserData* data) {
       /*data->specific_leaf_area[i]           = pow(10.0, (2.37 - 0.33 * log10(data->leaf_life_span[i])));*/  
       /* convert to (m2/kg(carbon) */
       data->specific_leaf_area[i]             = data->c2b * data->specific_leaf_area[i] * 1000.0 / 10000.0;
-      printf("spp %s  sla = %f \n", pft, data->specific_leaf_area[i]);
+      printf("spp %s  sla = %f c2n= %f \n", pft, data->specific_leaf_area[i],data->c2n_leaf[i] );
       /* ratio of sapwood area (m2) leaf biomass (kg) *
        * QSW = sapwood area /leaf area ratio          */ 
       data->qsw[i]                            = (1.0 / QSW) * data->specific_leaf_area[i]; 
