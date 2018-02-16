@@ -22,7 +22,7 @@
 ////////////////////////////////////////
 //    LAND USE
 ////////////////////////////////////////
-#define LANDUSE 0 ///< Flag to turn on land use dynamics
+#define LANDUSE 1 ///< Flag to turn on land use dynamics
 #define FASTLOAD 1
 #define COUPLE_FAR 1
 #define COUPLE_PFTspecific 1
