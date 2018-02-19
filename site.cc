@@ -214,7 +214,6 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
         windspeed=0.8;
 #endif
         
-        
         if (time_period==0)
         {
             for (size_t mon1=0;mon1<24;mon1++)

@@ -866,6 +866,7 @@ bool loadGlobalEnvironmentData(UserData* data)
     
     if ((rv = nc_inq_varid(ncid, "soil_temp", &varid))) {
         // if no soil_temp, default to air temp
+        printf("no soil_temp, default to air temp\n");
         if ((rv = nc_inq_varid(ncid, "temperature", &varid))) {
             NCERR("soil_temp", rv);
         }
