@@ -1371,7 +1371,7 @@ SiteData::SiteData (size_t y, size_t x, UserData& data) {
    // TODO: should the rest be here? Same for all sites
 
    // max soil evaporation per mm of soil moisture per yr
-   soil_evap_conductivity = 0.0;
+   soil_evap_conductivity = 10.0;
 
    loss_fraction[0] = 0.0; // nothing lost during treefall
    loss_fraction[1] = data.smoke_fraction;
