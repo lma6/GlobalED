@@ -70,7 +70,7 @@ struct SiteData {
 #if COUPLE_FAR
     /// The following varaibles are used for photosynthesis.cc that couple Farqhuar with stomactal conductance and leaf energy balance model.
     int C4,iter1, iter2,iter_Ci;
-    double Vcm25,Jm25,Vpm25,TPU25,Rd25,Theta,EaVc,Eaj,Hj,Sj,Hv,EaVp,Sv,Eap,Ear,rJ2V,Q10R,g0,g1,stomaRatio,LfWidth,LfAngFact;
+    double Vcm25,Jm25,Vpm25,TPU25,Rd25,Theta,EaVc,Eaj,Eap,Ear,EaVp,Hv,Hj,Hr,Hp,Sv,Sj,Sr,Sp,rJ2V,Q10R,g0,g1,stomaRatio,LfWidth,LfAngFact;
     double  PhotoFluxDensity,  //!< Photosynthetic Flux Density (umol photons m-2 s-1
     R_abs, //!< Absorbed incident radiation (watts m-2)
     Tair,  //!< Air temperature at 2m, (C)
@@ -119,7 +119,7 @@ struct SiteData {
     void PhotosynthesisC4(double Ci);
     void EnergyBalance();
     void GasEx(void);
-    void Farquhar_couple(int pt, int spp,UserData* data,double Tair, double ea, double shortwaveRad, double Tg, double Ca, double wind, double Press, double shade, double Vm25, double outputs[5]);
+    void Farquhar_couple(int pt, int spp,UserData* data,double Tair, double Tsoil,double ea, double shortwaveRad, double Tg, double Ca, double wind, double Press, double shade, double Vm25, double outputs[6]);
 #endif
     
 #if COUPLE_PFTspecific
@@ -128,10 +128,12 @@ struct SiteData {
     double E[NSPECIES][N_CLIMATE][N_LIGHT];   ///< potential transpitation (gW/(m2 mo))
     double Anb[NSPECIES][N_CLIMATE][N_LIGHT]; ///< pot. psyn when shut (g/(m2 mo))
     double Eb[NSPECIES][N_CLIMATE][N_LIGHT];  ///< pot. transp when shut (gW/(m2 mo))
-    double tf[NSPECIES][N_CLIMATE];           ///< value of temp function (used in resp calc)
+    double tf_air[NSPECIES][N_CLIMATE];           ///< value of temp function (used in resp calc)
+    double tf_soil[NSPECIES][N_CLIMATE];           ///< value of temp function (used in resp calc)
 #else
     double light_levels[PT][NUM_Vm0s][N_LIGHT];
-    double tf[PT][NUM_Vm0s][N_CLIMATE];           ///< value of temp function (used in resp calc) (Dimensionless???)
+    double tf_air[PT][NUM_Vm0s][N_CLIMATE];           ///< value of temp function (used in resp calc) (Dimensionless???)
+    double tf_soil[PT][NUM_Vm0s][N_CLIMATE];           ///< value of temp function (used in resp calc) (Dimensionless???)
     double An[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];  ///< pot. net photosynthesis (gC/(m2 mo))
     double E[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];   ///< potential transpitation (gW/(m2 mo))
     double Anb[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT]; ///< pot. psyn when shut (g/(m2 mo))

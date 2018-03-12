@@ -35,21 +35,32 @@ void cohort::plant_respiration(UserData* data){
 #elif COUPLE_FAR
 
 #if COUPLE_PFTspecific
-    if (currents->sdata->tf[species][tindex]<-1000)
+    if (currents->sdata->tf_air[species][tindex]<-1000)
     {
         currents->sdata->compute_mech(pt,species,Vm0,NUM_Vm0s-1,tindex,0,data);
     }
-    double tf = currents->sdata->tf[species][tindex];
+    if (currents->sdata->tf_soil[species][tindex]<-1000)
+    {
+        currents->sdata->compute_mech(pt,species,Vm0,NUM_Vm0s-1,tindex,0,data);
+    }
+    double tf_air = currents->sdata->tf_air[species][tindex];
+    double tf_soil = currents->sdata->tf_soil[species][tindex];
 #else
-    if (currents->sdata->tf[pt][NUM_Vm0s-1][tindex]<-1000)
+    if (currents->sdata->tf_air[pt][NUM_Vm0s-1][tindex]<-1000)
     {
         currents->sdata->compute_mech(pt,species,Vm0,NUM_Vm0s-1,tindex,0,data);
     }
-    double tf = currents->sdata->tf[pt][NUM_Vm0s-1][tindex];
+    if (currents->sdata->tf_soil[pt][NUM_Vm0s-1][tindex]<-1000)
+    {
+        currents->sdata->compute_mech(pt,species,Vm0,NUM_Vm0s-1,tindex,0,data);
+    }
+    double tf_air = currents->sdata->tf_air[pt][NUM_Vm0s-1][tindex];
+    double tf_soil = currents->sdata->tf_soil[pt][NUM_Vm0s-1][tindex];
 #endif //COUPLE_PFTspecific
     
 #else
-   double tf = currents->sdata->tf[pt][NUM_Vm0s-1][tindex];
+   double tf_air = currents->sdata->tf_air[pt][NUM_Vm0s-1][tindex];
+   double tf_soil = currents->sdata->tf_soil[pt][NUM_Vm0s-1][tindex];
 #endif
 
    /* resp rates read in are  in gC/m2(leaf)/mo */
@@ -60,9 +71,9 @@ void cohort::plant_respiration(UserData* data){
    //double r_leaf = (0.001*N_CLIMATE)*(-1.0*currents->sdata->Anb[pt][light_index][tindex])*bl*data->specific_leaf_area[species];
    //double r_leaf = (0.001*N_CLIMATE)*(-1.0*currents->An_shut[pt][(int)(lite*100)])*bl*data->specific_leaf_area[species];
    
-   double r_vleaf = data->beta[species][4]*blv*tf;
-   double r_stem = data->beta[species][1]*bsw*tf;
-   double r_root = data->beta[species][3]*br*tf;
+   double r_vleaf = data->beta[species][4]*blv*tf_air;
+   double r_stem = data->beta[species][1]*bsw*tf_air;
+   double r_root = data->beta[species][3]*br*tf_soil;
 
    /*currentc->resp = r_leaf + r_vleaf + r_stem + r_root;*/
    /* 4/24/00 take out leaf resp here, include in gpp below by reading in net
@@ -86,8 +97,11 @@ void cohort::npp_function(UserData* data){
  
    /*driver index index*/
    size_t time_index = data->time_period;
-   get_cohort_vm0(data);
+    
+#if !COUPLE_PFTspecific    //onLY COUPLE_PFTspecific is off, the mech variables are seperated by vcmax_bins, otherwise, by PFTs --Lei
+   get_cohort_vm0(data);   //And the downgrade if Vcmax by cumulative LAI is done in compute_mech function using cumuLAI derived from light level and Lloyd et al 2010
    Vm0_bin= get_cohort_vm0_bin(Vm0, data);
+#endif
       
    /* RESPIRATION */
    plant_respiration(data);

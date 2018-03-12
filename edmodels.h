@@ -26,8 +26,10 @@
 #define FASTLOAD 1
 #define COUPLE_FAR 1
 #define COUPLE_PFTspecific 1
-#define COUPLE_MERRA2 0
+#define COUPLE_MERRA2 1
 #define COUPLE_TemAccm 0
+#define CPOUPLE_VcmaxDownreg 0
+#define COUPLE_SepSoilTF 1
 #define INI_Year 1500
 #define N_LAI 6
 #define WT_Abg_PROFILE 1

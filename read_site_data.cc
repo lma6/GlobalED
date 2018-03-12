@@ -1310,6 +1310,7 @@ bool loadPREMECH (UserData* data)
             for (size_t lon_n=0;lon_n<720;lon_n++)
             {
                 if (data->global_tmp[mon][lat_n][lon_n]>0) data->global_tmp[mon][lat_n][lon_n]-=273.2;
+                if (data->global_soiltmp[mon][lat_n][lon_n]>0) data->global_soiltmp[mon][lat_n][lon_n]-=273.2;
                 if (data->global_hum[mon][lat_n][lon_n]>0) data->global_hum[mon][lat_n][lon_n]=data->global_hum[mon][lat_n][lon_n]*28.96/18.02;
             }
         }
@@ -1371,7 +1372,7 @@ SiteData::SiteData (size_t y, size_t x, UserData& data) {
    // TODO: should the rest be here? Same for all sites
 
    // max soil evaporation per mm of soil moisture per yr
-   soil_evap_conductivity = 10.0;
+   soil_evap_conductivity = 0.0;
 
    loss_fraction[0] = 0.0; // nothing lost during treefall
    loss_fraction[1] = data.smoke_fraction;
@@ -2143,7 +2144,8 @@ bool SiteData::SetMECHdefault(UserData& data)
                 Eb[spp][x][y]=-9999.0;
                 light_levels[spp][y]= exp(-1.0 * y / (1.0 * QRES));
             }
-            tf[spp][x]=-9999.0;
+            tf_air[spp][x]=-9999.0;
+            tf_soil[spp][x]=-9999.0;
             light_levels[spp][N_LIGHT-1]=0;
         }
     }
@@ -2162,7 +2164,8 @@ bool SiteData::SetMECHdefault(UserData& data)
                     Eb[pt][i][x][y]=-9999.0;
                     light_levels[pt][i][y]= exp(-1.0 * y / (1.0 * QRES));
                 }
-                tf[pt][i][x]=-9999.0;
+                tf_air[pt][i][x]=-9999.0;
+                tf_soil[pt][i][x]=-9999.0;
                 light_levels[pt][i][N_LIGHT-1]=0;
             }
         }

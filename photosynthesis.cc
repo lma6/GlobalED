@@ -19,10 +19,11 @@
 #define O 205.0     //!<  Oxygen partial pressure gas units are mbar
 #define Q10 2.0        //!< Q10 factor
 
+#define parameterizationCase 2 //1-Bonan 2011; 2-Kattge 2007 without thermal accmlimation; 3-Kattge 2007 with acclimation
+
 void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
 {
     C4=pt;
-    
     errTolerance = 0.001;
     eqlTolerance = 1.0e-6;
     
@@ -48,55 +49,78 @@ void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
     
     Theta=0.7;
     
-#if COUPLE_TemAccm
+    //Kattge et al 2007 used here for parameterization with temperature acclimation
     if (C4==0)
     {
-        EaVc=71513;  //Need to find value, now use same with C3
-        Eaj=49884;   //Delta_Ja
-        Ear=66400;  //Need to check. from photo...master paramater.xls
-        Eap=47100;
+#if parameterizationCase==1
+        EaVc=65330;  //Need to find value, now use same with C3
+        Eaj=43540;   //Delta_Ja
+        Ear=46390;   //66400
+        Eap=53100;
         
-        Sv=668.39-1.07*Tg;
-        Sj=659.70-0.75*Tg;
+        Sv=485;
+        Sj=495;
+        Sr=490;
+        Sp=490;
         
-        Hv=200000;
-        Hj=200000;
+        Hv=149250;
+        Hj=152040;
+        Hr=150650;
+        Hp=150650;
         
-        rJ2V=2.59-0.035*Tg;
+        rJ2V=1.97;
+        Q10R=1; //from Atkin et al 2008
+#endif
         
-        Q10R=3.22-0.045*Tg;
-        
-        if (!strcmp(data->title[spp],"evergreen"))
-            rJ2V=1.07;
-    }
-    else
-    {
-        EaVc=55900;
-        EaVp=75100;
-        Ear=39800;
-        Eaj=32800;
-        
-        Sj=702.6;
-        Hj=220000;
-    }
-#else
-    if (C4==0)
-    {
-        EaVc=71513;  //Need to find value, now use same with C3
-        Eaj=49884;   //Delta_Ja
-        Ear=66400;
+#if parameterizationCase==2
+        EaVc=71513;  //Kattge 2007 Table.3
+        Eaj=49884;   //Kattge 2007 Table.3
+        Ear=66400;   //Need to check. from photo...master paramater.xls
+        Eap=53100;   //As no acclimation in Kattge 2007, same as Bonan 2011
         
         Sv=649.12;
         Sj=646.22;
+        Sr=490;     //As no acclimation in Kattge 2007, same as Bonan 2011, acclimation is achieved using Q10R factor
+        Sp=490;     //As no acclimation in Kattge 2007, same as Bonan 2011
         
-        Hv=200000;
-        Hj=200000;
+        Hv=200000;  //Kattge 2007 Table.3
+        Hj=200000;  //Kattge 2007 Table.3
+        Hr=150650;  //As no acclimation in Kattge 2007, same as Bonan 2011
+        Hp=150650;  //As no acclimation in Kattge 2007, same as Bonan 2011
+        
+        rJ2V=1.97; //Kattge 2007 Table.3
+        
+        Q10R=1; //from Atkin et al 2008
+#endif
+        
+#if parameterizationCase==3
+        //printf("Using thermal acclimation based parameterization\n");
+        //As Kattge only considered temperature range from 11 to 35 degrees Celsius
+        if (Tg>35)  Tg=35;
+        if (Tg<11)  Tg=11;
+        
+        EaVc=71513;  //Kattge 2007 Table.3
+        Eaj=49884;   //Kattge 2007 Table.3
+        Ear=66400;   //Need to check. from photo...master paramater.xls
+        Eap=53100;   //As no acclimation in Kattge 2007, same as Bonan 2011
+        
+        Sv=668.39-1.07*Tg;
+        Sj=659.70-0.75*Tg;
+        Sr=490;     //As no acclimation in Kattge 2007, same as Bonan 2011, acclimation is achieved using Q10R factor
+        Sp=490;     //As no acclimation in Kattge 2007, same as Bonan 2011
+        
+        Hv=200000;  //Kattge 2007 Table.3
+        Hj=200000;  //Kattge 2007 Table.3
+        Hr=150650;  //As no acclimation in Kattge 2007, same as Bonan 2011
+        Hp=150650;  //As no acclimation in Kattge 2007, same as Bonan 2011
+        
+        rJ2V=2.59-0.035*Tg; //Kattge 2007 Table.3
+        
+        Q10R=pow(10,-0.00794*(Tg-25.0)); //from Atkin et al 2008
         
         if (!strcmp(data->title[spp],"evergreen"))
             rJ2V=1.07;
-        else
-            rJ2V=1.97;
-        
+#endif
     }
     else
     {
@@ -108,7 +132,6 @@ void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
         Sj=702.6;
         Hj=220000;
     }
-#endif
 
     iter_total=0,
     Jm25=0,
@@ -128,7 +151,7 @@ void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
 //Vm25 Maxmimum Rubisco campacity at 25 ceilus
 //wind: Windspeed at 2.5 m, m s-1
 //Press Atmospheric pressure (kpa m-2)
-void SiteData::Farquhar_couple(int pt, int spp,UserData* data,double Ta, double ea, double swd, double Tg,double Ca, double speed, double Pa, double shade, double Vm25, double outputs[5])
+void SiteData::Farquhar_couple(int pt, int spp,UserData* data,double Ta, double Ts,double ea, double swd, double Tg,double Ca, double speed, double Pa, double shade, double Vm25, double outputs[6])
 {
     Initilize(pt,spp,Tg,data);
     
@@ -136,7 +159,6 @@ void SiteData::Farquhar_couple(int pt, int spp,UserData* data,double Ta, double 
     {
         Vcm25=Vm25;
         Jm25=Vcm25*rJ2V;      //Medlyn 2002 Fig.3
-        
         TPU25=Jm25*0.06;
         Rd25=Vcm25*0.015;
     }else
@@ -175,6 +197,13 @@ void SiteData::Farquhar_couple(int pt, int spp,UserData* data,double Ta, double 
     else
         tf /= (1.0 + exp(0.4 * (5.0 - Tair))) * (1.0 + exp(0.4 * (Tair - 45.0)));
     
+
+    outputs[5]=exp(3000.0 * (1.0 / 288.2 - 1.0 / (Ts + 273.2)));
+    if (C4==1)
+        outputs[5] /= (1.0 + exp(0.4 * (10.0 - Ts))) * (1.0 + exp(0.4 * (Ts - 50.0)));
+    else
+        outputs[5] /= (1.0 + exp(0.4 * (5.0 - Ts))) * (1.0 + exp(0.4 * (Ts - 45.0)));
+    
     outputs[0]=tf;
     outputs[1]=AssimilationNet;
     outputs[2]=Transpiration;
@@ -189,6 +218,10 @@ void SiteData::Farquhar_couple(int pt, int spp,UserData* data,double Ta, double 
     outputs[1]/=1e6;
     outputs[3]/=-1e6;
     
+    
+    double Ds=(Es(Tleaf)-RH*Es(Tair))/Press;
+    printf("Tl %f Ta %f Ag %f An %f light %f Ci %f Ds %f\n",Tleaf,Tair,AssimilationGross,AssimilationNet,PhotoFluxDensity,Ci,Ds*Press);
+   
     Initilize(pt,spp,Tg,data);
 }
 
@@ -215,6 +248,10 @@ void SiteData::GasEx(void)
 
 void SiteData::PhotosynthesisC3(double Ci)
 {
+//    for (Tleaf=0;Tleaf<50;Tleaf++)
+//    {
+//        PhotoFluxDensity=1350;
+//        Ci=350;
     //parameters for C3 Photosythesis;
     const double curvature=0.999 ; //!< \b Curvature -factor of Av and Aj colimitation
     
@@ -241,12 +278,11 @@ void SiteData::PhotosynthesisC3(double Ci)
     Kc = Kc25*exp(Eac*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
     Ko = Ko25*exp(Eao*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
     Km = Kc*(1+O/Ko); //* effective M-M constant for Kc in the presence of O2 */
-#if COUPLE_TemAccm
-    DarkRespiration=Rd25*pow(Q10R,(Tleaf-25)/10.0);
-#else
-    DarkRespiration = Rd25*exp(Ear*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
-#endif
-    
+
+    DarkRespiration=Rd25*exp(((Tleaf-25)*Ear)/(R_gas*(Tleaf+273)*298))*
+    (1+exp((Sr*298-Hr)/(R_gas*298)))/
+    (1+exp((Sr*(Tleaf+273)-Hr)/(R_gas*(Tleaf+273))));
+    DarkRespiration*=Q10R;
     
     Jmax = Jm25*exp(((Tleaf-25)*Eaj)/(R_gas*(Tleaf+273)*298))*
     (1+exp((Sj*298-Hj)/(R_gas*298)))/
@@ -254,9 +290,11 @@ void SiteData::PhotosynthesisC3(double Ci)
     Vcmax = Vcm25*exp(((Tleaf-25)*EaVc)/(R_gas*(Tleaf+273)*298))*
     (1+exp((Sv*298-Hv)/(R_gas*298)))/
     (1+exp((Sv*(Tleaf+273)-Hv)/(R_gas*(Tleaf+273)))); // Used peaked response, DHF
-    TPU = TPU25*exp(Eap*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
+    //TPU = TPU25*exp(Eap*(Tleaf-25)/(298*R_gas*(Tleaf+273)));  //orginal one, does account thermal breakdown
+    TPU = TPU25*exp(((Tleaf-25)*Eap)/(R_gas*(Tleaf+273)*298))*
+    (1+exp((Sp*298-Hp)/(R_gas*298)))/
+    (1+exp((Sp*(Tleaf+273)-Hp)/(R_gas*(Tleaf+273))));
     Cc = Ci; // assume infinite gi
-    
     
     StomatalConductance = CalcStomatalConductance(); // Initial value
     BoundaryLayerConductance=  CalcTurbulentVaporConductance();
@@ -268,6 +306,7 @@ void SiteData::PhotosynthesisC3(double Ci)
     
     if (Cc > gamma)
         AssimilationNet = fmin(Ac, Ap) -DarkRespiration;
+        //AssimilationNet = Ac -DarkRespiration;  //Turn off TPU limitation
     else
     {
         AssimilationNet = Av-DarkRespiration;
@@ -277,6 +316,10 @@ void SiteData::PhotosynthesisC3(double Ci)
     AssimilationGross = fmax(AssimilationNet+DarkRespiration,0.0);
     StomatalConductance = CalcStomatalConductance(); // Update StomatalConductance using new value of AssimilationNet
     
+    //printf("gb %f\n",BoundaryLayerConductance);
+        //printf("Tl %f Av %f Aj %f Ap %f Ac %f Ag %f An %f Vcmax %f Jmax %f light %f Ci %f\n",Tleaf,Av,Aj,Ap,Ac,AssimilationGross,AssimilationNet,Vcmax,Jmax,PhotoFluxDensity,Ci);
+    //}
+//    exit(0);
 }
 
 void SiteData::PhotosynthesisC4(double Ci)
@@ -438,9 +481,9 @@ double SiteData::CalcStomatalConductance()
     hs = QuadSolnUpper(aa,bb,cc);
     if (hs > 1) hs = 1;
     if (hs<0) hs = 0;
-    Ds = (1-hs)*Es(Tleaf); // VPD at leaf surface
-    StomatalConductance = (g0+g1*(AssimilationNet*hs/Cs));
-    if (StomatalConductance < g0) StomatalConductance=g0; //Limit StomatalConductance to mesophyll conductance
+    //Ds = (1-hs)*Es(Tleaf); // VPD at leaf surface
+    //StomatalConductance = (g0+g1*(AssimilationNet*hs/Cs));
+    //if (StomatalConductance < g0) StomatalConductance=g0; //Limit StomatalConductance to mesophyll conductance
     
     
     Ds=(Es(Tleaf)-RH*Es(Tair))/Press;
