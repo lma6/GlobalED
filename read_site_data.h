@@ -97,7 +97,7 @@ struct SiteData {
     ///
     
     bool SetMECHdefault(UserData& data);
-    bool farquhar (double Vmax,double CA, double ta, double ea, double q, double shade, int C4, double outputs[5]);
+    bool farquhar (double Vmax,double CA, double ta, double ts,double ea, double q, double shade, int C4, double outputs[6]);
     bool farquhar_collatz (double Vmax,double CA, double ta, double ea, double q, double shade, int C4, double outputs[5]);
     bool compute_mech(int pt, int spp,double Vm0,int Vm0_bin, int time_period, int light_index, UserData* data);
     

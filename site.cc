@@ -132,7 +132,7 @@ double compute_dyl_factor (double lat, double day) {
 #if COUPLE_FAR
 bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_period, int light_index, UserData* data)
 {
-    double farquhar_results[5];
+    double farquhar_results[6];
     double shade=0;
     double Vcmax25=Vm0;
     double CA=350.0/1e6;
@@ -165,32 +165,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
     printf("Dwonregulate Vcmax cumuLAI %f lite %f Vcmax25 %f %f\n",cumuLAI,shade,data->Vm0_max[spp],Vcmax25);
 #endif
     
-//    double farquhar_results2[6],farquhar_results3[6],tmp,hum,swd;
-    
-//
-//    farquhar(Vcmax25/1e6,CA,tmp,hum,swd,shade,pt,farquhar_results);
-//
-//    farquhar_collatz(Vcmax25/1e6,CA,tmp,hum,swd,shade,pt,farquhar_results2);
-//
-//    Farquhar_couple(pt,tmp,hum,swd,CA*1e6,0.8,100.0,shade,Vcmax25,farquhar_results3);
-//    printf("Comp %d %d vc %f tmp %f hum %f swd %f __ %f %f %f == %f %f %f == %f %f %f\n",globY_,globX_,Vcmax25,tmp,hum,swd,farquhar_results[1]*1e6,farquhar_results2[1]*1e6,farquhar_results3[1]*1e6,farquhar_results[2]*1e6,farquhar_results2[2]*1e6,farquhar_results3[2]*1e6,farquhar_results[3]*1e6,farquhar_results2[3]*1e6,farquhar_results3[3]*1e6);
-    
-//    int lat=120,lon=437,mon=6;
-    //for (lat=0;lat<360;lat++)
-    //for (Vcmax25=3;Vcmax25<100;Vcmax25++)
-//    {
-//
-//        tmp=data->global_tmp[mon][lat][lon];
-//        hum=data->global_hum[mon][lat][lon];
-//        swd=data->global_swd[mon][lat][lon];
-//
-//        farquhar(Vcmax25/1e6,CA,tmp,hum,swd,shade,pt,farquhar_results);
-//
-//        farquhar_collatz(Vcmax25/1e6,CA,tmp,hum,swd,shade,pt,farquhar_results2);
-//
-//        Farquhar_couple(pt,tmp,hum,swd,CA*1e6,0.8,100.0,shade,Vcmax25,farquhar_results3);
-//        printf("Comp %d %d __ vc %f %f %f %f __ %.4f %.4f %.4f == %.4f %.4f %.4f == %.4f %.4f %.4f\n",lat,lon,Vcmax25,tmp,hum,swd,farquhar_results[1]*1e6,farquhar_results2[1]*1e6,farquhar_results3[1]*1e6,farquhar_results[2]*1e6,farquhar_results2[2]*1e6,farquhar_results3[2]*1e6,farquhar_results[3]*1e6,farquhar_results2[3]*1e6,farquhar_results3[3]*1e6);
-//    }
+    //double farquhar_results2[6],farquhar_results3[6],tmp,hum,swd;
 //
 //    hum=0.03;
 //    swd=600;
@@ -202,7 +177,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
 //            //Farquhar_couple(1,4,data,tmp,hum,swd,Tg,CA*1e6,0.8,100.0,shade,16,farquhar_results3);
 //            //printf("Comp vc %f %f %f %f __ %.4f %.4f == %.4f %.4f == %.4f %.4f\n",Vcmax25,tmp,hum,swd,farquhar_results2[1]*1e6,farquhar_results3[1]*1e6,farquhar_results2[2]*1e6,farquhar_results3[2]*1e6,farquhar_results2[3]*1e6,farquhar_results3[3]*1e6);
 //        }
-//
+
 //    exit(0);
     
     
@@ -236,7 +211,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
         Ts=data->global_tmp[mon][globY_][globX_];
 #endif  //COUPLE_MERRA2
         
-        //As growth temperature defined in  Lombardozzi et all 2015 and Atkin et al 2008 is the preceding 10 days running mean of air temperature, here for simplicity, use mean temperature of current month
+        //As growth temperature defined in Lombardozzi et all 2015 and Atkin et al 2008 is the preceding 10 days running mean of air temperature, here for simplicity, use mean temperature of current month
         Tg=0;
         for (size_t mon1=time_period*24;mon1<time_period*24+24;mon1++)
         {
@@ -245,7 +220,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
         Tg/=24.0;
         
         ////Currently, ambient CO2 concentration is 350 umol
-//        farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],shade,pt,farquhar_results);
+        //farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],Ts,data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],shade,pt,farquhar_results);
         
         Farquhar_couple(pt,spp,data,data->global_tmp[mon][globY_][globX_],Ts,data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
         
@@ -272,7 +247,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
 //            hum1=data->global_hum[mon2][86][162];
 //            swd1=data->global_swd[mon2][86][162];
 //            tmp1=data->global_tmp[mon2][86][162];
-//            Farquhar_couple(0,4,data,tmp1,hum1,swd1,Tg,400,windspeed,Pa,1,20,farquhar_results);
+//            Farquhar_couple(0,4,data,tmp1,tmp1,hum1,swd1,Tg,400,windspeed,Pa,1,20,farquhar_results);
 //            printf("mon %d hr %d pt %d t %f e %f swd %f ws %f Tg %f An %f Anb %f E %f Eb %f\n",tp,mon2,pt,tmp1,hum1,swd1,windspeed,Tg,farquhar_results[1]*1e6,farquhar_results[3]*1e6,farquhar_results[2]*1e6,farquhar_results[4]*1e6);
 //        }
 //    }
@@ -337,7 +312,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
     return 1;
 }
 
-bool SiteData::farquhar (double Vmax,double CA, double ta, double ea, double q, double shade, int C4, double outputs[5]) {
+bool SiteData::farquhar (double Vmax,double CA, double ta, double ts,double ea, double q, double shade, int C4, double outputs[5]) {
     //printf("Cal farquhar V %f Ca %f ta %f ea %f q %f shade %f C4 %f\n",Vmax,CA,ta,ea,q,shade,C4);
     double shade_thresh, shade_thresh2;
     /* Scalers for turning boundary resitance */
@@ -533,10 +508,18 @@ bool SiteData::farquhar (double Vmax,double CA, double ta, double ea, double q, 
         }
         g = maxg + ginc / exp((j + 1.0) * log(10.0));
     }
-    //outputs[0] = tf; outputs[1] = a; outputs[2] = e; outputs[3] = ab; outputs[4] = eb;
-    outputs[0] = tf; outputs[1] = a; outputs[2] = e; outputs[3] = ab; outputs[4] = eb;
+    //Add separate rate for root respiration and saved in the 6th element in outputs array
+    double tf_soil=0;
+    tf_soil = exp(3000.0 * (1.0 / 288.2 - 1.0 / (ts + 273.2)));
+    if (C4)
+        tf_soil /= (1.0 + exp(0.4 * (10.0 - ts))) * (1.0 + exp(0.4 * (ts - 50.0)));
+    else
+    /* tl changed to ta and denominator added, gch 09/29/99 */
+        tf_soil /= (1.0 + exp(0.4 * (5.0 - ts))) * (1.0 + exp(0.4 * (ts - 45.0)));
+    
+    outputs[0] = tf; outputs[1] = a; outputs[2] = e; outputs[3] = ab; outputs[4] = eb;outputs[5] = tf_soil;
     //printf("capgam %f kc %f ko %f vm %f \n",capgam,kc,ko,vm);
-    printf("Tl %f Ta %f Ag %f An %f light %f Ci %f Ds %f\n",tl,ta,a,an,lite,ci,ds);
+    //printf("Tl %f Ta %f Ag %f An %f light %f Ci %f Ds %f\n",tl,ta,a,an,lite,ci,ds);
     return 1;
 }
 

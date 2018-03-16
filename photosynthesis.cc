@@ -219,8 +219,8 @@ void SiteData::Farquhar_couple(int pt, int spp,UserData* data,double Ta, double 
     outputs[3]/=-1e6;
     
     
-    double Ds=(Es(Tleaf)-RH*Es(Tair))/Press;
-    printf("Tl %f Ta %f Ag %f An %f light %f Ci %f Ds %f\n",Tleaf,Tair,AssimilationGross,AssimilationNet,PhotoFluxDensity,Ci,Ds*Press);
+    //double Ds=(Es(Tleaf)-RH*Es(Tair))/Press;
+    //printf("Tl %f Ta %f Ag %f An %f light %f Ci %f Ds %f gb %f VPD %f\n",Tleaf,Tair,AssimilationGross,AssimilationNet,PhotoFluxDensity,Ci,Ds*Press,BoundaryLayerConductance,this->VPD);
    
     Initilize(pt,spp,Tg,data);
 }
@@ -401,6 +401,8 @@ void SiteData::PhotosynthesisC4(double Ci)
     
 }
 
+//Change Newton iteration solving Tleaf from orignal version saved in EnergyBalance2, which does not
+//change newTi during iteration.
 void SiteData::EnergyBalance()
 {
     const long Lambda = 44000; //latent heat of vaporization of water J mol-1 - not used in this implementation
@@ -431,7 +433,7 @@ void SiteData::EnergyBalance()
     psc1 = psc*RadiativeAndHeatConductance/VaporConductance;
     this->VPD = Es(Tair)*(1-RH); // vapor pressure deficit Es is saturation vapor pressure at air temperature
     // iterative version
-    newTi=-10;
+    newTi=Tleaf*0.7;
     iter=0;
     lastTi=Tleaf;
     double Res, dRes; //temporary variables
@@ -440,19 +442,75 @@ void SiteData::EnergyBalance()
     while ((fabs(lastTi-newTi)>0.001) && (iter <maxiter))
     {
         lastTi=newTi;
-        Tleaf= Tair + (R_abs- thermal_air-Lambda*VaporConductance*this->VPD/Press)/(Cp*RadiativeAndHeatConductance+Lambda*Slope(Tair)*VaporConductance); // eqn 14.6a
-        thermal_leaf=epsilon*sbc*pow(Tleaf+273,4)*2;
-        Res = R_abs - thermal_leaf - Cp*HeatConductance*(Tleaf - Tair) - Lambda*VaporConductance*0.5*(Es(Tleaf)-Ea)/Press; // Residual function: f(Ti), KT Paw (1987)
-        dRes= -4*epsilon*sbc*pow(273+Tleaf,3)*2-Cp*HeatConductance*Tleaf-Lambda*VaporConductance*Slope(Tleaf); // derivative of residual: f'(Ti)
-        newTi = Tleaf + Res/dRes; // newton-rhapson iteration
+        //double Tleaf2= Tair + (R_abs- thermal_air-Lambda*VaporConductance*this->VPD/Press)/(Cp*RadiativeAndHeatConductance+Lambda*Slope(Tair)*VaporConductance); // eqn 14.6a
+        thermal_leaf=epsilon*sbc*pow(lastTi+273,4)*2;
+        Res = R_abs - thermal_leaf - Cp*HeatConductance*(lastTi - Tair) - Lambda*VaporConductance*0.5*(Es(lastTi)-Ea)/Press; // Residual function: f(Ti), KT Paw (1987)
+        dRes= -4*epsilon*sbc*pow(273+lastTi,3)*2-Cp*HeatConductance-0.5*Lambda*VaporConductance*Slope(lastTi); // derivative of residual: f'(Ti)
+        newTi = lastTi - Res/dRes; // newton-rhapson iteration
         iter++;
+        //printf("iter %d newTi %f lastTi %f Res %f dRes %f\n",iter,newTi,lastTi,Res,dRes);
     }
     Tleaf=newTi;
-    
+    //printf("test energy Ta %f Tl %f s %f\n",Tair,Tleaf,Slope(Tair));
+    //exit(0);
     Transpiration =VaporConductance*(Es(Tleaf)-Ea)/Press; //Don't need Lambda - cancels out see eq 14.10 in Campbell and Norman, 1998
     // umol m-2 s-1. note 1000 converts from moles to umol since units of VaporConductance are moles.
     //printf("ml marks flag Tr %f %f %f %f %f %f %f\n",Transpiration,VaporConductance,StomatalConductance,BoundaryLayerConductance,Es(Tleaf),Ea,Tleaf);
 }
+
+//void SiteData::EnergyBalance2()
+//{
+//    const long Lambda = 44000; //latent heat of vaporization of water J mol-1 - not used in this implementation
+//    const double Cp = 29.3; // thermodynamic psychrometer constant and specific hear of air, J mol-1 C-1
+//    const double psc = 6.66e-4; //psycrometric constant units are C-1
+//    //psc=Cp/Lambda = 29.3/44000 See Campbell and Norman, pg 232, after eq 14.11
+//
+//    //The following are secondary variables used in the energy balance
+//    double HeatConductance,  //heat conductance J m-2 s-1
+//    VaporConductance, //vapor conductance ratio of stomatal and heat conductance mol m-2 s-1
+//    RadiativeConductance, //radiative conductance J m-2 s-1
+//    RadiativeAndHeatConductance, //radiative+heat conductance
+//    psc1,  // apparent psychrometer constant Campbell and Norman, page 232 after eq 14.11
+//    Ea,   //ambient vapor pressure kPa
+//    thermal_air; // emitted thermal radiation Watts  m-2
+//    double lastTi, newTi;
+//    int    iter;
+//
+//    HeatConductance = BoundaryLayerConductance*(0.135/0.147);  // heat conductance, HeatConductance = 1.4*.135*sqrt(u/d), u is the wind speed in m/s} Boundary Layer Conductance to Heat
+//    // Since BoundaryLayerConductance is .147*sqrt(u/d) this scales to 0.135*sqrt(u/d) - HeatConductance on page 109 of Campbell and Norman, 1998
+//    // Wind was accounted for in BoundaryLayerConductance already  as BoundaryLayerConductance (turbulent vapor transfer) was calculated from CalcTurbulentVaporConductance() in GasEx.
+//    // units are J m-2 s-1
+//    VaporConductance = StomatalConductance*BoundaryLayerConductance/(StomatalConductance+BoundaryLayerConductance);      //vapor conductance, StomatalConductance is stomatal conductance and is given as gvs in Campbell and Norman.
+//    // note units are moles m-2 s-1.
+//    RadiativeConductance = (4*epsilon*sbc*pow(273+Tair,3)/Cp)*2; // radiative conductance, *2 account for both sides
+//    RadiativeAndHeatConductance = HeatConductance + RadiativeConductance;
+//    thermal_air = epsilon*sbc*pow(Tair+273,4)*2; //Multiply by 2 for both surfaces
+//    psc1 = psc*RadiativeAndHeatConductance/VaporConductance;
+//    this->VPD = Es(Tair)*(1-RH); // vapor pressure deficit Es is saturation vapor pressure at air temperature
+//    // iterative version
+//    newTi=-10;
+//    iter=0;
+//    lastTi=Tleaf;
+//    double Res, dRes; //temporary variables
+//    double thermal_leaf;
+//    Ea = Es(Tair)*RH; // ambient vapor pressure
+//    while ((fabs(lastTi-newTi)>0.001) && (iter <maxiter))
+//    {
+//        lastTi=newTi;
+//        Tleaf= Tair + (R_abs- thermal_air-Lambda*VaporConductance*this->VPD/Press)/(Cp*RadiativeAndHeatConductance+Lambda*Slope(Tair)*VaporConductance); // eqn 14.6a
+//        thermal_leaf=epsilon*sbc*pow(Tleaf+273,4)*2;
+//        Res = R_abs - thermal_leaf - Cp*HeatConductance*(Tleaf - Tair) - Lambda*VaporConductance*0.5*(Es(Tleaf)-Ea)/Press; // Residual function: f(Ti), KT Paw (1987)
+//        dRes= -4*epsilon*sbc*pow(273+Tleaf,3)*2-Cp*HeatConductance*Tleaf-Lambda*VaporConductance*Slope(Tleaf); // derivative of residual: f'(Ti)
+//        newTi = Tleaf + Res/dRes; // newton-rhapson iteration
+//        iter++;
+//        printf("iter %d newTi %f Res %f dRes %f\n",iter,newTi,Res,dRes);
+//    }
+//    Tleaf=newTi;
+//    printf("test energy Ta %f Tl %f s %f\n",Tair,Tleaf,Slope(Tair));
+//    Transpiration =VaporConductance*(Es(Tleaf)-Ea)/Press; //Don't need Lambda - cancels out see eq 14.10 in Campbell and Norman, 1998
+//    // umol m-2 s-1. note 1000 converts from moles to umol since units of VaporConductance are moles.
+//    //printf("ml marks flag Tr %f %f %f %f %f %f %f\n",Transpiration,VaporConductance,StomatalConductance,BoundaryLayerConductance,Es(Tleaf),Ea,Tleaf);
+//}
 
 
 
@@ -501,7 +559,8 @@ double SiteData::CalcTurbulentVaporConductance(void)
     ratio = Square(stomaRatio+1)/(Square(stomaRatio)+1);
     Char_Dim = LfWidth*0.72; // characteristic dimension of a leaf, leaf width in m
     // wind is in m per second
-    return (1.4*0.147*sqrt(fmax(0.1,wind)/Char_Dim))*ratio;
+    //return (1.4*0.147*sqrt(fmax(0.1,wind)/Char_Dim))*ratio;
+    return (1.4*0.147*sqrt(fmax(0.1,wind)/Char_Dim));
     // multiply by 1.4 for outdoor condition, Campbell and Norman (1998), p109, gva
     // multiply by ratio to get the effective blc (per projected area basis), licor 6400 manual p 1-9
 }
