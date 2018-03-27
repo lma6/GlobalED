@@ -97,6 +97,9 @@ struct SiteData {
     ///
     
     bool SetMECHdefault(UserData& data);
+//#if COUPLE_MERRA2_LUT
+    bool SetMERRA2_LUTdefault(UserData& data);
+//#endif
     bool farquhar (double Vmax,double CA, double ta, double ts,double ea, double q, double shade, int C4, double outputs[6]);
     bool farquhar_collatz (double Vmax,double CA, double ta, double ea, double q, double shade, int C4, double outputs[5]);
     bool compute_mech(int pt, int spp,double Vm0,int Vm0_bin, int time_period, int light_index, UserData* data);
@@ -123,6 +126,17 @@ struct SiteData {
 #endif
     
 #if COUPLE_PFTspecific
+
+//#if COUPLE_MERRA2_LUT
+    int is_filled_LUT[N_MERRA2][NSPECIES][N_CLIMATE];
+    float An_LUT[N_MERRA2][NSPECIES][N_CLIMATE][N_bins_LUT_LITE];
+    float Anb_LUT[N_MERRA2][NSPECIES][N_CLIMATE][N_bins_LUT_LITE];
+    float E_LUT[N_MERRA2][NSPECIES][N_CLIMATE][N_bins_LUT_LITE];
+    float Eb_LUT[N_MERRA2][NSPECIES][N_CLIMATE][N_bins_LUT_LITE];
+    float tf_LUT_air[N_MERRA2][NSPECIES][N_CLIMATE];
+    float tf_LUT_soil[N_MERRA2][NSPECIES][N_CLIMATE];
+//#endif
+    
     double light_levels[NSPECIES][N_LIGHT];
     double An[NSPECIES][N_CLIMATE][N_LIGHT];  ///< pot. net photosynthesis (gC/(m2 mo))
     double E[NSPECIES][N_CLIMATE][N_LIGHT];   ///< potential transpitation (gW/(m2 mo))

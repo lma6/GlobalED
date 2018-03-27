@@ -181,11 +181,11 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
        while(currents->sdata->light_levels[spp][light_index] > currentc->lite){
            light_index++;
        }
-#else
+#else //COUPLE_PFTspecific
        while(currents->sdata->light_levels[pt][currentc->Vm0_bin][light_index] > currentc->lite){
            light_index++;
        }
-#endif
+#endif //COUPLE_PFTspecific
        
 //       printf("flag 2 spp %d hite %f light_index %d lite %f \n",spp,currentc->hite,light_index,currentc->lite);
 //       if (light_index==120)
@@ -210,7 +210,6 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
        {
            currents->sdata->compute_mech(pt,spp,currentc->Vm0,currentc->Vm0_bin,time_index,N_LIGHT-1,data);
        }
-       
        currentc->E_pot = currents->sdata->E[spp][time_index][light_index];
        currentc->E_pot *= currentc->leaf_area*N_CLIMATE/1000.0;
        currentc->E_shut = currents->sdata->Eb[spp][time_index][N_LIGHT-1];

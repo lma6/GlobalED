@@ -232,6 +232,12 @@ void initialize_model_params(UserData* data) {
     data->PREMECH         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH");
     data->PREMECH_MERRA2         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH_MERRA2");
     data->PREMECH_avg         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH_avg");
+    
+#if COUPLE_MERRA2
+    data->PREMECH_CO2_avg         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH_CO2_avg");
+    data->PREMECH_CO2         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH_CO2");
+#endif
+    
 #endif
     data->single_year       = get_val<int>(data, MODEL_IO, data->which_mech_to_use, "single_year");   
     data->do_yearly_mech    = get_val<int>(data, MODEL_IO, data->which_mech_to_use, "do_yearly_mech");

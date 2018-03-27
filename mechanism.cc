@@ -112,11 +112,11 @@ void cohort::npp_function(UserData* data){
     while(cs->sdata->light_levels[species][light_index] > lite){
         light_index++;
     }
-#else
+#else //COUPLE_PFTspecific
     while(cs->sdata->light_levels[pt][Vm0_bin][light_index] > lite){
         light_index++;
     }
-#endif
+#endif //COUPLE_PFTspecific
     
    /*PHOTOSYNTHESIS**************************/
    

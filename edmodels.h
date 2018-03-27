@@ -22,18 +22,32 @@
 ////////////////////////////////////////
 //    LAND USE
 ////////////////////////////////////////
-#define LANDUSE 1 ///< Flag to turn on land use dynamics
+#define LANDUSE 0 ///< Flag to turn on land use dynamics
 #define FASTLOAD 1
 #define COUPLE_FAR 1
 #define COUPLE_PFTspecific 1
 #define COUPLE_MERRA2 1
+#define COUPLE_MERRA2_LUT 1
 #define COUPLE_TemAccm 0
 #define CPOUPLE_VcmaxDownreg 0
-#define COUPLE_SepSoilTF 1
-#define INI_Year 1500
+#define INI_Year 791  //In LANDUSE, it should be 1500
 #define N_LAI 6
 #define WT_Abg_PROFILE 1
+#define MERRA2_START 1981
+#define MERRA2_END 2015
 const int LAI_INTERVAL[]={0,1.5,5, 10, 20, 30}; //The elements number should be same as N_LAI
+
+///////////////////////////////////////
+//  MERRA2 35-year cyclically repeat
+////////////////////////////////////////
+//#if COUPLE_MERRA2_LUT
+#define N_bins_LUT_LITE 25
+#define N_bins_LUT_CO2 1
+#define N_MERRA2 MERRA2_END-MERRA2_START+1
+const int LITE_IDX[]={0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120};  //indexes of light level in initial LUT, the number of elements should be equal to N_bins_LUT_LITE
+const float CO2_VALUE[]={280}; //co2 concentration in nittial LUT, the number of elements should be equal to N_bins_LUT_CO2
+//#endif
+
 
 #define FTS 0
 
@@ -226,6 +240,10 @@ struct UserData {
     const char *PREMECH;
     const char *PREMECH_avg;
     const char *PREMECH_MERRA2;
+#if COUPLE_MERRA2
+    const char *PREMECH_CO2_avg;
+    const char *PREMECH_CO2;
+#endif
     
 #endif
     
@@ -368,6 +386,7 @@ struct UserData {
    int mech_c3_file_ncid[NUM_Vm0s];
    int mech_c4_file_ncid[NUM_Vm0s];
    int mechanism_year;           ///<stores the mechanism year to use
+   int MERRA2_timestamp;       ///<stores timestamp in cyclically MERRA2 forcing from MERRA2_START-MERRA2_END, it indicates which year of MERRA2 should be used in given mechanism_year
    char mech_year_string[256];
 
    // Integration structures parameters and coefficients
@@ -532,14 +551,27 @@ struct UserData {
 #endif
     
 #if COUPLE_FAR
+    
+    
+#if COUPLE_MERRA2
+    int is_loadMERRA2[MERRA2_END-MERRA2_START+1];
+    int MERRA2_LUT;
     double global_tmp[288][360][720];
     double global_hum[288][360][720];
     double global_swd[288][360][720];
-    
-#if COUPLE_MERRA2
     double global_windspeed[288][360][720];
-    double global_soiltmp[288][360][720];
-#endif  //COUPLE_MERRA2
+    double global_CO2[288][360][720];
+    double global_soiltmp[288][360][720]; //1st layer in MERRA2 soil tempetature
+    //double global_soiltmp2[288][360][720]; //2nd layer in MERRA2 soil tempetature
+    //double global_soiltmp3[288][360][720]; //3rd layer in MERRA2 soil tempetature
+    //double global_soiltmp4[288][360][720]; //4th layer in MERRA2 soil tempetature
+    //double global_soiltmp5[288][360][720]; //5th layer in MERRA2 soil tempetature
+    //double global_soiltmp6[288][360][720]; //6th layer in MERRA2 soil tempetature
+#else  //COUPLE_MERRA2
+    double global_tmp[288][360][720];
+    double global_hum[288][360][720];
+    double global_swd[288][360][720];
+#endif
     
 #endif //COUPLE_FAR
     
@@ -554,9 +586,23 @@ struct UserData {
     float **k_sat;
     float **tau;
     
+    
+#if COUPLE_MERRA2
+    float ***climate_temp;
+    float ***climate_precip;
+    float ***climate_soil; //average of all layers maybe 5 or 6.
+    float ***climate_soil1; //1st layer
+    float ***climate_soil2; //2nd layer
+    float ***climate_soil3; //3rd layer
+    float ***climate_soil4; //4th layer
+    float ***climate_soil5; //5th layer
+    float ***climate_soil6; //6th layer
+#else
     float ***climate_temp;
     float ***climate_precip;
     float ***climate_soil;
+#endif
+    
     float *light_levels;
     
 #ifndef COUPLE_FAR

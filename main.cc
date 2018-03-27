@@ -363,17 +363,36 @@ void model (UserData& data) {
       // do_yearly_mech is deprecated in favor of FTS
 #if 1
       FILE *namefile;
-      if(data.do_yearly_mech) {
-          if(data.m_int) {
-             if (t > 0 && t%12 == 0) {
+      if(data.do_yearly_mech)
+      {
+          if(data.m_int)
+          {
+             if (t > 0 && t%12 == 0)
+             {
                  size_t i=0;
                  data.mechanism_year = INI_Year+t1;
+                 if (data.mechanism_year<1850)
+                 {
+                     data.MERRA2_LUT=1;
+                 }
+                 else
+                 {
+                     data.MERRA2_LUT=0;
+                 }
                  printf("Mechanism_year_to use: %d\n" , data.mechanism_year);
 #if 1         //Avoid repeating loading climate and mech data before 1900 when use avg climate data
+                 
+#if COUPLE_MERRA2
+                 if (data.mechanism_year>-1000) //loading data for everyear if COUPLE_MERRA2
+                 {
+#else //COUPLE_MERRA2   if not in COUPLE_MERRA2, only loading yearly data after 1900 or in 1st year
                  if ((data.mechanism_year>1900) or (data.mechanism_year==1500))
                  {
+#endif //COUPLE_MERRA2
+                 
 #endif
-                     for (; i< data.num_Vm0;i++) {
+                     for (; i< data.num_Vm0;i++)
+                     {
                          if (data.mech_c3_file_ncid[i]>0)    ncclose(data.mech_c3_file_ncid[i]);
                          if (data.mech_c4_file_ncid[i]>0)   ncclose(data.mech_c4_file_ncid[i]);
                          
@@ -385,10 +404,6 @@ void model (UserData& data) {
                      data.climate_file_ncid =0;
                      
 #if FASTLOAD
-                     
-                     //if (!data.is_site)
-                     //{
-                     //MLreplace
                          printf("Start load Envir\n");
                          loadGlobalEnvironmentData(&data);
                          
@@ -408,7 +423,8 @@ void model (UserData& data) {
                 
 
                      site* siteptr = data.first_site;
-                     while (siteptr != NULL) {
+                     while (siteptr != NULL)
+                     {
                          /* Now we have to read the site data again */
                          siteptr->sdata->readSiteData(data);
                          siteptr = siteptr->next_site;

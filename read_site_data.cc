@@ -776,28 +776,44 @@ bool loadGlobalEnvironmentData(UserData* data)
     char convert[256];
     char climatename[256];
     if (data->do_yearly_mech) {
-        if (data->m_int) {
-            if (data->mechanism_year>1900) {
-                if (COUPLE_MERRA2 && data->mechanism_year>1981)
-                {
-                    sprintf(convert, "%s%d", base, data->mechanism_year);
-                    strcpy(climatename, data->climate_file_MERRA2);
-                    strcat(climatename, convert);
-                    strcat(climatename, nc);
-                    printf("Loading Environmental data from MERRA2\n");
-                }
-                else
-                {
-                    sprintf(convert, "%s%d", base, data->mechanism_year);
-                    strcpy(climatename, data->climate_file);
-                    strcat(climatename, convert);
-                    strcat(climatename, nc);
-                    printf("Loading Environmental data from CRUNCEP\n");
-                }
+        if (data->m_int)
+        {
+#if COUPLE_MERRA2
+            //Currently, using Cyclically repeat the MERRA2 meteorology of 1981-2015 before MERRA2_START, then use actual forcing.
+            //As the length of time doman is not integral multiple of length of MERRA2 forcing, so the first year in simulation
+            //may start from a certain point (i.e. MERRA2_timestamp_mod) to make sure that when run to MERRA2_START year, the actual
+            //annual MERRA2 forcing will be used
+            
+            if (data->mechanism_year<MERRA2_START) //If simulation just start, using MERRA2_timestamp is MERRA2_timestamp_mod
+            {
+                data->MERRA2_timestamp=(MERRA2_END-MERRA2_START+1)-(MERRA2_START-1-data->mechanism_year)%(MERRA2_END-MERRA2_START+1);
             }
-            else{
+            else //Otherwise, MERRA2_timestamp jumpt to next year
+            {
+                data->MERRA2_timestamp=data->mechanism_year-MERRA2_START+1;
+            }
+            
+            printf("test in loadGlobalEnvironmentData mechanism_year %d MERRA2_timestamp %d\n",data->mechanism_year,data->MERRA2_timestamp);
+            sprintf(convert, "%s%d", base, data->MERRA2_timestamp+MERRA2_START-1);
+            strcpy(climatename, data->climate_file_MERRA2);
+            strcat(climatename, convert);
+            strcat(climatename, nc);
+            printf("Loading Environmental data from MERRA2\n");
+            
+#else
+            if (data->mechanism_year>1900)
+            {
+                sprintf(convert, "%s%d", base, data->mechanism_year);
+                strcpy(climatename, data->climate_file);
+                strcat(climatename, convert);
+                strcat(climatename, nc);
+                printf("Loading Environmental data from CRUNCEP\n");
+            }
+            else
+            {
                 strcpy(climatename, data->climate_file_avg);
             }
+#endif  //end COUPLE_MERRA2
         }
         
         if(data->m_string) {
@@ -834,6 +850,7 @@ bool loadGlobalEnvironmentData(UserData* data)
     
     if (data->climate_precip==NULL)
     {
+        printf("Start allocate climate_precip\n");
         data->climate_precip=malloc_3d_float(N_CLIMATE,360,720);
     }
     else
@@ -843,6 +860,7 @@ bool loadGlobalEnvironmentData(UserData* data)
     
     if (data->climate_soil==NULL)
     {
+        printf("Start allocate climate_soil\n");
         data->climate_soil=malloc_3d_float(N_CLIMATE,360,720);
     }
     else
@@ -864,16 +882,141 @@ bool loadGlobalEnvironmentData(UserData* data)
         NCERR("temp", rv);
     }
     
-    if ((rv = nc_inq_varid(ncid, "soil_temp", &varid))) {
-        // if no soil_temp, default to air temp
-        printf("no soil_temp, default to air temp\n");
-        if ((rv = nc_inq_varid(ncid, "temperature", &varid))) {
-            NCERR("soil_temp", rv);
+#if COUPLE_MERRA2
+    //reading 1st soil_temp
+    if (data->climate_soil1==NULL)
+    {
+        printf("Start allocate climate_soil1\n");
+        data->climate_soil1=malloc_3d_float(N_CLIMATE,360,720);
+    }
+    else
+    {
+        reset_3d_float(data->climate_soil1,N_CLIMATE,360,720);
+    }
+    if ((rv = nc_inq_varid(ncid, "soil_temp1", &varid))) {
+        NCERR("soil_temp1", rv);
+    }
+    if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->climate_soil1[0][0][0]))) {
+        NCERR("soil_temp1", rv);
+    }
+    //reading 2nd soil_temp
+    if (data->climate_soil2==NULL)
+    {
+        printf("Start allocate climate_soil2\n");
+        data->climate_soil2=malloc_3d_float(N_CLIMATE,360,720);
+    }
+    else
+    {
+        reset_3d_float(data->climate_soil2,N_CLIMATE,360,720);
+    }
+    if ((rv = nc_inq_varid(ncid, "soil_temp2", &varid))) {
+        NCERR("soil_temp2", rv);
+    }
+    if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->climate_soil2[0][0][0]))) {
+        NCERR("soil_temp2", rv);
+    }
+    //reading 3rd soil_temp
+    if (data->climate_soil3==NULL)
+    {
+        printf("Start allocate climate_soil3\n");
+        data->climate_soil3=malloc_3d_float(N_CLIMATE,360,720);
+    }
+    else
+    {
+        reset_3d_float(data->climate_soil3,N_CLIMATE,360,720);
+    }
+    if ((rv = nc_inq_varid(ncid, "soil_temp3", &varid))) {
+        NCERR("soil_temp3", rv);
+    }
+    if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->climate_soil3[0][0][0]))) {
+        NCERR("soil_temp3", rv);
+    }
+    //reading 4th soil_temp
+    if (data->climate_soil4==NULL)
+    {
+        printf("Start allocate climate_soil4\n");
+        data->climate_soil4=malloc_3d_float(N_CLIMATE,360,720);
+    }
+    else
+    {
+        reset_3d_float(data->climate_soil4,N_CLIMATE,360,720);
+    }
+    if ((rv = nc_inq_varid(ncid, "soil_temp4", &varid))) {
+        NCERR("soil_temp4", rv);
+    }
+    if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->climate_soil4[0][0][0]))) {
+        NCERR("soil_temp4", rv);
+    }
+    //reading 5th soil_temp
+    if (data->climate_soil5==NULL)
+    {
+        printf("Start allocate climate_soil5\n");
+        data->climate_soil5=malloc_3d_float(N_CLIMATE,360,720);
+    }
+    else
+    {
+        reset_3d_float(data->climate_soil5,N_CLIMATE,360,720);
+    }
+    if ((rv = nc_inq_varid(ncid, "soil_temp5", &varid))) {
+        NCERR("soil_temp5", rv);
+    }
+    if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->climate_soil5[0][0][0]))) {
+        NCERR("soil_temp5", rv);
+    }
+    //reading 6th soil_temp
+//    if (data->climate_soil6==NULL)
+//    {
+//        printf("Start allocate climate_soil6\n");
+//        data->climate_soil6=malloc_3d_float(N_CLIMATE,360,720);
+//    }
+//    else
+//    {
+//        reset_3d_float(data->climate_soil6,N_CLIMATE,360,720);
+//    }
+//    if ((rv = nc_inq_varid(ncid, "soil_temp6", &varid))) {
+//        NCERR("soil_temp6", rv);
+//    }
+//    if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->climate_soil6[0][0][0]))) {
+//        NCERR("soil_temp6", rv);
+//    }
+    //Take a average of 5 layers
+    printf("Statt taking average %f\n",data->climate_soil1[0][0][0]);
+    for (size_t ilat=0;ilat<360;ilat++)
+    {
+        for (size_t ilon=0;ilon<720;ilon++)
+        {
+            if (data->climate_soil1[0][ilat][ilon]>-274)
+            {
+                for (size_t t=0;t<N_CLIMATE;t++)
+                {
+                    data->climate_soil[t][ilat][ilon]+=data->climate_soil1[t][ilat][ilon];
+                    data->climate_soil[t][ilat][ilon]+=data->climate_soil2[t][ilat][ilon];
+                    data->climate_soil[t][ilat][ilon]+=data->climate_soil3[t][ilat][ilon];
+                    data->climate_soil[t][ilat][ilon]+=data->climate_soil4[t][ilat][ilon];
+                    data->climate_soil[t][ilat][ilon]+=data->climate_soil5[t][ilat][ilon];
+                    data->climate_soil[t][ilat][ilon]/=5.0;
+                }
+            }
+            else
+            {
+                for (size_t t=0;t<N_CLIMATE;t++)
+                {
+                    data->climate_soil[t][ilat][ilon]=-9999.0;
+                }
+            }
         }
+    }
+    printf("End taking average\n");
+#else
+    if ((rv = nc_inq_varid(ncid, "temperature", &varid))) {
+        NCERR("temperature", rv);
     }
     if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->climate_soil[0][0][0]))) {
         NCERR("soil_temp", rv);
     }
+#endif
+    
+    
     ncclose(data->climate_file_ncid);
     data->climate_file_ncid=0;
     
@@ -1220,39 +1363,78 @@ bool loadGlobalMechanismLUT(UserData* data)
 #if COUPLE_FAR
 bool loadPREMECH (UserData* data)
 {
-    char premech[256], tairname[256], swname[256];
-    int rv,ncid,varid;
+    char premech_clim[256],premech_co2[256], tairname[256], swname[256];
+    int rv,ncid,varid,ncid_co2,varid_co2;
     
     size_t index3[3] = { 0, 0, 0 };
     size_t count3[3]  = {288, 360, 720 };
     
-    if (data->mechanism_year>1900) {
-        if (COUPLE_MERRA2 && data->mechanism_year>1981)
-        {
-            strcpy(premech, data->PREMECH_MERRA2);
-            sprintf(premech, "%s%d", premech, data->mechanism_year);
-            strcat(premech, ".nc");
-            printf("Loading premech file from MERRA2 %s\n",premech);
-        }
-        else
-        {
-            strcpy(premech, data->PREMECH);
-            sprintf(premech, "%s%d", premech, data->mechanism_year);
-            strcat(premech, ".nc");
-            printf("Loading premech file from CRUNCEP %s\n",premech);
-        }
+    
+#if COUPLE_MERRA2
+    //Currently, using Cyclically repeat the MERRA2 meteorology of 1981-2015 before MERRA2_START, then use actual forcing.
+    //As the length of time doman is not integral multiple of length of MERRA2 forcing, so the first year in simulation
+    //may start from a certain point (i.e. MERRA2_timestamp_mod) to make sure that when run to MERRA2_START year, the actual
+    //annual MERRA2 forcing will be used
+    
+    if (data->mechanism_year<MERRA2_START) //If simulation just start, using MERRA2_timestamp is MERRA2_timestamp_mod
+    {
+        data->MERRA2_timestamp=(MERRA2_END-MERRA2_START+1)-(MERRA2_START-1-data->mechanism_year)%(MERRA2_END-MERRA2_START+1);
     }
-    else{
-        strcpy(premech, data->PREMECH_avg);
+    else //Otherwise, MERRA2_timestamp jumpt to next year
+    {
+        data->MERRA2_timestamp=data->mechanism_year-MERRA2_START+1;
     }
     
-    if ((rv = nc_open(premech, NC_NOWRITE, &ncid))){
-        NCERR(premech, rv);
+    printf("test in loadGlobalEnvironmentData mechanism_year %d MERRA2_timestamp %d\n",data->mechanism_year,data->MERRA2_timestamp);
+    strcpy(premech_clim, data->PREMECH_MERRA2);
+    sprintf(premech_clim, "%s%d", premech_clim, data->MERRA2_timestamp+MERRA2_START-1);
+    strcat(premech_clim, ".nc");
+    printf("Loading premech file from MERRA2 %s\n",premech_clim);
+    
+    if(data->mechanism_year<=2000) //before 2001, using average climatology co2 and scaling factor
+    {
+        strcpy(premech_co2, data->PREMECH_CO2_avg);
+        printf("Loading CO2 premech file from MERRA2 %s\n",premech_co2);
+    }
+    else if (data->mechanism_year>2000 and data->mechanism_year<2015)//After 2001 but before 2015, use actual data
+    {
+        strcpy(premech_co2, data->PREMECH_CO2);
+        sprintf(premech_co2, "%s%d", premech_co2, data->mechanism_year);
+        strcat(premech_co2, ".nc");
+        printf("Loading CO2 premech file from MERRA2 %s\n",premech_co2);
+    }
+    else //After 2014, using 2014
+    {
+        strcpy(premech_co2, data->PREMECH_CO2);
+        sprintf(premech_co2, "%s%d", premech_co2, 2014);
+        strcat(premech_co2, ".nc");
+        printf("Loading CO2 premech file from MERRA2 %s\n",premech_co2);
+    }
+    
+#else
+    if (data->mechanism_year>1900)
+    {
+        strcpy(premech_clim, data->PREMECH);
+        sprintf(premech_clim, "%s%d", premech_clim, data->mechanism_year);
+        strcat(premech_clim, ".nc");
+        printf("Loading premech file from CRUNCEP %s\n",premech_clim);
+    }
+    else
+    {
+        strcpy(premech_clim, data->PREMECH_avg);
+    }
+#endif
+    
+    if ((rv = nc_open(premech_clim, NC_NOWRITE, &ncid))){
+        NCERR(premech_clim, rv);
     }
     else{
         data->premech_file_ncid = ncid;
     }
     
+    if ((rv = nc_open(premech_co2, NC_NOWRITE, &ncid_co2))){
+        NCERR(premech_co2, rv);
+    }
 //    if ((rv = nc_inq_varid(ncid, "temperature", &varid))) NCERR("temperature", rv);
 //    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("temperature", rv);
 //
@@ -1264,45 +1446,20 @@ bool loadPREMECH (UserData* data)
     
     
 #if COUPLE_MERRA2
-    if (data->mechanism_year>1981)
-    {
-        if ((rv = nc_inq_varid(ncid, "AirTemp", &varid))) NCERR("AirTemp", rv);
-        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("AirTemp", rv);
-        
-        if ((rv = nc_inq_varid(ncid, "specific_humidity", &varid))) NCERR("specific_humidity", rv);
-        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_hum[0][0][0]))) NCERR("specific_humidity", rv);
-        
-        if ((rv = nc_inq_varid(ncid, "swdown", &varid))) NCERR("swdown", rv);
-        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_swd[0][0][0]))) NCERR("swdown", rv);
-        
-        if ((rv = nc_inq_varid(ncid, "wind", &varid))) NCERR("wind", rv);
-        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_windspeed[0][0][0]))) NCERR("wind", rv);
-        
-        if ((rv = nc_inq_varid(ncid, "SoilTemp", &varid))) NCERR("SoilTemp", rv);
-        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_soiltmp[0][0][0]))) NCERR("SoilTemp", rv);
-    }
-    else
-    {
-        if ((rv = nc_inq_varid(ncid, "temperature", &varid))) NCERR("temperature", rv);
-        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("temperature", rv);
-        
-        if ((rv = nc_inq_varid(ncid, "specific_humidity", &varid))) NCERR("specific_humidity", rv);
-        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_hum[0][0][0]))) NCERR("specific_humidity", rv);
-        
-        if ((rv = nc_inq_varid(ncid, "swdown", &varid))) NCERR("swdown", rv);
-        if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_swd[0][0][0]))) NCERR("swdown", rv);
-    }
-#else
-    if ((rv = nc_inq_varid(ncid, "temperature", &varid))) NCERR("temperature", rv);
-    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("temperature", rv);
+    if ((rv = nc_inq_varid(ncid, "AirTemp", &varid))) NCERR("AirTemp", rv);
+    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("AirTemp", rv);
     
     if ((rv = nc_inq_varid(ncid, "specific_humidity", &varid))) NCERR("specific_humidity", rv);
     if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_hum[0][0][0]))) NCERR("specific_humidity", rv);
     
     if ((rv = nc_inq_varid(ncid, "swdown", &varid))) NCERR("swdown", rv);
     if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_swd[0][0][0]))) NCERR("swdown", rv);
-#endif
     
+    if ((rv = nc_inq_varid(ncid, "wind", &varid))) NCERR("wind", rv);
+    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_windspeed[0][0][0]))) NCERR("wind", rv);
+    
+    if ((rv = nc_inq_varid(ncid, "SoilTemp", &varid))) NCERR("SoilTemp", rv);
+    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_soiltmp[0][0][0]))) NCERR("SoilTemp", rv);
     for (size_t mon=0;mon<288;mon++)
     {
         for (size_t lat_n=0;lat_n<360;lat_n++)
@@ -1315,6 +1472,34 @@ bool loadPREMECH (UserData* data)
             }
         }
     }
+    
+    //load spatial CO2 data
+    if ((rv = nc_inq_varid(ncid_co2, "co2_ambient", &varid_co2))) NCERR("co2_ambient", rv);
+    if ((rv = nc_get_vara_double(ncid_co2, varid_co2, index3, count3, &data->global_CO2[0][0][0]))) NCERR("co2_ambient", rv);
+#else
+    if ((rv = nc_inq_varid(ncid, "temperature", &varid))) NCERR("temperature", rv);
+    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("temperature", rv);
+    
+    if ((rv = nc_inq_varid(ncid, "specific_humidity", &varid))) NCERR("specific_humidity", rv);
+    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_hum[0][0][0]))) NCERR("specific_humidity", rv);
+    
+    if ((rv = nc_inq_varid(ncid, "swdown", &varid))) NCERR("swdown", rv);
+    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_swd[0][0][0]))) NCERR("swdown", rv);
+    for (size_t mon=0;mon<288;mon++)
+    {
+        for (size_t lat_n=0;lat_n<360;lat_n++)
+        {
+            for (size_t lon_n=0;lon_n<720;lon_n++)
+            {
+                if (data->global_tmp[mon][lat_n][lon_n]>0) data->global_tmp[mon][lat_n][lon_n]-=273.2;
+                if (data->global_soiltmp[mon][lat_n][lon_n]>0) data->global_soiltmp[mon][lat_n][lon_n]-=273.2;
+                if (data->global_hum[mon][lat_n][lon_n]>0) data->global_hum[mon][lat_n][lon_n]=data->global_hum[mon][lat_n][lon_n]*28.96/18.02;
+            }
+        }
+    }
+#endif
+    
+    
     rv = nc_close(ncid);
     return true;
 }
@@ -1421,13 +1606,18 @@ bool SiteData::readSiteData (UserData& data) {
     if (!SetMECHdefault(data)) {
         return false;
     }
+    
+//#if COUPLE_MERRA2_LUT
+    if (! SetMERRA2_LUTdefault(data) ) {
+        return false;
+    }
+//#endif //COUPLE_MERRA2_LUT
+    
 #else
    if (! readMechanismLUT(data) ) {
          return false;
    }
 #endif
-    
-
 #elif defined MIAMI_LU
    // calculate miami npp
    miami_npp = miami(precip_average, temp_average);
@@ -2149,7 +2339,7 @@ bool SiteData::SetMECHdefault(UserData& data)
             light_levels[spp][N_LIGHT-1]=0;
         }
     }
-#else
+#else //COUPLE_PFTspecific
     for (size_t i=0;i<data.num_Vm0;i++)
     {
         for (size_t pt=0;pt<PT;pt++)
@@ -2170,12 +2360,38 @@ bool SiteData::SetMECHdefault(UserData& data)
             }
         }
     }
-#endif
-    
-
+#endif //COUPLE_PFTspecific
     return true;
 }
-#endif
+//#if COUPLE_MERRA2_LUT
+bool SiteData::SetMERRA2_LUTdefault(UserData& data)
+{
+    for (size_t merra2_i=0;merra2_i<N_MERRA2;merra2_i++)
+    {
+        for (size_t mon=0;mon<N_CLIMATE;mon++)
+        {
+            for (size_t spp=0;spp<NSPECIES;spp++)
+            {
+                if(1-is_filled_LUT[merra2_i][spp][mon])
+                {
+                    for (size_t lite_i=0;lite_i<N_bins_LUT_LITE;lite_i++)
+                    {
+                        An_LUT[merra2_i][spp][mon][lite_i]=-9999.0;
+                        Anb_LUT[merra2_i][spp][mon][lite_i]=-9999.0;
+                        E_LUT[merra2_i][spp][mon][lite_i]=-9999.0;
+                        Eb_LUT[merra2_i][spp][mon][lite_i]=-9999.0;
+                    }
+                    tf_LUT_air[merra2_i][spp][mon]=-9999.0;
+                    tf_LUT_soil[merra2_i][spp][mon]=-9999.0;
+                }
+            }
+        }
+    }
+    return true;
+}
+//#endif //COUPLE_MERRA2_LUT
+
+#endif //COUPLE_FAR
 
 ////////////////////////////////////////////////////////////////////////////////
 //! calcPETMonthly

@@ -135,8 +135,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
     double farquhar_results[6];
     double shade=0;
     double Vcmax25=Vm0;
-    double CA=350.0/1e6;
-    double CO2=CA*1e6,windspeed=0,Pa=101.3,Tg=25.0,Ts=0;
+    double tmp=0,hum=0,swd=0,windspeed=0,CO2=0,Pa=101.3,Tg=25.0,Ts=0;
     
 #if COUPLE_PFTspecific
     shade=light_levels[spp][light_index];
@@ -180,135 +179,209 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
 
 //    exit(0);
     
+//#if COUPLE_MERRA2_LUT
+    if(data->MERRA2_LUT)
+    {
+    if (1-is_filled_LUT[data->MERRA2_timestamp-1][spp][time_period])  ////if MECH LUT has not been computed before
+    {
+        //Compute for all co2 and light combination
+        double tmp_airtemp=0,tmp_soiltemp=0,tmp_hum=0,tmp_swd=0,tmp_windspeed=0,tmp_co2=0,tmp_shade=0;
+        for (size_t lite_i=0;lite_i<N_bins_LUT_LITE;lite_i++)
+        {
+            double tmp_An=0,tmp_Anb=0,tmp_E=0,tmp_Eb=0,tmp_tf_air=0,tmp_tf_soil=0;
+            for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
+            {
+                tmp_airtemp=data->global_tmp[mon][globY_][globX_];
+                tmp_hum=data->global_hum[mon][globY_][globX_];
+                tmp_swd=data->global_swd[mon][globY_][globX_];
+                tmp_windspeed=data->global_windspeed[mon][globY_][globX_];
+                tmp_soiltemp=data->global_soiltmp[mon][globY_][globX_];
+                if(data->mechanism_year<1850)
+                    tmp_co2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
+                else if(data->mechanism_year>=1850 and data->mechanism_year<1950)
+                    tmp_co2=(280.0+0.314*(data->mechanism_year-1850))/390.0*data->global_CO2[mon][globY_][globX_];
+                else if(data->mechanism_year>=1950 and data->mechanism_year<2001)
+                    tmp_co2=(311+1.290*(data->mechanism_year-1950))/390.0*data->global_CO2[mon][globY_][globX_];
+                else
+                    tmp_co2=data->global_CO2[mon][globY_][globX_];
+                
+                tmp_shade=light_levels[spp][LITE_IDX[lite_i]];
+                
+                double tmp_Tg=0;
+                for (size_t mon1=time_period*24;mon1<time_period*24+24;mon1++)
+                {
+                    tmp_Tg+=data->global_tmp[mon1][globY_][globX_];
+                }
+                tmp_Tg/=24.0;
+                
+                Farquhar_couple(pt,spp,data,tmp_airtemp,tmp_soiltemp,tmp_hum,tmp_swd,tmp_Tg,tmp_co2,tmp_windspeed,Pa,tmp_shade,Vcmax25,farquhar_results);
+                
+                tmp_tf_air+=farquhar_results[0];
+                tmp_tf_soil+=farquhar_results[5];
+                tmp_An+=farquhar_results[1];
+                tmp_E+=farquhar_results[2];
+                tmp_Anb+=farquhar_results[3];
+                tmp_Eb+=farquhar_results[4];
+            }
+            tf_LUT_air[data->MERRA2_timestamp-1][spp][time_period]=tmp_tf_air/24.0;
+            tf_LUT_soil[data->MERRA2_timestamp-1][spp][time_period]=tmp_tf_soil/24.0;
+            An_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_An*3600.0*360.0;
+            E_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_E*3600.0*540.0;
+            Anb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_Anb*3600.0*360.0;
+            Eb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_Eb*3600.0*540.0;
+        }
+        //flag for this spp at MERRA2_timestamp and time_period, avoid repeating computation
+        is_filled_LUT[data->MERRA2_timestamp-1][spp][time_period]=1;
+        printf("Finished computing of LUT lat %d lon %d mechyear %d timestamp %d mon %d spp %d co2 %f \n",globY_,globX_,data->mechanism_year,data->MERRA2_timestamp-1,time_period,spp,tmp_co2);
+        //exit(0);
+    }
+    if (An_LUT[data->MERRA2_timestamp-1][spp][time_period][0]<-1000)
+    {
+        printf("Error in An_LUT initilization\n");
+        exit(0);
+    }
+    int lite_i=0,lite_i_1=0; //co2_i_1 and co2_i are left and right points for linear interpolation, same to lite_i and lite_i_1
+    while (LITE_IDX[lite_i]<=light_index and lite_i<N_bins_LUT_LITE)
+    {
+        lite_i++;
+    }
+    if (lite_i==0) lite_i_1=0;  else    lite_i_1=lite_i-1;
+    double weight_lite=(LITE_IDX[lite_i]-light_index)/(LITE_IDX[lite_i]-LITE_IDX[lite_i-1]);
+    An[spp][time_period][light_index]=weight_lite*An_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
+                                    +(1-weight_lite)*An_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
     
-        
+    Anb[spp][time_period][light_index]=weight_lite*Anb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
+                                        +(1-weight_lite)*Anb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
+    
+    E[spp][time_period][light_index]=weight_lite*E_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
+                                    +(1-weight_lite)*E_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
+    
+    Eb[spp][time_period][light_index]=weight_lite*Eb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
+                                    +(1-weight_lite)*Eb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
+    
+    tf_air[spp][time_period]=tf_LUT_air[data->MERRA2_timestamp-1][spp][time_period];
+    tf_soil[spp][time_period]=tf_LUT_soil[data->MERRA2_timestamp-1][spp][time_period];
+
+//#else  //COUPLE_MERRA2_LUT
+    }
+        else
+        {
 #if COUPLE_PFTspecific
     for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
     {
 
-        
 #if COUPLE_MERRA2
-        if(data->global_windspeed[mon][globY_][globX_]>0)
-        {
-            windspeed=data->global_windspeed[mon][globY_][globX_];
-        }
-        else
-        {
-            windspeed=4;
-        }
+        tmp=data->global_tmp[mon][globY_][globX_];
+        hum=data->global_hum[mon][globY_][globX_];
+        swd=data->global_swd[mon][globY_][globX_];
+        windspeed=data->global_windspeed[mon][globY_][globX_];
+        Ts=data->global_soiltmp[mon][globY_][globX_];
         
-#if COUPLE_SepSoilTF
-        if (data->mechanism_year>1981)
-            Ts=data->global_soiltmp[mon][globY_][globX_];
+        if(data->mechanism_year<1850)
+            CO2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
+        else if(data->mechanism_year>=1850 and data->mechanism_year<1950)
+            CO2=(280.0+0.314*(data->mechanism_year-1850))/390.0*data->global_CO2[mon][globY_][globX_];
+        else if(data->mechanism_year>=1950 and data->mechanism_year<2001)
+            CO2=(311+1.290*(data->mechanism_year-1950))/390.0*data->global_CO2[mon][globY_][globX_];
         else
-            Ts=data->global_tmp[mon][globY_][globX_];
-#else
-        Ts=data->global_tmp[mon][globY_][globX_];
-#endif //COUPLE_SepSoilTF
-        
-#else
+            CO2=data->global_CO2[mon][globY_][globX_];
+#else  //else COUPLE_MERRA2
+        tmp=data->global_tmp[mon][globY_][globX_];
+        hum=data->global_hum[mon][globY_][globX_];
+        swd=data->global_swd[mon][globY_][globX_];
         windspeed=4;
-        Ts=data->global_tmp[mon][globY_][globX_];
+        Ts=(data->global_soiltmp[mon][globY_][globX_];
+        CO2=350;
 #endif  //COUPLE_MERRA2
-        
-        //As growth temperature defined in Lombardozzi et all 2015 and Atkin et al 2008 is the preceding 10 days running mean of air temperature, here for simplicity, use mean temperature of current month
-        Tg=0;
-        for (size_t mon1=time_period*24;mon1<time_period*24+24;mon1++)
-        {
-            Tg+=data->global_tmp[mon1][globY_][globX_];
-        }
-        Tg/=24.0;
-        
-        ////Currently, ambient CO2 concentration is 350 umol
-        //farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],Ts,data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],shade,pt,farquhar_results);
-        
-        Farquhar_couple(pt,spp,data,data->global_tmp[mon][globY_][globX_],Ts,data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
-        
-        
-        tf_air[spp][time_period]+=farquhar_results[0];
-        tf_soil[spp][time_period]+=farquhar_results[5];
-        An[spp][time_period][light_index]+=farquhar_results[1];
-        E[spp][time_period][light_index]+=farquhar_results[2];
-        Anb[spp][time_period][light_index]+=farquhar_results[3];
-        Eb[spp][time_period][light_index]+=farquhar_results[4];
-        
-//        double hum1=0,swd1=0,tmp1=0;
-//        for (size_t tp=0;tp<12;tp++)
-//        {
-//        Tg=0;
-//        for (size_t mon1=tp*24;mon1<tp*24+24;mon1++)
-//        {
-//            Tg+=data->global_tmp[mon1][globY_][globX_];
-//        }
-//        Tg/=24.0;
-//        double hum1=0,swd1=0,tmp1=0;
-//        for (size_t mon2=tp*24;mon2<tp*24+24;mon2++)
-//        {
-//            hum1=data->global_hum[mon2][86][162];
-//            swd1=data->global_swd[mon2][86][162];
-//            tmp1=data->global_tmp[mon2][86][162];
-//            Farquhar_couple(0,4,data,tmp1,tmp1,hum1,swd1,Tg,400,windspeed,Pa,1,20,farquhar_results);
-//            printf("mon %d hr %d pt %d t %f e %f swd %f ws %f Tg %f An %f Anb %f E %f Eb %f\n",tp,mon2,pt,tmp1,hum1,swd1,windspeed,Tg,farquhar_results[1]*1e6,farquhar_results[3]*1e6,farquhar_results[2]*1e6,farquhar_results[4]*1e6);
-//        }
-//    }
-//        exit(0);
-        
-//        if (spp==4 && globY_==86 && globX_==162)
-//        {
-//            printf("mon %d y %d x %d tmp %f hum %f swd %f shade %f ",mon,globY_,globX_,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],shade);
-//
-//            printf("An %f Anb %f E %f Eb %f\n",farquhar_results[1]*1e6,farquhar_results[3]*1e6,farquhar_results[2]*1e6,farquhar_results[4]*1e6);
-        //}
-        
-//        printf("mon %d y %d x %d tmp %f hum %f swd %f shade %f ",mon,globY_,globX_,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],shade);
-//        printf("An %f Anb %f E %f Eb %f\n",farquhar_results[1]*1e6,farquhar_results[3]*1e6,farquhar_results[2]*1e6,farquhar_results[4]*1e6);
-//        }
-        //exit(0);
-    }
-//    if (time_period==5 && spp==4 && globY_==86 && globX_==162)
-//    {
-//        printf("spp %d t %d lite %d An %f Anb %f E %f Eb %f\n",spp,time_period,light_index,An[spp][time_period][light_index],Anb[spp][time_period][light_index],E[spp][time_period][light_index],Eb[spp][time_period][light_index]);
-//        exit(0);
-//    }
-    
-    
-    tf_air[spp][time_period]/=24.0;
-    tf_soil[spp][time_period]/=24.0;
-    An[spp][time_period][light_index]*=3600.0*360.0;
-    E[spp][time_period][light_index]*=3600.0*540.0;
-    Anb[spp][time_period][light_index]*=3600.0*360.0;
-    Eb[spp][time_period][light_index]*=3600.0*540.0;
-    
-    //printf("spp %d light_idx %d shade %f An %f E %f Eb %f\n",spp,light_index,shade,An[spp][time_period][light_index],E[spp][time_period][light_index]);
+            
+            //As growth temperature defined in Lombardozzi et all 2015 and Atkin et al 2008 is the preceding 10 days running mean of air temperature, here for simplicity, use mean temperature of current month
+            Tg=0;
+            for (size_t mon1=time_period*24;mon1<time_period*24+24;mon1++)
+            {
+                Tg+=data->global_tmp[mon1][globY_][globX_];
+            }
+            Tg/=24.0;
+            
+            ////Currently, ambient CO2 concentration is 350 umol
+            //farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],Ts,data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],shade,pt,farquhar_results);
+            
+            Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
+            
+            tf_air[spp][time_period]+=farquhar_results[0];
+            tf_soil[spp][time_period]+=farquhar_results[5];
+            An[spp][time_period][light_index]+=farquhar_results[1];
+            E[spp][time_period][light_index]+=farquhar_results[2];
+            Anb[spp][time_period][light_index]+=farquhar_results[3];
+            Eb[spp][time_period][light_index]+=farquhar_results[4];
+            
+//            double hum1=0,swd1=0,tmp1=0,shade1=0;
+//            int mon2=5,lati=0,loni=0;
+//            clock_t begin = clock();
+//            for(lati=0;lati<360;lati++)
+//            {
+//                for(loni=0;loni<720;loni++)
+//                {
+//                    for(mon2=0;mon2<12;mon2++)
+//                    {
+//                        for(shade1=1.0;shade1>=0;shade1-=0.05)
+//                        {
+//                            for (size_t co21=280;co21<400;co21+=20)
+//                            {
+//                                hum1=data->global_hum[mon2][lati][loni];
+//                                swd1=data->global_swd[mon2][lati][loni];
+//                                tmp1=data->global_tmp[mon2][lati][loni];
+//                                Farquhar_couple(0,4,data,tmp1,tmp1,hum1,swd1,Tg,co21,windspeed,Pa,shade1,20,farquhar_results);
+//                                //printf("co21 %d hr %d pt %d t %f e %f swd %f ws %f Tg %f An %f Anb %f E %f Eb %f\n",co21,mon2,pt,tmp1,hum1,swd1,windspeed,Tg,farquhar_results[1]*1e6,farquhar_results[3]*1e6,farquhar_results[2]*1e6,farquhar_results[4]*1e6);
+//                                //printf("lat %d lon %d co21 %d hr %d\n",lati,loni,co21,mon2);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//            clock_t end = clock();
+//            double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+//            printf("totaltime %f\n",elapsed_secs);
+//            exit(0);
+            }
+            
+            tf_air[spp][time_period]/=24.0;
+            tf_soil[spp][time_period]/=24.0;
+            An[spp][time_period][light_index]*=3600.0*360.0;
+            E[spp][time_period][light_index]*=3600.0*540.0;
+            Anb[spp][time_period][light_index]*=3600.0*360.0;
+            Eb[spp][time_period][light_index]*=3600.0*540.0;
+            printf("Finished cal actual lat %d lon %d mechyear %d timestamp %d co2 %f\n",globY_,globX_,data->mechanism_year,data->MERRA2_timestamp-1,time_period,spp,CO2);
 #else
-    for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
-    {
-        //Currently, ambient CO2 concentration is 350 umol
-//                farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],
-//        data->global_hum[mon][globY_][globX_],
-//        data->global_swd[mon][globY_][globX_],
-//        shade,pt,farquhar_results);
-        
-        
-        Farquhar_couple(pt,spp,data,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
-        
-        tf_air[pt][Vm0_bin][time_period]+=farquhar_results[0];
-        tf_soil[pt][Vm0_bin][time_period]+=farquhar_results[0];
-        An[pt][Vm0_bin][time_period][light_index]+=farquhar_results[1];
-        E[pt][Vm0_bin][time_period][light_index]+=farquhar_results[2];
-        Anb[pt][Vm0_bin][time_period][light_index]+=farquhar_results[3];
-        Eb[pt][Vm0_bin][time_period][light_index]+=farquhar_results[4];
-    }
-    tf_air[pt][Vm0_bin][time_period]/=24.0;
-    tf_soil[pt][Vm0_bin][time_period]/=24.0;
-    An[pt][Vm0_bin][time_period][light_index]*=3600.0*360.0;
-    E[pt][Vm0_bin][time_period][light_index]*=3600.0*540.0;
-    Anb[pt][Vm0_bin][time_period][light_index]*=3600.0*360.0;
-    Eb[pt][Vm0_bin][time_period][light_index]*=3600.0*540.0;
-#endif
-        
-
-
+            for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
+            {
+                //Currently, ambient CO2 concentration is 350 umol
+                //                farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],
+                //        data->global_hum[mon][globY_][globX_],
+                //        data->global_swd[mon][globY_][globX_],
+                //        shade,pt,farquhar_results);
+                
+                Farquhar_couple(pt,spp,data,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
+                
+                tf_air[pt][Vm0_bin][time_period]+=farquhar_results[0];
+                tf_soil[pt][Vm0_bin][time_period]+=farquhar_results[0];
+                An[pt][Vm0_bin][time_period][light_index]+=farquhar_results[1];
+                E[pt][Vm0_bin][time_period][light_index]+=farquhar_results[2];
+                Anb[pt][Vm0_bin][time_period][light_index]+=farquhar_results[3];
+                Eb[pt][Vm0_bin][time_period][light_index]+=farquhar_results[4];
+            }
+            tf_air[pt][Vm0_bin][time_period]/=24.0;
+            tf_soil[pt][Vm0_bin][time_period]/=24.0;
+            An[pt][Vm0_bin][time_period][light_index]*=3600.0*360.0;
+            E[pt][Vm0_bin][time_period][light_index]*=3600.0*540.0;
+            Anb[pt][Vm0_bin][time_period][light_index]*=3600.0*360.0;
+            Eb[pt][Vm0_bin][time_period][light_index]*=3600.0*540.0;
+#endif //COUPLE_PFTspecific
+    
+//#endif //COUPLE_MERRA2_LUT
+            } //COUPLE_MERRA2_LUT
+            //printf("lai %d lon %d mon %d lite %d An %f Anb %f E %f Eb %f\n",globY_,globX_,time_period,light_index,An[spp][time_period][light_index],Anb[spp][time_period][light_index],E[spp][time_period][light_index],Eb[spp][time_period][light_index]);
+            //exit(0);
+            
     return 1;
 }
 
