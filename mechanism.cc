@@ -30,11 +30,7 @@ void cohort::plant_respiration(UserData* data){
    /* time index*/
    size_t tindex = (data->time_period*12)/N_CLIMATE;
 
-#if FTS
-   double tf = currents->tf[pt];
-#elif COUPLE_FAR
 
-#if COUPLE_PFTspecific
     if (currents->sdata->tf_air[species][tindex]<-1000)
     {
         currents->sdata->compute_mech(pt,species,Vm0,NUM_Vm0s-1,tindex,0,data);
@@ -45,23 +41,7 @@ void cohort::plant_respiration(UserData* data){
     }
     double tf_air = currents->sdata->tf_air[species][tindex];
     double tf_soil = currents->sdata->tf_soil[species][tindex];
-#else
-    if (currents->sdata->tf_air[pt][NUM_Vm0s-1][tindex]<-1000)
-    {
-        currents->sdata->compute_mech(pt,species,Vm0,NUM_Vm0s-1,tindex,0,data);
-    }
-    if (currents->sdata->tf_soil[pt][NUM_Vm0s-1][tindex]<-1000)
-    {
-        currents->sdata->compute_mech(pt,species,Vm0,NUM_Vm0s-1,tindex,0,data);
-    }
-    double tf_air = currents->sdata->tf_air[pt][NUM_Vm0s-1][tindex];
-    double tf_soil = currents->sdata->tf_soil[pt][NUM_Vm0s-1][tindex];
-#endif //COUPLE_PFTspecific
-    
-#else
-   double tf_air = currents->sdata->tf_air[pt][NUM_Vm0s-1][tindex];
-   double tf_soil = currents->sdata->tf_soil[pt][NUM_Vm0s-1][tindex];
-#endif
+
 
    /* resp rates read in are  in gC/m2(leaf)/mo */
    /* calc resp rates in kgC per plant per yr */
@@ -108,26 +88,12 @@ void cohort::npp_function(UserData* data){
   
    /*SET INDICIES*/
    size_t light_index = 0;
-#if COUPLE_PFTspecific
     while(cs->sdata->light_levels[species][light_index] > lite){
         light_index++;
     }
-#else //COUPLE_PFTspecific
-    while(cs->sdata->light_levels[pt][Vm0_bin][light_index] > lite){
-        light_index++;
-    }
-#endif //COUPLE_PFTspecific
+
     
    /*PHOTOSYNTHESIS**************************/
-   
-#if FTS
-   An_pot = 0.001*cs->An[pt][light_index];
-   An_max = 0.001*cs->An[pt][0];
-   An_shut = 0.001*cs->An_shut[pt][120];
-   An_shut_max = 0.001*cs->An_shut[pt][120];
-#elif COUPLE_FAR
-
-#if COUPLE_PFTspecific
     if (cs->sdata->An[species][time_index][light_index]<-1000)
     {
         cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,light_index,data);
@@ -144,35 +110,8 @@ void cohort::npp_function(UserData* data){
     An_max = 0.001*cs->sdata->An[species][time_index][0];  // TODO, should we use current Vm0_bin or 0
     An_shut = 0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1];
     An_shut_max = 0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1];
-#else
-    if (cs->sdata->An[pt][Vm0_bin][time_index][light_index]<-1000)
-    {
-        cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,light_index,data);
-    }
-    if (cs->sdata->Anb[pt][Vm0_bin][time_index][N_LIGHT-1]<-1000)
-    {
-        cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,N_LIGHT-1,data);
-    }
-    if (cs->sdata->An[pt][Vm0_bin][time_index][0]<-1000)
-    {
-        cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,0,data);
-    }
-    An_pot = 0.001*cs->sdata->An[pt][Vm0_bin][time_index][light_index];
-    An_max = 0.001*cs->sdata->An[pt][Vm0_bin][time_index][0];  // TODO, should we use current Vm0_bin or 0
-    An_shut = 0.001*cs->sdata->Anb[pt][Vm0_bin][time_index][N_LIGHT-1];
-    An_shut_max = 0.001*cs->sdata->Anb[pt][Vm0_bin][time_index][N_LIGHT-1];
-#endif //COUPLE_PFTspecific
-    
 
-#else
-   //calc potential and max photosynthesis (KgC/m2/mon)
-   An_pot = 0.001*cs->sdata->An[pt][Vm0_bin][time_index][light_index];
-   An_max = 0.001*cs->sdata->An[pt][Vm0_bin][time_index][0];  // TODO, should we use current Vm0_bin or 0
-   //4/24/00 dowregulation idea, note Anb[120] below 
-   An_shut = 0.001*cs->sdata->Anb[pt][Vm0_bin][time_index][N_LIGHT-1];
-   //5/1/00 this next one should be at 120 as well?
-   An_shut_max = 0.001*cs->sdata->Anb[pt][Vm0_bin][time_index][N_LIGHT-1]; 
-#endif
+    leafAn_pot=0.001*cs->sdata->An[species][time_index][light_index];
    
    /*convert from KgC/m2/mon to kgC/yr*/
    An_pot *= data->specific_leaf_area[species]*bl*12; 

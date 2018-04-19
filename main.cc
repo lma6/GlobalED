@@ -102,20 +102,14 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
 
    read_input_data_layers(data);
     
-#if FASTLOAD
+
    loadGlobalEnvironmentData(data);
-    
-#if COUPLE_FAR
-    loadPREMECH(data);
-#else
-    loadGlobalMechanismLUT(data);
-#endif
+   loadPREMECH(data);
     
 #if LANDUSE
    loabGlobalLUData(data);
 #endif
-    
-#endif
+
 
    /* setup netcdf output */
    data->outputter = new Outputter(data);
@@ -305,9 +299,7 @@ void model (UserData& data) {
    printf("****** running model \n"); 
 
    unsigned int tsteps = ((int)(data.tmax * N_SUB)) + 1;
-
    for (unsigned int t=data.start_time; t<tsteps; t++) { /* absolute time offset */
-
       if(data.print_output_files) {
           if (tsteps-t<110*N_SUB+1)
           {
@@ -380,17 +372,9 @@ void model (UserData& data) {
                      data.MERRA2_LUT=0;
                  }
                  printf("Mechanism_year_to use: %d\n" , data.mechanism_year);
-#if 1         //Avoid repeating loading climate and mech data before 1900 when use avg climate data
-                 
-#if COUPLE_MERRA2
+            
                  if (data.mechanism_year>-1000) //loading data for everyear if COUPLE_MERRA2
                  {
-#else //COUPLE_MERRA2   if not in COUPLE_MERRA2, only loading yearly data after 1900 or in 1st year
-                 if ((data.mechanism_year>1900) or (data.mechanism_year==1500))
-                 {
-#endif //COUPLE_MERRA2
-                 
-#endif
                      for (; i< data.num_Vm0;i++)
                      {
                          if (data.mech_c3_file_ncid[i]>0)    ncclose(data.mech_c3_file_ncid[i]);
@@ -402,25 +386,12 @@ void model (UserData& data) {
                      }
                      if (data.climate_file_ncid>0)  ncclose(data.climate_file_ncid);
                      data.climate_file_ncid =0;
-                     
-#if FASTLOAD
-                         printf("Start load Envir\n");
-                         loadGlobalEnvironmentData(&data);
-                         
-#if COUPLE_FAR
-                         printf("Start load pre_mech\n");
-                         loadPREMECH(&data);
-#else
-                         printf("Start load mech\n");
-                         loadGlobalMechanismLUT(&data);
-#endif
-                         
-                         //No need to load LU data sa it has been loaded for 506 yrs in read_input_data_layers->readLUData,
-                         //and just need to be assigned to each site. --Lei
-                     //}
-                    //MLreplace
-#endif
-                
+
+                     printf("Start load Envir\n");
+                     loadGlobalEnvironmentData(&data);
+
+                     printf("Start load pre_mech\n");
+                     loadPREMECH(&data);
 
                      site* siteptr = data.first_site;
                      while (siteptr != NULL)
@@ -461,21 +432,9 @@ void model (UserData& data) {
                    printf("Mechanism_year_to use: %s\n" , data.mech_year_string);
                 }
                  
-#if FASTLOAD
-                 //if (!data.is_site)
-                 //{
-                 //MLreplace
-                     freeGlobalEnvironmentData(&data);
-                     loadGlobalEnvironmentData(&data);
-#ifndef COUPLE_FAR
-                     freeGlobalMechanismLUT(&data);
-                     loadGlobalMechanismLUT(&data);
-#endif
-                     //No need to load LU data sa it has been loaded for 506 yrs in read_input_data_layers->readLUData,
-                     //and just need to be assigned to each site. --Lei
-                 //}
-                 //MLreplace
-#endif
+         
+                 freeGlobalEnvironmentData(&data);
+                 loadGlobalEnvironmentData(&data);
                  
                 site* siteptr = data.first_site;
                 while (siteptr != NULL) {

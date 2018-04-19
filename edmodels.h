@@ -30,12 +30,12 @@
 #define COUPLE_MERRA2_LUT 1
 #define COUPLE_TemAccm 0
 #define CPOUPLE_VcmaxDownreg 0
-#define INI_Year 791  //In LANDUSE, it should be 1500
+#define INI_Year 791  //In LANDUSE, it should be 1500; For spin-up. it is 791
 #define N_LAI 6
-#define WT_Abg_PROFILE 1
+#define WT_Abg_PROFILE 0
 #define MERRA2_START 1981
 #define MERRA2_END 2015
-const int LAI_INTERVAL[]={0,1.5,5, 10, 20, 30}; //The elements number should be same as N_LAI
+const float LAI_INTERVAL[]={0,1.5,5, 10, 20, 30}; //The elements number should be same as N_LAI
 
 ///////////////////////////////////////
 //  MERRA2 35-year cyclically repeat
@@ -236,16 +236,11 @@ struct UserData {
    const char *C4_FILE;
 #endif
     
-#if COUPLE_FAR
     const char *PREMECH;
     const char *PREMECH_avg;
     const char *PREMECH_MERRA2;
-#if COUPLE_MERRA2
     const char *PREMECH_CO2_avg;
     const char *PREMECH_CO2;
-#endif
-    
-#endif
     
    int single_year;
    int do_yearly_mech;
@@ -550,12 +545,9 @@ struct UserData {
    double Eb[2][136][30][1300];
 #endif
     
-#if COUPLE_FAR
-    
-    
-#if COUPLE_MERRA2
     int is_loadMERRA2[MERRA2_END-MERRA2_START+1];
     int MERRA2_LUT;
+    int LANDUSE_FLAG;
     double global_tmp[288][360][720];
     double global_hum[288][360][720];
     double global_swd[288][360][720];
@@ -567,15 +559,7 @@ struct UserData {
     //double global_soiltmp4[288][360][720]; //4th layer in MERRA2 soil tempetature
     //double global_soiltmp5[288][360][720]; //5th layer in MERRA2 soil tempetature
     //double global_soiltmp6[288][360][720]; //6th layer in MERRA2 soil tempetature
-#else  //COUPLE_MERRA2
-    double global_tmp[288][360][720];
-    double global_hum[288][360][720];
-    double global_swd[288][360][720];
-#endif
     
-#endif //COUPLE_FAR
-    
-#if FASTLOAD
 #if LANDUSE
     float gfl[N_LANDUSE_TYPES][N_LANDUSE_TYPES-1][N_LANDUSE_YEARS][360][720];
     float gfvh[N_VBH_TYPES][N_LANDUSE_YEARS][360][720];
@@ -586,8 +570,6 @@ struct UserData {
     float **k_sat;
     float **tau;
     
-    
-#if COUPLE_MERRA2
     float ***climate_temp;
     float ***climate_precip;
     float ***climate_soil; //average of all layers maybe 5 or 6.
@@ -597,23 +579,8 @@ struct UserData {
     float ***climate_soil4; //4th layer
     float ***climate_soil5; //5th layer
     float ***climate_soil6; //6th layer
-#else
-    float ***climate_temp;
-    float ***climate_precip;
-    float ***climate_soil;
-#endif
-    
     float *light_levels;
-    
-#ifndef COUPLE_FAR
-    float *****tf;
-    float ******An;
-    float ******Anb;
-    float ******E;
-    float ******Eb;
-#endif
-    
-#endif
+
 
 #ifdef COUPLED
    double lastTotalC;

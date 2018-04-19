@@ -366,7 +366,6 @@ char lu2charname2 (int lu) {
     return name;
 }
 
-#if FASTLOAD
 float* malloc_1d_float (size_t dim1)
 {
     float *array_1d = (float *)malloc(dim1*sizeof(float));
@@ -767,8 +766,6 @@ bool loadGlobalEnvironmentData(UserData* data)
     ncclose(data->soil_file_ncid);
     data->soil_file_ncid=0;
     
-    printf("Check soil during read %f %f %f %f\n",data->soil_depth[242][248],data->theta_max[242][248],data->k_sat[242][248],data->tau[242][248]);
-    
     // Added below for yearly climate
     // TODO: this should not be done here. needs to be done once, not every site
     char nc[4] = ".nc"  ;
@@ -778,7 +775,6 @@ bool loadGlobalEnvironmentData(UserData* data)
     if (data->do_yearly_mech) {
         if (data->m_int)
         {
-#if COUPLE_MERRA2
             //Currently, using Cyclically repeat the MERRA2 meteorology of 1981-2015 before MERRA2_START, then use actual forcing.
             //As the length of time doman is not integral multiple of length of MERRA2 forcing, so the first year in simulation
             //may start from a certain point (i.e. MERRA2_timestamp_mod) to make sure that when run to MERRA2_START year, the actual
@@ -793,27 +789,13 @@ bool loadGlobalEnvironmentData(UserData* data)
                 data->MERRA2_timestamp=data->mechanism_year-MERRA2_START+1;
             }
             
-            printf("test in loadGlobalEnvironmentData mechanism_year %d MERRA2_timestamp %d\n",data->mechanism_year,data->MERRA2_timestamp);
+            printf("mechanism_year %d MERRA2_timestamp %d\n",data->mechanism_year,data->MERRA2_timestamp);
             sprintf(convert, "%s%d", base, data->MERRA2_timestamp+MERRA2_START-1);
             strcpy(climatename, data->climate_file_MERRA2);
             strcat(climatename, convert);
             strcat(climatename, nc);
-            printf("Loading Environmental data from MERRA2\n");
-            
-#else
-            if (data->mechanism_year>1900)
-            {
-                sprintf(convert, "%s%d", base, data->mechanism_year);
-                strcpy(climatename, data->climate_file);
-                strcat(climatename, convert);
-                strcat(climatename, nc);
-                printf("Loading Environmental data from CRUNCEP\n");
-            }
-            else
-            {
-                strcpy(climatename, data->climate_file_avg);
-            }
-#endif  //end COUPLE_MERRA2
+            printf("Loading Environmental data from MERRA2 %s\n",climatename);
+
         }
         
         if(data->m_string) {
@@ -855,6 +837,7 @@ bool loadGlobalEnvironmentData(UserData* data)
     }
     else
     {
+        printf("Start reset climate_precip\n");
         reset_3d_float(data->climate_precip,N_CLIMATE,360,720);
     }
     
@@ -865,6 +848,7 @@ bool loadGlobalEnvironmentData(UserData* data)
     }
     else
     {
+        printf("Start reset climate_soil\n");
         reset_3d_float(data->climate_soil,N_CLIMATE,360,720);
     }
     
@@ -882,7 +866,6 @@ bool loadGlobalEnvironmentData(UserData* data)
         NCERR("temp", rv);
     }
     
-#if COUPLE_MERRA2
     //reading 1st soil_temp
     if (data->climate_soil1==NULL)
     {
@@ -891,6 +874,7 @@ bool loadGlobalEnvironmentData(UserData* data)
     }
     else
     {
+        printf("Start reset climate_soil1\n");
         reset_3d_float(data->climate_soil1,N_CLIMATE,360,720);
     }
     if ((rv = nc_inq_varid(ncid, "soil_temp1", &varid))) {
@@ -907,6 +891,7 @@ bool loadGlobalEnvironmentData(UserData* data)
     }
     else
     {
+        printf("Start reset climate_soil2\n");
         reset_3d_float(data->climate_soil2,N_CLIMATE,360,720);
     }
     if ((rv = nc_inq_varid(ncid, "soil_temp2", &varid))) {
@@ -923,6 +908,7 @@ bool loadGlobalEnvironmentData(UserData* data)
     }
     else
     {
+        printf("Start reset climate_soil3\n");
         reset_3d_float(data->climate_soil3,N_CLIMATE,360,720);
     }
     if ((rv = nc_inq_varid(ncid, "soil_temp3", &varid))) {
@@ -939,6 +925,7 @@ bool loadGlobalEnvironmentData(UserData* data)
     }
     else
     {
+        printf("Start reset climate_soil4\n");
         reset_3d_float(data->climate_soil4,N_CLIMATE,360,720);
     }
     if ((rv = nc_inq_varid(ncid, "soil_temp4", &varid))) {
@@ -955,6 +942,7 @@ bool loadGlobalEnvironmentData(UserData* data)
     }
     else
     {
+        printf("Start reset climate_soil5\n");
         reset_3d_float(data->climate_soil5,N_CLIMATE,360,720);
     }
     if ((rv = nc_inq_varid(ncid, "soil_temp5", &varid))) {
@@ -980,7 +968,6 @@ bool loadGlobalEnvironmentData(UserData* data)
 //        NCERR("soil_temp6", rv);
 //    }
     //Take a average of 5 layers
-    printf("Statt taking average %f\n",data->climate_soil1[0][0][0]);
     for (size_t ilat=0;ilat<360;ilat++)
     {
         for (size_t ilon=0;ilon<720;ilon++)
@@ -1006,361 +993,13 @@ bool loadGlobalEnvironmentData(UserData* data)
             }
         }
     }
-    printf("End taking average\n");
-#else
-    if ((rv = nc_inq_varid(ncid, "temperature", &varid))) {
-        NCERR("temperature", rv);
-    }
-    if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->climate_soil[0][0][0]))) {
-        NCERR("soil_temp", rv);
-    }
-#endif
-    
     
     ncclose(data->climate_file_ncid);
     data->climate_file_ncid=0;
     
-    printf("Check clim during read %f %f %f\n",data->climate_soil[5][242][248],data->climate_temp[5][242][248],data->climate_precip[5][242][248]);
-    
-    printf("Finish loading global environment data\n");
     return 1;
 }
-#ifndef COUPLE_FAR
-bool loadGlobalMechanismLUT(UserData* data)
-{
-    int rv, ncid, varid;
-    size_t index1[3] = { 0, 0, 0 };
-    size_t count1[3] = { 360, 720, 12 };
-    
-    size_t index2[4] = { 0, 0, 0, 0 };
-    size_t count2[4] = { 360, 720, 12, 121 };
-    
-    
-    if (data->light_levels==NULL)
-    {
-        data->light_levels=malloc_1d_float(N_LIGHT);
-    }
-    else
-    {
-        reset_1d_float(data->light_levels,N_LIGHT);
-    }
-    
-    if (data->tf==NULL)
-    {
-        data->tf=malloc_5d_float(data->num_Vm0,2,360,720,N_CLIMATE);
-    }
-    else
-    {
-        reset_5d_float(data->tf,data->num_Vm0,2,360,720,N_CLIMATE);
-    }
-    
-    if (data->An==NULL)
-    {
-        printf("Start allocate An\n");
-        data->An=malloc_6d_float(data->num_Vm0,2,360,720,N_CLIMATE,N_LIGHT);
-    }
-    else
-    {
-        printf("Start reset An\n");
-        reset_6d_float(data->An,data->num_Vm0,2,360,720,N_CLIMATE,N_LIGHT);
-    }
-    
-    if (data->Anb==NULL)
-    {
-        data->Anb=malloc_6d_float(data->num_Vm0,2,360,720,N_CLIMATE,N_LIGHT);
-    }
-    else
-    {
-        reset_6d_float(data->Anb,data->num_Vm0,2,360,720,N_CLIMATE,N_LIGHT);
-    }
-    
-    if (data->E==NULL)
-    {
-        data->E=malloc_6d_float(data->num_Vm0,2,360,720,N_CLIMATE,N_LIGHT);
-    }
-    else
-    {
-        reset_6d_float(data->E,data->num_Vm0,2,360,720,N_CLIMATE,N_LIGHT);
-    }
-    
-    
-    if (data->Eb==NULL)
-    {
-        data->Eb=malloc_6d_float(data->num_Vm0,2,360,720,N_CLIMATE,N_LIGHT);
-    }
-    else
-    {
-        reset_6d_float(data->Eb,data->num_Vm0,2,360,720,N_CLIMATE,N_LIGHT);
-    }
-    
-    if (1)
-    {
-        printf("Finish mech intilizing & resetting\n");
-    }
-    
-    // TODO: this shouldn't be here. Do once, not for each site.
-    char nc[] = ".nc"  ;
-    char base[] = "";
-    char convert[256];
-    char c3name[256];
-    char c4name[256];
-    if (data->do_yearly_mech) {
-        // NOTE!!! do_yearly_mech does not work with the multiple Vm0 bins mechanism (currently)
-        // Please use FTS
-        if (data->m_int) {
-            
-            size_t i=0;
-            
-            for (; i< data->num_Vm0;i++) {
-                if (data->num_Vm0>1) {
-                    if (data->mechanism_year>1900) {
-                        sprintf(convert, "%s_%d", data->list_c3_files.at(i).c_str(), data->mechanism_year);
-                        
-                        
-                    }else{
-                        sprintf(convert, "%s_%s", data->list_c3_files.at(i).c_str(), data->mech_c3_file_avg.at(i).c_str());
-                    }
-                    strcpy(c3name, data->mech_c3_file);
-                    strcpy(c4name, data->mech_c4_file);
-                    
-                    strcat(c3name, convert);
-                    strcat(c4name, convert);
-                    
-                    strcat(c3name, nc);
-                    strcat(c4name, nc);
-#if 1
-                    printf("mech file used is %s\n",c3name);
-#endif
-                    if (data->mech_c3_file_ncid[i] == 0) {
-                        if ((rv = nc_open(c3name, NC_NOWRITE, &ncid))) {
-                            NCERR(c3name, rv);
-                        } else {
-                            data->mech_c3_file_ncid[i] = ncid;
-                        }
-                    }
-                    if (data->mech_c4_file_ncid[i] == 0) {
-                        if ((rv = nc_open(c4name, NC_NOWRITE, &ncid))) {
-                            NCERR(c4name, rv);
-                        } else {
-                            data->mech_c4_file_ncid[i] = ncid;
-                        }
-                    }
-                    for (size_t pt=0; pt<PT; pt++) {
-                        
-                        if (pt == 0) {
-                            ncid = data->mech_c3_file_ncid[i];
-                        } else {
-                            ncid = data->mech_c4_file_ncid[i];
-                        }
-                        // light levels
-                        // TODO: is this worth storing for each site? Same for everywhere.
-                        
-                        if ((rv = nc_inq_varid(ncid, "shade", &varid))) {
-                            NCERR("shade", rv);
-                        }
-                        
-                        if ((rv = nc_get_var_float(ncid, varid, &data->light_levels[0]))) {
-                            NCERR("shade", rv);
-                        }
-                        
-                        // temp function
-                        if ((rv = nc_inq_varid(ncid, "tf", &varid))) {
-                            NCERR("tf", rv);
-                        }
-                        if ((rv = nc_get_vara_float(ncid, varid, index1, count1, &data->tf[i][pt][0][0][0]))) {
-                            NCERR("tf", rv);
-                        }
-                        
-                        //start_s=clock();
-                        // An
-                        if ((rv = nc_inq_varid(ncid, "An", &varid))) {
-                            NCERR("An", rv);
-                        }
-                        if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->An[i][pt][0][0][0][0]))) {
-                            NCERR("An", rv);
-                        }
-                        
-                        // Anb
-                        if ((rv = nc_inq_varid(ncid, "Anb", &varid))) {
-                            NCERR("Anb", rv);
-                        }
-                        if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->Anb[i][pt][0][0][0][0]))) {
-                            NCERR("Anb", rv);
-                        }
-                        
-                        // E
-                        if ((rv = nc_inq_varid(ncid, "E", &varid))) {
-                            NCERR("E", rv);
-                        }
-                        if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->E[i][pt][0][0][0][0]))) {
-                            NCERR("E", rv);
-                        }
-                        
-                        // Eb
-                        if ((rv = nc_inq_varid(ncid, "Eb", &varid))) {
-                            NCERR("Eb", rv);
-                        }
-                        if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->Eb[i][pt][0][0][0][0]))) {
-                            NCERR("Eb", rv);
-                        }
-                        
-                        if (1)
-                        {
-                            printf("Finish mech loading\n");
-                        }
-                        
-                        if (pt == 0) {
-                            ncclose(data->mech_c3_file_ncid[i]);
-                            data->mech_c3_file_ncid[i]=0;
-                        } else {
-                            ncclose(data->mech_c4_file_ncid[i]);
-                            data->mech_c4_file_ncid[i]=0;
-                        }
-                        
-                        if (1)
-                        {
-                            size_t latml=140;
-                            size_t lonml=556;
-                            
-                            printf("Check mechi during read %f %f %f %f\n",data->An[i][pt][latml][lonml][5][0],data->Anb[i][pt][latml][lonml][5][0],data->E[i][pt][latml][lonml][5][0],data->Eb[i][pt][latml][lonml][5][0]);
-                        }
-                    }
-                }
-            }
-        } else if (data->m_string) {
-            strcpy(c3name, data->mech_c3_file);
-            strcpy(c4name, data->mech_c4_file);
-            
-            strcat(c3name, data->mech_year_string);
-            strcat(c4name, data->mech_year_string);
-            
-            strcat(c3name, nc);
-            strcat(c4name, nc);
-        }
-    } else if (data->single_year) {
-        size_t i = 0;
-        for(; i < data->num_Vm0; i++) {
-            if (data->num_Vm0 > 1) {
-                strcpy(c3name, data->Vm0_basepath);
-                strcat(c3name, data->list_c3_files.at(i).c_str());
-                strcpy(c4name, data->Vm0_basepath);
-                strcat(c4name, data->list_c4_files.at(i).c_str());
-            } else {
-                strcpy(c3name, data->mech_c3_file);
-                strcpy(c4name, data->mech_c4_file);
-            }
-            
-            if (1)
-            {
-                printf("Finish mech link filename\n");
-            }
-            
-            if (data->mech_c3_file_ncid[i] == 0) {
-                if ((rv = nc_open(c3name, NC_NOWRITE, &ncid))) {
-                    NCERR(c3name, rv);
-                } else {
-                    data->mech_c3_file_ncid[i] = ncid;
-                }
-            }
-            if (data->mech_c4_file_ncid[i] == 0) {
-                if ((rv = nc_open(c4name, NC_NOWRITE, &ncid))) {
-                    NCERR(c4name, rv);
-                } else {
-                    data->mech_c4_file_ncid[i] = ncid;
-                }
-            }
-            
-            if (0)
-            {
-                printf("Finish mech open file\n");
-            }
-            
-            for (size_t pt=0; pt<PT; pt++) {
-                if (pt == 0) {
-                    ncid = data->mech_c3_file_ncid[i];
-                } else {
-                    ncid = data->mech_c4_file_ncid[i];
-                }
-                
-                if ((rv = nc_inq_varid(ncid, "shade", &varid))) {
-                    NCERR("shade", rv);
-                }
-                
-                if ((rv = nc_get_var_float(ncid, varid, &data->light_levels[0]))) {
-                    NCERR("shade", rv);
-                }
-                
-                // temp function
-                if ((rv = nc_inq_varid(ncid, "tf", &varid))) {
-                    NCERR("tf", rv);
-                }
-                if ((rv = nc_get_vara_float(ncid, varid, index1, count1, &data->tf[i][pt][0][0][0]))) {
-                    NCERR("tf", rv);
-                }
-                
-                //start_s=clock();
-                // An
-                if ((rv = nc_inq_varid(ncid, "An", &varid))) {
-                    NCERR("An", rv);
-                }
-                if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->An[i][pt][0][0][0][0]))) {
-                    NCERR("An", rv);
-                }
-                
-                // Anb
-                if ((rv = nc_inq_varid(ncid, "Anb", &varid))) {
-                    NCERR("Anb", rv);
-                }
-                if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->Anb[i][pt][0][0][0][0]))) {
-                    NCERR("Anb", rv);
-                }
-                
-                // E
-                if ((rv = nc_inq_varid(ncid, "E", &varid))) {
-                    NCERR("E", rv);
-                }
-                if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->E[i][pt][0][0][0][0]))) {
-                    NCERR("E", rv);
-                }
-                
-                // Eb
-                if ((rv = nc_inq_varid(ncid, "Eb", &varid))) {
-                    NCERR("Eb", rv);
-                }
-                if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->Eb[i][pt][0][0][0][0]))) {
-                    NCERR("Eb", rv);
-                }
-                
-                if (0)
-                {
-                    printf("Finish mech loading data\n");
-                }
-                
-                if (pt == 0) {
-                    ncclose(data->mech_c3_file_ncid[i]);
-                    data->mech_c3_file_ncid[i]=0;
-                } else {
-                    ncclose(data->mech_c4_file_ncid[i]);
-                    data->mech_c4_file_ncid[i]=0;
-                }
-                
-                if (1)
-                {
-                    size_t latml=140;
-                    size_t lonml=556;
-                    
-                    printf("Check mechi during read %f %f %f %f\n",data->An[i][pt][latml][lonml][5][0],data->Anb[i][pt][latml][lonml][5][0],data->E[i][pt][latml][lonml][5][0],data->Eb[i][pt][latml][lonml][5][0]);
-                }
-            }
-        }
-    }
-    
-    printf("Finish loading global mechnism data\n");
-    return 1;
-}
-#endif
 
-#if COUPLE_FAR
 bool loadPREMECH (UserData* data)
 {
     char premech_clim[256],premech_co2[256], tairname[256], swname[256];
@@ -1369,8 +1008,6 @@ bool loadPREMECH (UserData* data)
     size_t index3[3] = { 0, 0, 0 };
     size_t count3[3]  = {288, 360, 720 };
     
-    
-#if COUPLE_MERRA2
     //Currently, using Cyclically repeat the MERRA2 meteorology of 1981-2015 before MERRA2_START, then use actual forcing.
     //As the length of time doman is not integral multiple of length of MERRA2 forcing, so the first year in simulation
     //may start from a certain point (i.e. MERRA2_timestamp_mod) to make sure that when run to MERRA2_START year, the actual
@@ -1385,7 +1022,7 @@ bool loadPREMECH (UserData* data)
         data->MERRA2_timestamp=data->mechanism_year-MERRA2_START+1;
     }
     
-    printf("test in loadGlobalEnvironmentData mechanism_year %d MERRA2_timestamp %d\n",data->mechanism_year,data->MERRA2_timestamp);
+    printf("mechanism_year %d MERRA2_timestamp %d\n",data->mechanism_year,data->MERRA2_timestamp);
     strcpy(premech_clim, data->PREMECH_MERRA2);
     sprintf(premech_clim, "%s%d", premech_clim, data->MERRA2_timestamp+MERRA2_START-1);
     strcat(premech_clim, ".nc");
@@ -1410,20 +1047,7 @@ bool loadPREMECH (UserData* data)
         strcat(premech_co2, ".nc");
         printf("Loading CO2 premech file from MERRA2 %s\n",premech_co2);
     }
-    
-#else
-    if (data->mechanism_year>1900)
-    {
-        strcpy(premech_clim, data->PREMECH);
-        sprintf(premech_clim, "%s%d", premech_clim, data->mechanism_year);
-        strcat(premech_clim, ".nc");
-        printf("Loading premech file from CRUNCEP %s\n",premech_clim);
-    }
-    else
-    {
-        strcpy(premech_clim, data->PREMECH_avg);
-    }
-#endif
+
     
     if ((rv = nc_open(premech_clim, NC_NOWRITE, &ncid))){
         NCERR(premech_clim, rv);
@@ -1435,17 +1059,7 @@ bool loadPREMECH (UserData* data)
     if ((rv = nc_open(premech_co2, NC_NOWRITE, &ncid_co2))){
         NCERR(premech_co2, rv);
     }
-//    if ((rv = nc_inq_varid(ncid, "temperature", &varid))) NCERR("temperature", rv);
-//    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("temperature", rv);
-//
-//    if ((rv = nc_inq_varid(ncid, "specific_humidity", &varid))) NCERR("specific_humidity", rv);
-//    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_hum[0][0][0]))) NCERR("specific_humidity", rv);
-//
-//    if ((rv = nc_inq_varid(ncid, "swdown", &varid))) NCERR("swdown", rv);
-//    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_swd[0][0][0]))) NCERR("swdown", rv);
-    
-    
-#if COUPLE_MERRA2
+
     if ((rv = nc_inq_varid(ncid, "AirTemp", &varid))) NCERR("AirTemp", rv);
     if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("AirTemp", rv);
     
@@ -1476,35 +1090,10 @@ bool loadPREMECH (UserData* data)
     //load spatial CO2 data
     if ((rv = nc_inq_varid(ncid_co2, "co2_ambient", &varid_co2))) NCERR("co2_ambient", rv);
     if ((rv = nc_get_vara_double(ncid_co2, varid_co2, index3, count3, &data->global_CO2[0][0][0]))) NCERR("co2_ambient", rv);
-#else
-    if ((rv = nc_inq_varid(ncid, "temperature", &varid))) NCERR("temperature", rv);
-    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("temperature", rv);
-    
-    if ((rv = nc_inq_varid(ncid, "specific_humidity", &varid))) NCERR("specific_humidity", rv);
-    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_hum[0][0][0]))) NCERR("specific_humidity", rv);
-    
-    if ((rv = nc_inq_varid(ncid, "swdown", &varid))) NCERR("swdown", rv);
-    if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_swd[0][0][0]))) NCERR("swdown", rv);
-    for (size_t mon=0;mon<288;mon++)
-    {
-        for (size_t lat_n=0;lat_n<360;lat_n++)
-        {
-            for (size_t lon_n=0;lon_n<720;lon_n++)
-            {
-                if (data->global_tmp[mon][lat_n][lon_n]>0) data->global_tmp[mon][lat_n][lon_n]-=273.2;
-                if (data->global_soiltmp[mon][lat_n][lon_n]>0) data->global_soiltmp[mon][lat_n][lon_n]-=273.2;
-                if (data->global_hum[mon][lat_n][lon_n]>0) data->global_hum[mon][lat_n][lon_n]=data->global_hum[mon][lat_n][lon_n]*28.96/18.02;
-            }
-        }
-    }
-#endif
-    
-    
+
     rv = nc_close(ncid);
     return true;
 }
-#endif
-
 
 bool freeGlobalEnvironmentData(UserData* data)
 {
@@ -1516,18 +1105,6 @@ bool freeGlobalEnvironmentData(UserData* data)
     dealloc_3d_float(data->climate_precip,N_CLIMATE,360,720);
     dealloc_3d_float(data->climate_soil,N_CLIMATE,360,720);
 }
-#ifndef COUPLE_FAR
-bool freeGlobalMechanismLUT(UserData* data)
-{
-    dealloc_6d_float(data->An,data->num_Vm0,2,3670,720,N_CLIMATE,N_LIGHT);
-    dealloc_6d_float(data->Anb,data->num_Vm0,2,3670,720,N_CLIMATE,N_LIGHT);
-    dealloc_6d_float(data->E,data->num_Vm0,2,3670,720,N_CLIMATE,N_LIGHT);
-    dealloc_6d_float(data->Eb,data->num_Vm0,2,3670,720,N_CLIMATE,N_LIGHT);
-    dealloc_5d_float(data->tf,data->num_Vm0,2,3670,720,N_CLIMATE);
-}
-#endif
-
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 //! SiteData
@@ -1596,13 +1173,6 @@ bool SiteData::readSiteData (UserData& data) {
    }
    calcSiteDrynessIndex(data);
    
-   // read in physiology or FTS data
-#if FTS
-   if (! readFTSdata(data) ) {
-      return false;
-   }
-    
-#elif COUPLE_FAR
     if (!SetMECHdefault(data)) {
         return false;
     }
@@ -1612,12 +1182,7 @@ bool SiteData::readSiteData (UserData& data) {
         return false;
     }
 //#endif //COUPLE_MERRA2_LUT
-    
-#else
-   if (! readMechanismLUT(data) ) {
-         return false;
-   }
-#endif
+
 #elif defined MIAMI_LU
    // calculate miami npp
    miami_npp = miami(precip_average, temp_average);
@@ -1708,192 +1273,70 @@ bool SiteData::readEnvironmentalData (UserData& data) {
 ////////////////////////////////////////////////////////////////////////////////
 bool SiteData::readEnvironmentalData (UserData& data)
 {
-
-    //if (FASTLOAD && !data.is_site)
-    //MLreplace
-    if (FASTLOAD)
-    {
-#if FASTLOAD
-        soil_depth=data.soil_depth[globY_][globX_];
-        theta_max=data.theta_max[globY_][globX_];
-        k_sat=data.k_sat[globY_][globX_];
-        tau=data.tau[globY_][globX_];
-        
-        if ( (soil_depth <= 0) || (theta_max == -9999.0)
-            || (k_sat == -9999.0) || (tau == -9999.0) ) {
-            //fprintf(stderr, "No soil char data found for site lat %f lon %f\n", cs->lat, cs->lon);
-            return false;
-        }
-        
-        precip_average=0.0;
-        temp_average=0.0;
-        soil_temp_average=0.0;
-        
-        if (data.climate_precip[0][globY_][globX_] < 0.0) {
-            //fprintf(stderr, "No precip data found for site lat %f lon %f\n", cs->lat, cs->lon);
-            return false;
-        }
-        if (data.climate_temp[0][globY_][globX_] == -9999.0) { // TODO: better test?
-            //fprintf(stderr, "No temp data found for site lat %f lon %f\n", cs->lat, cs->lon);
-            return false;
-        }
-        if (data.climate_soil[0][globY_][globX_] == -9999.0) { // TODO: better test?
-            //fprintf(stderr, "No soil temp data found for site lat %f lon %f\n", cs->lat, cs->lon);
-            return false;
-        }
-        for (size_t i=0;i<N_CLIMATE;i++)
-        {
-            precip[i] = data.climate_precip[i*12/N_CLIMATE][globY_][globX_]*12.; // to make units avg mm/yr
-            precip_average += precip[i] / N_CLIMATE;
-            temp[i] = data.climate_temp[i*12/N_CLIMATE][globY_][globX_] - 273.15;
-            temp_average += temp[i] / N_CLIMATE;
-            soil_temp[i] = data.climate_soil[i*12/N_CLIMATE][globY_][globX_] - 273.15; // convert Kelvin to C
-            soil_temp_average += soil_temp[i] / N_CLIMATE;
-        }
-#endif //FASTLOAD
+    soil_depth=data.soil_depth[globY_][globX_];
+    theta_max=data.theta_max[globY_][globX_];
+    k_sat=data.k_sat[globY_][globX_];
+    tau=data.tau[globY_][globX_];
+    
+    if ( (soil_depth <= 0) || (theta_max == -9999.0)
+        || (k_sat == -9999.0) || (tau == -9999.0) ) {
+        //fprintf(stderr, "No soil char data found for site lat %f lon %f\n", cs->lat, cs->lon);
+        return false;
     }
-    else
+    
+    precip_average=0.0;
+    temp_average=0.0;
+    soil_temp_average=0.0;
+    
+    if (data.climate_precip[0][globY_][globX_] < 0.0) {
+        //fprintf(stderr, "No precip data found for site lat %f lon %f\n", cs->lat, cs->lon);
+        return false;
+    }
+    if (data.climate_temp[0][globY_][globX_] == -9999.0) { // TODO: better test?
+        //fprintf(stderr, "No temp data found for site lat %f lon %f\n", cs->lat, cs->lon);
+        return false;
+    }
+    if (data.climate_soil[0][globY_][globX_] == -9999.0) { // TODO: better test?
+        //fprintf(stderr, "No soil temp data found for site lat %f lon %f\n", cs->lat, cs->lon);
+        return false;
+    }
+    
+    if (data.climate_soil1[0][globY_][globX_] == -9999.0) { // TODO: better test?
+        //fprintf(stderr, "No soil temp data found for site lat %f lon %f\n", cs->lat, cs->lon);
+        return false;
+    }
+    if (data.climate_soil2[0][globY_][globX_] == -9999.0) { // TODO: better test?
+        //fprintf(stderr, "No soil temp data found for site lat %f lon %f\n", cs->lat, cs->lon);
+        return false;
+    }
+    if (data.climate_soil3[0][globY_][globX_] == -9999.0) { // TODO: better test?
+        //fprintf(stderr, "No soil temp data found for site lat %f lon %f\n", cs->lat, cs->lon);
+        return false;
+    }
+    if (data.climate_soil4[0][globY_][globX_] == -9999.0) { // TODO: better test?
+        //fprintf(stderr, "No soil temp data found for site lat %f lon %f\n", cs->lat, cs->lon);
+        return false;
+    }
+    if (data.climate_soil5[0][globY_][globX_] == -9999.0) { // TODO: better test?
+        //fprintf(stderr, "No soil temp data found for site lat %f lon %f\n", cs->lat, cs->lon);
+        return false;
+    }
+    
+    for (size_t i=0;i<N_CLIMATE;i++)
     {
-        int rv, ncid, varid;
-        printf("Using old readEnvironment\n");
-        size_t index1[2] = { globY_, globX_ };
-        size_t index2[3] = { 0, globY_, globX_ };
-        size_t count[3]  = { N_CLIMATE, 1, 1 };
+        precip[i] = data.climate_precip[i*12/N_CLIMATE][globY_][globX_]*12.; // to make units avg mm/yr
+        precip_average += precip[i] / N_CLIMATE;
+        temp[i] = data.climate_temp[i*12/N_CLIMATE][globY_][globX_] - 273.15;
+        temp_average += temp[i] / N_CLIMATE;
+        soil_temp[i] = data.climate_soil[i*12/N_CLIMATE][globY_][globX_] - 273.15; // convert Kelvin to C
+        soil_temp_average += soil_temp[i] / N_CLIMATE;
         
-        if (data.soil_file_ncid == 0) {
-            if ((rv = nc_open(data.soil_file, NC_NOWRITE, &ncid))) {
-                NCERR(data.soil_file, rv);
-            }
-            data.soil_file_ncid = ncid;
-        } else {
-            ncid = data.soil_file_ncid;
-        }
+        soil_temp1[i] = data.climate_soil1[i*12/N_CLIMATE][globY_][globX_] - 273.15; // convert Kelvin to C
+        soil_temp2[i] = data.climate_soil2[i*12/N_CLIMATE][globY_][globX_] - 273.15; // convert Kelvin to C
+        soil_temp3[i] = data.climate_soil3[i*12/N_CLIMATE][globY_][globX_] - 273.15; // convert Kelvin to C
+        soil_temp4[i] = data.climate_soil4[i*12/N_CLIMATE][globY_][globX_] - 273.15; // convert Kelvin to C
+        soil_temp5[i] = data.climate_soil5[i*12/N_CLIMATE][globY_][globX_] - 273.15; // convert Kelvin to C
         
-        if ((rv = nc_inq_varid(ncid, "soil_depth", &varid))) {
-            NCERR("soil_depth", rv);
-        }
-        if ((rv = nc_get_var1_double(ncid, varid, index1, &soil_depth))) {
-            NCERR("soil_depth", rv);
-        }
-        //soil_depth *= 10.0; // convert from cm to mm
-        
-        if ((rv = nc_inq_varid(ncid, "soil_theta_max", &varid))) {
-            NCERR("theta_max", rv);
-        }
-        if ((rv = nc_get_var1_double(ncid, varid, index1, &theta_max))) {
-            NCERR("theta_max", rv);
-        }
-        
-        if ((rv = nc_inq_varid(ncid, "soil_k_sat", &varid))) {
-            NCERR("k_sat", rv);
-        }
-        if ((rv = nc_get_var1_double(ncid, varid, index1, &k_sat))) {
-            NCERR("k_sat", rv);
-        }
-        
-        if ((rv = nc_inq_varid(ncid, "soil_tau", &varid))) {
-            NCERR("tau", rv);
-        }
-        if ((rv = nc_get_var1_double(ncid, varid, index1, &tau))) {
-            NCERR("tau", rv);
-        }
-        
-        if ( (soil_depth <= 0) || (theta_max == -9999.0)
-            || (k_sat == -9999.0) || (tau == -9999.0) ) {
-            //fprintf(stderr, "No soil char data found for site lat %f lon %f\n", cs->lat, cs->lon);
-            return false;
-        }
-        
-        // Added below for yearly climate
-        // TODO: this should not be done here. needs to be done once, not every site
-        char nc[4] = ".nc"  ;
-        char base[256] = "";
-        char convert[256];
-        char climatename[256];
-        if (data.do_yearly_mech) {
-            if (data.m_int) {
-                if (data.mechanism_year>1900) {
-                    sprintf(convert, "%s%d", base, data.mechanism_year);
-                    strcpy(climatename, data.climate_file);
-                    strcat(climatename, convert);
-                    strcat(climatename, nc);
-                }
-                else{
-                    strcpy(climatename, data.climate_file_avg);
-                }
-            }
-            
-            if(data.m_string) {
-                strcpy(climatename,data.climate_file);
-                strcat(climatename,data.mech_year_string);
-                strcat(climatename, nc);
-            }
-        } else if(data.single_year) {
-            strcpy(climatename, data.climate_file);
-        }
-#if 0
-        printf("climate file used is %s\n",climatename);
-#endif
-        
-        if (data.climate_file_ncid == 0) {
-            if ((rv = nc_open(climatename, NC_NOWRITE, &ncid))) {
-                NCERR(climatename, rv);
-            }
-            data.climate_file_ncid = ncid;
-        } else {
-            ncid = data.climate_file_ncid;
-        }
-        
-        double climate_temp[12], climate_precip[12], climate_soil[12];
-        
-        // precip
-        if ((rv = nc_inq_varid(ncid, "precipitation", &varid))) {
-            NCERR("precip", rv);
-        }
-        if ((rv = nc_get_vara_double(ncid, varid, index2, count, &climate_precip[0]))) {
-            NCERR("precip", rv);
-        }
-        if (climate_precip[0] < 0.0) {
-            //fprintf(stderr, "No precip data found for site lat %f lon %f\n", cs->lat, cs->lon);
-            return false;
-        }
-        
-        if ((rv = nc_inq_varid(ncid, "temperature", &varid))) {
-            NCERR("temp", rv);
-        }
-        if ((rv = nc_get_vara_double(ncid, varid, index2, count, &climate_temp[0]))) {
-            NCERR("temp", rv);
-        }
-        if (climate_temp[0] == -9999.0) { // TODO: better test?
-            //fprintf(stderr, "No temp data found for site lat %f lon %f\n", cs->lat, cs->lon);
-            return false;
-        }
-        
-        if ((rv = nc_inq_varid(ncid, "soil_temp", &varid))) {
-            // if no soil_temp, default to air temp
-            if ((rv = nc_inq_varid(ncid, "temperature", &varid))) {
-                NCERR("soil_temp", rv);
-            }
-        }
-        if ((rv = nc_get_vara_double(ncid, varid, index2, count, &climate_soil[0]))) {
-            NCERR("soil_temp", rv);
-        }
-        if (climate_soil[0] == -9999.0) { // TODO: better test?
-            //fprintf(stderr, "No soil temp data found for site lat %f lon %f\n", cs->lat, cs->lon);
-            return false;
-        }
-        
-        precip_average    = 0.0;
-        temp_average      = 0.0;
-        soil_temp_average = 0.0;
-        for (size_t i=0; i<N_CLIMATE; i++) {
-            precip[i] = climate_precip[i*12/N_CLIMATE]*12.; // to make units avg mm/yr
-            precip_average += precip[i] / N_CLIMATE;
-            temp[i] = climate_temp[i*12/N_CLIMATE] - 273.15;
-            temp_average += temp[i] / N_CLIMATE;
-            soil_temp[i] = climate_soil[i*12/N_CLIMATE] - 273.15; // convert Kelvin to C
-            soil_temp_average += soil_temp[i] / N_CLIMATE;
-        }
     }
     return true;
 }
@@ -2050,278 +1493,10 @@ bool SiteData::readFTSdata (UserData& data) {
 }
 #endif //FTS
 
-////////////////////////////////////////////////////////////////////////////////
-//! readMechanismLUT
-//! 
-//!
-//! @param  
-//! @return 
-////////////////////////////////////////////////////////////////////////////////
-bool SiteData::readMechanismLUT (UserData& data)
-{
-    //if (FASTLOAD && !data.is_site)
-    //MLreplace
-    if (FASTLOAD)
-    {
-#if FASTLOAD && !COUPLE_FAR
-        for (size_t i=0;i<data.num_Vm0;i++)
-        {
-            for (size_t pt=0;pt<PT;pt++)
-            {
-                for (size_t x=0;x<N_CLIMATE;x++)
-                {
-                    for (size_t y=0;y<N_LIGHT;y++)
-                    {
-                        An[pt][i][x][y]=data.An[i][pt][globY_][globX_][x][y];
-                        Anb[pt][i][x][y]=data.Anb[i][pt][globY_][globX_][x][y];
-                        E[pt][i][x][y]=data.E[i][pt][globY_][globX_][x][y];
-                        Eb[pt][i][x][y]=data.Eb[i][pt][globY_][globX_][x][y];
-                        light_levels[pt][i][y]=data.light_levels[y];
-                    }
-                    tf[pt][i][x]=data.tf[i][pt][globY_][globX_][x];
-                }
-            }
-        }
-#endif
-    }
-    else
-    {
-#if !COUPLE_PFTspecific
-        int rv, ncid, varid;
-        size_t index1[3] = { globY_, globX_, 0 };
-        size_t count1[3] = { 1, 1, N_CLIMATE };
-        
-        size_t index2[4] = { globY_, globX_, 0, 0 };
-        size_t count2[4] = { 1, 1, N_CLIMATE, N_LIGHT };
-        
-        //int start_s=clock();
-        //int stop_s=clock();
-        
-        // TODO: this shouldn't be here. Do once, not for each site.
-        char nc[] = ".nc"  ;
-        char base[] = "";
-        char convert[256];
-        char c3name[256];
-        char c4name[256];
-        if (data.do_yearly_mech) {
-            // NOTE!!! do_yearly_mech does not work with the multiple Vm0 bins mechanism (currently)
-            // Please use FTS
-            if (data.m_int) {
-                
-                size_t i=0;
-                for (; i< data.num_Vm0;i++) {
-                    if (data.num_Vm0>1) {
-                        if (data.mechanism_year>1900) {
-                            sprintf(convert, "%s_%d", data.list_c3_files.at(i).c_str(), data.mechanism_year);
-                            
-                            
-                        }else{
-                            sprintf(convert, "%s_%s", data.list_c3_files.at(i).c_str(), data.mech_c3_file_avg.at(i).c_str());
-                        }
-                        strcpy(c3name, data.mech_c3_file);
-                        strcpy(c4name, data.mech_c4_file);
-                        
-                        strcat(c3name, convert);
-                        strcat(c4name, convert);
-                        
-                        strcat(c3name, nc);
-                        strcat(c4name, nc);
-                        
-#if 1
-                        printf("mech file used is %s\n",c3name);
-#endif
-                        if (data.mech_c3_file_ncid[i] == 0) {
-                            if ((rv = nc_open(c3name, NC_NOWRITE, &ncid))) {
-                                NCERR(c3name, rv);
-                            } else {
-                                data.mech_c3_file_ncid[i] = ncid;
-                            }
-                        }
-                        if (data.mech_c4_file_ncid[i] == 0) {
-                            if ((rv = nc_open(c4name, NC_NOWRITE, &ncid))) {
-                                NCERR(c4name, rv);
-                            } else {
-                                data.mech_c4_file_ncid[i] = ncid;
-                            }
-                        }
-                        
-                        for (size_t pt=0; pt<PT; pt++) {
-                            if (pt == 0) {
-                                ncid = data.mech_c3_file_ncid[i];
-                            } else {
-                                ncid = data.mech_c4_file_ncid[i];
-                            }
-                            // light levels
-                            // TODO: is this worth storing for each site? Same for everywhere.
-                            if ((rv = nc_inq_varid(ncid, "shade", &varid))) {
-                                NCERR("shade", rv);
-                            }
-                            if ((rv = nc_get_var_double(ncid, varid, &light_levels[pt][i][0]))) {
-                                NCERR("shade", rv);
-                            }
-                            
-                            // temp function
-                            if ((rv = nc_inq_varid(ncid, "tf", &varid))) {
-                                NCERR("tf", rv);
-                            }
-                            if ((rv = nc_get_vara_double(ncid, varid, index1, count1, &tf[pt][i][0]))) {
-                                NCERR("tf", rv);
-                            }
-                            
-                            //start_s=clock();
-                            // An
-                            if ((rv = nc_inq_varid(ncid, "An", &varid))) {
-                                NCERR("An", rv);
-                            }
-                            if ((rv = nc_get_vara_double(ncid, varid, index2, count2, &An[pt][i][0][0]))) {
-                                NCERR("An", rv);
-                            }
-                            //stop_s=clock();
-                            //printf("read An time is %f\n",(stop_s-start_s)/double(CLOCKS_PER_SEC)*1000000);
-                            
-                            //start_s=clock();
-                            // Anb
-                            if ((rv = nc_inq_varid(ncid, "Anb", &varid))) {
-                                NCERR("Anb", rv);
-                            }
-                            if ((rv = nc_get_vara_double(ncid, varid, index2, count2, &Anb[pt][i][0][0]))) {
-                                NCERR("Anb", rv);
-                            }
-                            //stop_s=clock();
-                            //printf("read Anb time is %f\n",(stop_s-start_s)/double(CLOCKS_PER_SEC)*1000000);
-                            
-                            //start_s=clock();
-                            // E
-                            if ((rv = nc_inq_varid(ncid, "E", &varid))) {
-                                NCERR("E", rv);
-                            }
-                            if ((rv = nc_get_vara_double(ncid, varid, index2, count2, &E[pt][i][0][0]))) {
-                                NCERR("E", rv);
-                            }
-                            //stop_s=clock();
-                            //printf("read E time is %f\n",(stop_s-start_s)/double(CLOCKS_PER_SEC)*1000000);
-                            
-                            //start_s=clock();
-                            // Eb
-                            if ((rv = nc_inq_varid(ncid, "Eb", &varid))) {
-                                NCERR("Eb", rv);
-                            }
-                            if ((rv = nc_get_vara_double(ncid, varid, index2, count2, &Eb[pt][i][0][0]))) {
-                                NCERR("Eb", rv);
-                            }
-                            //stop_s=clock();
-                            //printf("read Eb time is %f\n",(stop_s-start_s)/double(CLOCKS_PER_SEC)*1000000);
-                        }
-                    }
-                }
-            } else if (data.m_string) {
-                strcpy(c3name, data.mech_c3_file);
-                strcpy(c4name, data.mech_c4_file);
-                
-                strcat(c3name, data.mech_year_string);
-                strcat(c4name, data.mech_year_string);
-                
-                strcat(c3name, nc);
-                strcat(c4name, nc);
-            }
-        } else if (data.single_year) {
-            size_t i = 0;
-            for(; i < data.num_Vm0; i++) {
-                if (data.num_Vm0 > 1) {
-                    strcpy(c3name, data.Vm0_basepath);
-                    strcat(c3name, data.list_c3_files.at(i).c_str());
-                    strcpy(c4name, data.Vm0_basepath);
-                    strcat(c4name, data.list_c4_files.at(i).c_str());
-                } else {
-                    strcpy(c3name, data.mech_c3_file);
-                    strcpy(c4name, data.mech_c4_file);
-                }
-                
-                if (data.mech_c3_file_ncid[i] == 0) {
-                    if ((rv = nc_open(c3name, NC_NOWRITE, &ncid))) {
-                        NCERR(c3name, rv);
-                    } else {
-                        data.mech_c3_file_ncid[i] = ncid;
-                    }
-                }
-                if (data.mech_c4_file_ncid[i] == 0) {
-                    if ((rv = nc_open(c4name, NC_NOWRITE, &ncid))) {
-                        NCERR(c4name, rv);
-                    } else {
-                        data.mech_c4_file_ncid[i] = ncid;
-                    }
-                }
-                
-                for (size_t pt=0; pt<PT; pt++) {
-                    if (pt == 0) {
-                        ncid = data.mech_c3_file_ncid[i];
-                    } else {
-                        ncid = data.mech_c4_file_ncid[i];
-                    }
-                    // light levels
-                    // TODO: is this worth storing for each site? Same for everywhere.
-                    if ((rv = nc_inq_varid(ncid, "shade", &varid))) {
-                        NCERR("shade", rv);
-                    }
-                    if ((rv = nc_get_var_double(ncid, varid, &light_levels[pt][i][0]))) {
-                        NCERR("shade", rv);
-                    }
-                    
-                    // temp function
-                    if ((rv = nc_inq_varid(ncid, "tf", &varid))) {
-                        NCERR("tf", rv);
-                    }
-                    if ((rv = nc_get_vara_double(ncid, varid, index1, count1, &tf[pt][i][0]))) {
-                        NCERR("tf", rv);
-                    }
-                    
-                    // An
-                    if ((rv = nc_inq_varid(ncid, "An", &varid))) {
-                        NCERR("An", rv);
-                    }
-                    if ((rv = nc_get_vara_double(ncid, varid, index2, count2, &An[pt][i][0][0]))) {
-                        NCERR("An", rv);
-                    }
-                    
-                    // Anb
-                    if ((rv = nc_inq_varid(ncid, "Anb", &varid))) {
-                        NCERR("Anb", rv);
-                    }
-                    if ((rv = nc_get_vara_double(ncid, varid, index2, count2, &Anb[pt][i][0][0]))) {
-                        NCERR("Anb", rv);
-                    }
-                    
-                    // E
-                    if ((rv = nc_inq_varid(ncid, "E", &varid))) {
-                        NCERR("E", rv);
-                    }
-                    if ((rv = nc_get_vara_double(ncid, varid, index2, count2, &E[pt][i][0][0]))) {
-                        NCERR("E", rv);
-            }
-                    
-                    // Eb
-                    if ((rv = nc_inq_varid(ncid, "Eb", &varid))) {
-                        NCERR("Eb", rv);
-                    }
-                    if ((rv = nc_get_vara_double(ncid, varid, index2, count2, &Eb[pt][i][0][0]))) {
-                        NCERR("Eb", rv);
-                    }
-                }
-            }
-        }
-#endif
-    }
-    // TODO: check for bad inputs
-    
-    return true;
-}
 
-#if COUPLE_FAR
 bool SiteData::SetMECHdefault(UserData& data)
 {
-    //printf("Test flag 3 reset all mech var to -9999\n");
     int QRES=20;
-#if COUPLE_PFTspecific
     for (size_t spp=0;spp<NSPECIES;spp++)
     {
         for (size_t x=0;x<N_CLIMATE;x++)
@@ -2339,28 +1514,6 @@ bool SiteData::SetMECHdefault(UserData& data)
             light_levels[spp][N_LIGHT-1]=0;
         }
     }
-#else //COUPLE_PFTspecific
-    for (size_t i=0;i<data.num_Vm0;i++)
-    {
-        for (size_t pt=0;pt<PT;pt++)
-        {
-            for (size_t x=0;x<N_CLIMATE;x++)
-            {
-                for (size_t y=0;y<N_LIGHT;y++)
-                {
-                    An[pt][i][x][y]=-9999.0;
-                    Anb[pt][i][x][y]=-9999.0;
-                    E[pt][i][x][y]=-9999.0;
-                    Eb[pt][i][x][y]=-9999.0;
-                    light_levels[pt][i][y]= exp(-1.0 * y / (1.0 * QRES));
-                }
-                tf_air[pt][i][x]=-9999.0;
-                tf_soil[pt][i][x]=-9999.0;
-                light_levels[pt][i][N_LIGHT-1]=0;
-            }
-        }
-    }
-#endif //COUPLE_PFTspecific
     return true;
 }
 //#if COUPLE_MERRA2_LUT
@@ -2390,8 +1543,6 @@ bool SiteData::SetMERRA2_LUTdefault(UserData& data)
     return true;
 }
 //#endif //COUPLE_MERRA2_LUT
-
-#endif //COUPLE_FAR
 
 ////////////////////////////////////////////////////////////////////////////////
 //! calcPETMonthly

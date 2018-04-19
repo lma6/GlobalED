@@ -177,31 +177,10 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
       
       size_t time_index = data->time_period;
       size_t light_index = 0; /*calc light index*/
-#if COUPLE_PFTspecific
        while(currents->sdata->light_levels[spp][light_index] > currentc->lite){
            light_index++;
        }
-#else //COUPLE_PFTspecific
-       while(currents->sdata->light_levels[pt][currentc->Vm0_bin][light_index] > currentc->lite){
-           light_index++;
-       }
-#endif //COUPLE_PFTspecific
-       
-//       printf("flag 2 spp %d hite %f light_index %d lite %f \n",spp,currentc->hite,light_index,currentc->lite);
-//       if (light_index==120)
-//       {
-//           printf("flag 2 exit\n");
-//           exit(0);
-//       }
 
-#if FTS
-      currentc->E_pot = currents->E[pt][light_index];
-      currentc->E_pot *= currentc->leaf_area*12/1000.0;
-      currentc->E_shut = currents->E_shut[pt][120];
-      currentc->E_shut *= currentc->leaf_area*12/1000.0;
-#elif COUPLE_FAR
-       
-#if COUPLE_PFTspecific
        if (currents->sdata->E[spp][time_index][light_index]<-1000)
        {
            currents->sdata->compute_mech(pt,spp,currentc->Vm0,currentc->Vm0_bin,time_index,light_index,data);
@@ -214,36 +193,8 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
        currentc->E_pot *= currentc->leaf_area*N_CLIMATE/1000.0;
        currentc->E_shut = currents->sdata->Eb[spp][time_index][N_LIGHT-1];
        currentc->E_shut *= currentc->leaf_area*N_CLIMATE/1000.0;
-#else
-       if (currents->sdata->E[pt][currentc->Vm0_bin][time_index][light_index]<-1000)
-       {
-           currents->sdata->compute_mech(pt,spp,currentc->Vm0,currentc->Vm0_bin,time_index,light_index,data);
-       }
-       if (currents->sdata->Eb[pt][currentc->Vm0_bin][time_index][N_LIGHT-1]<-1000)
-       {
-           currents->sdata->compute_mech(pt,spp,currentc->Vm0,currentc->Vm0_bin,time_index,N_LIGHT-1,data);
-       }
        
-       currentc->E_pot = currents->sdata->E[pt][currentc->Vm0_bin][time_index][light_index];
-       currentc->E_pot *= currentc->leaf_area*N_CLIMATE/1000.0;
-       currentc->E_shut = currents->sdata->Eb[pt][currentc->Vm0_bin][time_index][N_LIGHT-1];
-       currentc->E_shut *= currentc->leaf_area*N_CLIMATE/1000.0;
-#endif //COUPLE_PFTspecific
-       
-
-#else
-      //potential transpiration (gH20/m2(leaf)/mon)
-      currentc->E_pot = currents->sdata->E[pt][currentc->Vm0_bin][time_index][light_index]; 
-      //convert to (kgH20/yr per plant)
-      currentc->E_pot *= currentc->leaf_area*N_CLIMATE/1000.0;
-
-      //4/25/00 changed to E_shut at 120 for dowregulation
-      //potential transpiration (gH20/m2(leaf)/mon)
-      currentc->E_shut = currents->sdata->Eb[pt][currentc->Vm0_bin][time_index][N_LIGHT-1];
-      //convert to (kgH20/yr per plant)
-      currentc->E_shut *= currentc->leaf_area*N_CLIMATE/1000.0;
-#endif
-
+       currentc->leafE_pot=currents->sdata->E[spp][time_index][light_index]/1000.0;
 
 
       /*NITROGEN UPTAKE**************************/
@@ -277,12 +228,7 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
            currentc->blv = currentc->blv + (1-wilt_factor)*currentc->bl;
            currentc->bl *= wilt_factor;
            currentc->leaf_area = currentc->bl*data->specific_leaf_area[spp];
-#if FTS
-           currentc->E_pot = currents->E[pt][light_index];
-           currentc->E_shut = currents->E_shut[pt][120];
-#elif COUPLE_FAR
-            
-#if COUPLE_PFTspecific
+        
             if (currents->sdata->E[spp][time_index][light_index]<-1000)
             {
                 currents->sdata->compute_mech(pt,spp,currentc->Vm0,currentc->Vm0_bin,time_index,light_index,data);
@@ -293,23 +239,7 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
             }
             currentc->E_pot = currents->sdata->E[spp][time_index][light_index];
             currentc->E_shut = currents->sdata->Eb[spp][time_index][N_LIGHT-1];
-#else
-            if (currents->sdata->E[pt][currentc->Vm0_bin][time_index][light_index]<-1000)
-            {
-                currents->sdata->compute_mech(pt,spp,currentc->Vm0,currentc->Vm0_bin,time_index,light_index,data);
-            }
-            if (currents->sdata->Eb[pt][currentc->Vm0_bin][time_index][N_LIGHT-1]<-1000)
-            {
-                currents->sdata->compute_mech(pt,spp,currentc->Vm0,currentc->Vm0_bin,time_index,N_LIGHT-1,data);
-            }
-            currentc->E_pot = currents->sdata->E[pt][currentc->Vm0_bin][time_index][light_index];
-            currentc->E_shut = currents->sdata->Eb[pt][currentc->Vm0_bin][time_index][N_LIGHT-1];
-#endif   //COUPLE_PFTspecific
 
-#else
-           currentc->E_pot = currents->sdata->E[pt][currentc->Vm0_bin][time_index][light_index];
-           currentc->E_shut = currents->sdata->Eb[pt][currentc->Vm0_bin][time_index][N_LIGHT-1];
-#endif
            currentc->E_pot *= currentc->leaf_area*12/1000.0;
            currentc->E_shut *= currentc->leaf_area*12/1000.0;
         } //Water_supply<E_shut

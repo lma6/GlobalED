@@ -74,6 +74,8 @@ double patch::Dwdt (double time, UserData* data){
    /* calculate water evaporation from the soil, scale by plant cover */
    soil_evap = (currents->sdata->soil_evap_conductivity)
       * (radiative_flux(data)) * water;
+    
+    
   
    /* calculate water loss per unit area from patch */
    theta = water / (currents->sdata->soil_depth * currents->sdata->theta_max);
@@ -302,13 +304,40 @@ double patch::A_function (unsigned int time_period, UserData* data) {
 
    /* EFFECT OF TEMPERATURE   */
    /* from ben's century code */
+    double Td=0;
+if (0)
+{
    double Tmax = 45.0;
    double Topt = 35.0;
    double tshr = 0.2; 
    double tshl = 2.63;
    double t1 = (Tmax - soil_temp) / (Tmax - Topt);
    double t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
-   double Td = pow(t1, tshr) * t2; // rate multiplier due to temp 
+   Td = pow(t1, tshr) * t2; // rate multiplier due to temp
+}
+else
+{
+    //Compute Td for each layer and then take the average
+    double Tmax=45.0,Topt = 35.0,tshr = 0.2,tshl = 2.63,t1=0,t2=0;
+
+    t1 = (Tmax - currents->sdata->soil_temp1[time_period]) / (Tmax - Topt);
+    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
+    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
+    
+    t1 = (Tmax - currents->sdata->soil_temp2[time_period]) / (Tmax - Topt);
+    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
+    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
+    
+    t1 = (Tmax - currents->sdata->soil_temp3[time_period]) / (Tmax - Topt);
+    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
+    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
+    
+//    t1 = (Tmax - currents->sdata->soil_temp4[time_period]) / (Tmax - Topt);
+//    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
+//    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
+    
+    Td/=3.0;
+}
    
 
    /*EFFECT OF MOISTURE*/
@@ -324,6 +353,7 @@ double patch::A_function (unsigned int time_period, UserData* data) {
    } else {
       Wd = 0.6 / (1.2 * theta);
    }
+
    return (Td * Wd);
 
 #elif defined MIAMI_LU

@@ -278,7 +278,11 @@ void update_patch (patch** current_patch, UserData* data) {
    cp->nep     = 0.0;
    cp->npp2    = 0.0;
    cp->gpp     = 0.0;
+   cp->avg_fopen   = 0.0;
+   cp->avg_leafAn_pot = 0.0;
+   cp->avg_leafE_pot=0.0;
    cc = cp->shortest;
+    int tmp_cc_number=0;
    while(cc != NULL){
       double hgtmin = data->hgtmin;
       if(data->allometry_type == 1 and !data->is_grass[cc->species] 
@@ -291,9 +295,29 @@ void update_patch (patch** current_patch, UserData* data) {
          cp->npp2 += cc->npp2 * cc->nindivs / cp->area;
          cp->gpp += cc->gpp * cc->nindivs / cp->area;
          cp->dndt += cc->dndt / cp->area;
+          
+          cp->avg_fopen+=cc->fs_open;
+          cp->avg_leafAn_pot+=cc->leafAn_pot;
+          cp->avg_leafE_pot+=cc->leafE_pot;
+          tmp_cc_number++;
       }
       cc = cc->taller;
    } /* end loop over cohorts */
+    
+    if (tmp_cc_number>0)
+    {
+        cp->avg_fopen/=tmp_cc_number;
+        cp->avg_leafAn_pot/=tmp_cc_number;
+        cp->avg_leafE_pot/=tmp_cc_number;
+    }
+    else
+    {
+        cp->avg_fopen=0.0;
+        cp->avg_leafAn_pot=0.0;
+        cp->avg_leafE_pot=0.0;
+    }
+    
+    
    cp->nep -= cp->rh;
 #elif defined MIAMI_LU
    cp->npp = cp->siteptr->sdata->miami_npp;

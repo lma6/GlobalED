@@ -19,7 +19,8 @@
 #define O 205.0     //!<  Oxygen partial pressure gas units are mbar
 #define Q10 2.0        //!< Q10 factor
 
-#define parameterizationCase 2 //1-Bonan 2011; 2-Kattge 2007 without thermal accmlimation; 3-Kattge 2007 with acclimation
+#define parameterizationCase 4 //1-Bonan 2011; 2-Kattge 2007 without thermal accmlimation; 3-Kattge 2007 with acclimation;
+                               //4-Kattge 2007 with acclimation but Tg is 40
 
 void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
 {
@@ -41,8 +42,8 @@ void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
     Transpiration=0,     //!< Transpiration mol H2O m-2 s-1
     Tleaf=0,  //!< Leaf temperature C
     Ci=0,     //!< Internal CO2 concentration umol mol-1
-    StomatalConductance=0,     //!< Stomatal conductance umol m-2 s-1
-    BoundaryLayerConductance=0,    //!< Boundary layer conductance umol m-2 s-1
+    StomatalConductance=0,     //!< Stomatal conductance umol H2O m-2 s-1
+    BoundaryLayerConductance=0,    //!< Boundary layer conductance umol H2O m-2 s-1
     DarkRespiration=0,    //!< Plant respiration    umol m-2 s-1
     VPD=0,    //!< Vapor Pressure Density, kPa */
     Ci_Ca=0;  //!< Ratio of internal to external CO2, unitless
@@ -118,6 +119,31 @@ void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
         
         Q10R=pow(10,-0.00794*(Tg-25.0)); //from Atkin et al 2008
         
+        if (!strcmp(data->title[spp],"evergreen"))
+            rJ2V=1.07;
+#endif
+        
+#if parameterizationCase==4
+        Tg=40;
+        
+        EaVc=71513;  //Kattge 2007 Table.3
+        Eaj=49884;   //Kattge 2007 Table.3
+        Ear=66400;   //Need to check. from photo...master paramater.xls
+        Eap=53100;   //As no acclimation in Kattge 2007, same as Bonan 2011
+        
+        Sv=668.39-1.07*Tg;
+        Sj=659.70-0.75*Tg;
+        Sr=490;     //As no acclimation in Kattge 2007, same as Bonan 2011, acclimation is achieved using Q10R factor
+        Sp=490;     //As no acclimation in Kattge 2007, same as Bonan 2011
+        
+        Hv=200000;  //Kattge 2007 Table.3
+        Hj=200000;  //Kattge 2007 Table.3
+        Hr=150650;  //As no acclimation in Kattge 2007, same as Bonan 2011
+        Hp=150650;  //As no acclimation in Kattge 2007, same as Bonan 2011
+        
+        rJ2V=2.59-0.035*Tg; //Kattge 2007 Table.3
+        
+        Q10R=pow(10,-0.00794*(Tg-25.0)); //from Atkin et al 2008
         if (!strcmp(data->title[spp],"evergreen"))
             rJ2V=1.07;
 #endif
@@ -219,8 +245,49 @@ void SiteData::Farquhar_couple(int pt, int spp,UserData* data,double Ta, double 
     outputs[3]/=-1e6;
     
     
-    //double Ds=(Es(Tleaf)-RH*Es(Tair))/Press;
-    //printf("Tl %f Ta %f Ag %f An %f light %f Ci %f Ds %f gb %f VPD %f\n",Tleaf,Tair,AssimilationGross,AssimilationNet,PhotoFluxDensity,Ci,Ds*Press,BoundaryLayerConductance,this->VPD);
+//    double Ds=(Es(Tleaf)-RH*Es(Tair))/Press;
+//    double Jmax = Jm25*exp(((Tleaf-25)*Eaj)/(R_gas*(Tleaf+273)*298))*
+//    (1+exp((Sj*298-Hj)/(R_gas*298)))/
+//    (1+exp((Sj*(Tleaf+273)-Hj)/(R_gas*(Tleaf+273)))); // de Pury 1997
+//    double Vcmax = Vcm25*exp(((Tleaf-25)*EaVc)/(R_gas*(Tleaf+273)*298))*
+//    (1+exp((Sv*298-Hv)/(R_gas*298)))/
+//    (1+exp((Sv*(Tleaf+273)-Hv)/(R_gas*(Tleaf+273)))); // Used peaked response, DHF
+//    //TPU = TPU25*exp(Eap*(Tleaf-25)/(298*R_gas*(Tleaf+273)));  //orginal one, does account thermal breakdown
+//    double TPU = TPU25*exp(((Tleaf-25)*Eap)/(R_gas*(Tleaf+273)*298))*
+//    (1+exp((Sp*298-Hp)/(R_gas*298)))/
+//    (1+exp((Sp*(Tleaf+273)-Hp)/(R_gas*(Tleaf+273))));
+//
+//
+//    const long Lambda = 44000; //latent heat of vaporization of water J mol-1 - not used in this implementation
+//    const double Cp = 29.3; // thermodynamic psychrometer constant and specific hear of air, J mol-1 C-1
+//    const double psc = 6.66e-4; //psycrometric constant units are C-1
+//
+//    double HeatConductance,  //heat conductance J m-2 s-1
+//    VaporConductance, //vapor conductance ratio of stomatal and heat conductance mol m-2 s-1
+//    RadiativeConductance, //radiative conductance J m-2 s-1
+//    RadiativeAndHeatConductance, //radiative+heat conductance
+//    psc1,  // apparent psychrometer constant Campbell and Norman, page 232 after eq 14.11
+//    Ea,   //ambient vapor pressure kPa
+//    thermal_air; // emitted thermal radiation Watts  m-2
+//
+//
+//
+//    HeatConductance = BoundaryLayerConductance*(0.135/0.147);  // heat conductance, HeatConductance = 1.4*.135*sqrt(u/d), u is the wind speed in m/s} Boundary Layer Conductance to Heat
+//    // Since BoundaryLayerConductance is .147*sqrt(u/d) this scales to 0.135*sqrt(u/d) - HeatConductance on page 109 of Campbell and Norman, 1998
+//    // Wind was accounted for in BoundaryLayerConductance already  as BoundaryLayerConductance (turbulent vapor transfer) was calculated from CalcTurbulentVaporConductance() in GasEx.
+//    // units are J m-2 s-1
+//    VaporConductance = StomatalConductance*BoundaryLayerConductance/(StomatalConductance+BoundaryLayerConductance);      //vapor conductance, StomatalConductance is stomatal
+//    double ds=(Es(Tleaf)-Ea)/Press;
+//
+//    double thermal_leaf=epsilon*sbc*pow(Tleaf+273,4)*2;
+//
+//    double Res = R_abs - thermal_leaf - Cp*HeatConductance*(Tleaf - Tair) - Lambda*VaporConductance*1.0*(Es(Tleaf)-Ea)/Press; // Residual function: f(Ti), KT Paw (1987)
+//
+//    printf("swd %f R_abs %f thermLeaf %f Rn %f H %f lamdaE %f Res %f Tl %f Ta %f gsw %f gbw %f gH %f ds %f\n",swd,R_abs,thermal_leaf,R_abs - thermal_leaf,Cp*HeatConductance*(Tleaf - Tair),Lambda*VaporConductance*1.0*(Es(Tleaf)-Ea)/Press,Res,Tleaf,Tair,StomatalConductance,BoundaryLayerConductance,HeatConductance,ds);
+    
+    
+    
+//    printf("Tl %f Ta %f Vcmax %f Jmax %f TPU %f Ag %f An %f light %f Ci %f Ds %f gb %f VPD %f\n",Tleaf,Tair,Vcmax,Jmax,TPU,AssimilationGross,AssimilationNet,PhotoFluxDensity,Ci,Ds*Press,BoundaryLayerConductance,this->VPD);
    
     Initilize(pt,spp,Tg,data);
 }
@@ -316,9 +383,8 @@ void SiteData::PhotosynthesisC3(double Ci)
     AssimilationGross = fmax(AssimilationNet+DarkRespiration,0.0);
     StomatalConductance = CalcStomatalConductance(); // Update StomatalConductance using new value of AssimilationNet
     
-    //printf("gb %f\n",BoundaryLayerConductance);
-        //printf("Tl %f Av %f Aj %f Ap %f Ac %f Ag %f An %f Vcmax %f Jmax %f light %f Ci %f\n",Tleaf,Av,Aj,Ap,Ac,AssimilationGross,AssimilationNet,Vcmax,Jmax,PhotoFluxDensity,Ci);
-    //}
+//    printf("gb %f\n",BoundaryLayerConductance);
+//    printf("Tl %f Av %f Aj %f Ap %f Ac %f Ag %f An %f Vcmax %f Jmax %f light %f Ci %f Cc %f gamma %f Km %f Kc %f Ko %f\n",Tleaf,Av,Aj,Ap,Ac,AssimilationGross,AssimilationNet,Vcmax,Jmax,PhotoFluxDensity,Ci,Cc,gamma,Km,Kc,Ko);
 //    exit(0);
 }
 
@@ -444,8 +510,8 @@ void SiteData::EnergyBalance()
         lastTi=newTi;
         //double Tleaf2= Tair + (R_abs- thermal_air-Lambda*VaporConductance*this->VPD/Press)/(Cp*RadiativeAndHeatConductance+Lambda*Slope(Tair)*VaporConductance); // eqn 14.6a
         thermal_leaf=epsilon*sbc*pow(lastTi+273,4)*2;
-        Res = R_abs - thermal_leaf - Cp*HeatConductance*(lastTi - Tair) - Lambda*VaporConductance*0.5*(Es(lastTi)-Ea)/Press; // Residual function: f(Ti), KT Paw (1987)
-        dRes= -4*epsilon*sbc*pow(273+lastTi,3)*2-Cp*HeatConductance-0.5*Lambda*VaporConductance*Slope(lastTi); // derivative of residual: f'(Ti)
+        Res = R_abs - thermal_leaf - 2*Cp*HeatConductance*(lastTi - Tair) - Lambda*VaporConductance*(Es(lastTi)-Ea)/Press; // Residual function: f(Ti), KT Paw (1987)
+        dRes= -4*epsilon*sbc*pow(273+lastTi,3)*2-2*Cp*HeatConductance-Lambda*VaporConductance*Slope(lastTi); // derivative of residual: f'(Ti)
         newTi = lastTi - Res/dRes; // newton-rhapson iteration
         iter++;
         //printf("iter %d newTi %f lastTi %f Res %f dRes %f\n",iter,newTi,lastTi,Res,dRes);
@@ -456,6 +522,8 @@ void SiteData::EnergyBalance()
     Transpiration =VaporConductance*(Es(Tleaf)-Ea)/Press; //Don't need Lambda - cancels out see eq 14.10 in Campbell and Norman, 1998
     // umol m-2 s-1. note 1000 converts from moles to umol since units of VaporConductance are moles.
     //printf("ml marks flag Tr %f %f %f %f %f %f %f\n",Transpiration,VaporConductance,StomatalConductance,BoundaryLayerConductance,Es(Tleaf),Ea,Tleaf);
+    //printf("Check Ta %f Tl %f gsw %f gbw %f gH %f Es %f R_abs %f thermal_leaf %f LamdaE %f Res %f dRes %f\n",Tair,Tleaf,StomatalConductance,BoundaryLayerConductance,HeatConductance,Es(Tair),R_abs,thermal_leaf,Lambda*VaporConductance*1.0*(Es(Tleaf)-Ea)/Press,Res,dRes);
+   //exit(0);
 }
 
 //void SiteData::EnergyBalance2()
@@ -548,8 +616,9 @@ double SiteData::CalcStomatalConductance()
     StomatalConductance=(0.01+8*AssimilationNet/((Cs-Gamma)*(1+Ds/0.01)));
     if (StomatalConductance < g0) StomatalConductance=g0; //Limit StomatalConductance to mesophyll conductance
     
+    //printf("Ds %f An %f Cs %f CO2 %f Gamma %f gsc %f\n",Ds,AssimilationNet,Cs,CO2,Gamma,StomatalConductance);
     
-    return StomatalConductance;  // moles m-2 s-1
+    return StomatalConductance;  // moles H2O m-2 s-1
 }
 
 double SiteData::CalcTurbulentVaporConductance(void)

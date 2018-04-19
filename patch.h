@@ -33,6 +33,9 @@ struct patch {
    double gpp;                         ///< kgC/(yr*m^2)
    double aa_gpp;                      ///< kgC/(timestep*m^2)
    double aa_npp2;                     ///< Annual average npp kgC/(timestep*m^2)
+   double avg_fopen;                       ///stomatal open
+   double avg_leafAn_pot;                     ///kgC/(yr*m^2)
+   double avg_leafE_pot;           ///Rate of evapotation mm/yr
 #endif
    double aa_lai;           ///< Annual average LAI m^2/m^2
    double aa_lai_profile[N_LAI];

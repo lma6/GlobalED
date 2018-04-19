@@ -6,7 +6,7 @@
 #include "read_site_data.h"
 #include "cohort.h"
 
-#define THETA_CRIT 0.5      /* theta threshold for leaf drop (mm)*/ 
+#define THETA_CRIT 0.5      /* theta threshold for leaf drop (mm)*/
 #define L_FRACT 0.5 /* 0.5 fraction of leaves retained after leaf fall */
 
 using namespace std;

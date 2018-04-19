@@ -30,6 +30,11 @@ struct SiteData {
    double temp[N_CLIMATE];           ///< monthly mean temperature (deg C)
    double precip[N_CLIMATE];         ///< monthly rate of rainfall (mm/yr)
    double soil_temp[N_CLIMATE];      ///< monthly mean soil temp (deg C)
+   double soil_temp1[N_CLIMATE];      ///< monthly mean soil temp (deg C) at 1st layer in MERRA2
+   double soil_temp2[N_CLIMATE];      ///< monthly mean soil temp (deg C) at 2nd layer in MERRA2
+   double soil_temp3[N_CLIMATE];      ///< monthly mean soil temp (deg C) at 3rd layer in MERRA2
+   double soil_temp4[N_CLIMATE];      ///< monthly mean soil temp (deg C) at 4th layer in MERRA2
+   double soil_temp5[N_CLIMATE];      ///< monthly mean soil temp (deg C) at 5th layer in MERRA2
    double pet[N_CLIMATE];            ///< potential evapotranspiration (mm/yr) 
 #endif // ED
    double precip_average;            ///< avg. yrly precip (mm/yr) 
@@ -60,14 +65,7 @@ struct SiteData {
     
    // potential photosynthesis and evap
 
-#if FTS
-   bool readFTSdata (UserData& data);
-   double Input_Temperature[N_CLIMATE_INPUT*CLIMATE_INPUT_INTERVALS];
-   double Input_Specific_Humidity[N_CLIMATE_INPUT*CLIMATE_INPUT_INTERVALS];
-   double Input_Par[N_CLIMATE_INPUT*CLIMATE_INPUT_INTERVALS];
-#else
-    
-#if COUPLE_FAR
+
     /// The following varaibles are used for photosynthesis.cc that couple Farqhuar with stomactal conductance and leaf energy balance model.
     int C4,iter1, iter2,iter_Ci;
     double Vcm25,Jm25,Vpm25,TPU25,Rd25,Theta,EaVc,Eaj,Eap,Ear,EaVp,Hv,Hj,Hr,Hp,Sv,Sj,Sr,Sp,rJ2V,Q10R,g0,g1,stomaRatio,LfWidth,LfAngFact;
@@ -123,9 +121,6 @@ struct SiteData {
     void EnergyBalance();
     void GasEx(void);
     void Farquhar_couple(int pt, int spp,UserData* data,double Tair, double Tsoil,double ea, double shortwaveRad, double Tg, double Ca, double wind, double Press, double shade, double Vm25, double outputs[6]);
-#endif
-    
-#if COUPLE_PFTspecific
 
 //#if COUPLE_MERRA2_LUT
     int is_filled_LUT[N_MERRA2][NSPECIES][N_CLIMATE];
@@ -144,19 +139,6 @@ struct SiteData {
     double Eb[NSPECIES][N_CLIMATE][N_LIGHT];  ///< pot. transp when shut (gW/(m2 mo))
     double tf_air[NSPECIES][N_CLIMATE];           ///< value of temp function (used in resp calc)
     double tf_soil[NSPECIES][N_CLIMATE];           ///< value of temp function (used in resp calc)
-#else
-    double light_levels[PT][NUM_Vm0s][N_LIGHT];
-    double tf_air[PT][NUM_Vm0s][N_CLIMATE];           ///< value of temp function (used in resp calc) (Dimensionless???)
-    double tf_soil[PT][NUM_Vm0s][N_CLIMATE];           ///< value of temp function (used in resp calc) (Dimensionless???)
-    double An[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];  ///< pot. net photosynthesis (gC/(m2 mo))
-    double E[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];   ///< potential transpitation (gW/(m2 mo))
-    double Anb[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT]; ///< pot. psyn when shut (g/(m2 mo))
-    double Eb[PT][NUM_Vm0s][N_CLIMATE][N_LIGHT];  ///< pot. transp when shut (gW/(m2 mo))
-#endif //COUPLE_PFTspecific
-    
-#endif
-   
-
 
 
    // N.A. stuff 

@@ -39,6 +39,11 @@ float getPercSPP6    (site* cs)      { return cs->site_total_spp_biomass[6]/(cs-
 
 float getGPP (site* cs)              { return cs->site_gpp; }
 float getGPPAA (site* cs)            { return cs->site_aa_gpp;}
+
+float getLeafFopen (site* cs)            { return cs->site_avg_fopen; }
+float getLeafAn_POT (site* cs)    { return cs->site_avg_leafAn_pot; }
+float getLeafE_POT (site* cs)    { return cs->site_avg_leafE_pot; }
+
 #endif
 float getLAIAA (site* cs)            { return cs->site_aa_lai;}
 float getLAIAA0 (site* cs)           { return cs->site_aa_lai_profile[0];}
@@ -60,6 +65,7 @@ float getSiteSoilC (site* cs)        { return cs->site_total_soil_c; }
 #ifdef ED
 float getNPP2 (site* cs)             { return cs->site_npp2; }
 float getNEP2 (site* cs)             { return cs->site_nep2; }
+float getNEP3 (site* cs)             { return cs->site_nep3; }
 float getSiteSoilN (site* cs)        { return cs->site_total_soil_N; }
 float getSiteMineralizedN (site* cs) { return cs->site_mineralized_soil_N; }
 float getLAI (site* cs)              { return cs->site_lai; }
@@ -243,6 +249,10 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("aa_GPP", &getGPPAA, "kg/m2/yr", -9999.0F, ncFloat);
    o->registerVar("NPP2", &getNPP2, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("NEP2", &getNEP2, "kg/m2", -9999.0F, ncFloat);
+   o->registerVar("NEP3", &getNEP3, "kg/m2", -9999.0F, ncFloat);
+   o->registerVar("Leaffopen", &getLeafFopen, "", -9999.0F, ncFloat);
+   o->registerVar("LeafAn_pot", &getLeafAn_POT, "kg/m2", -9999.0F, ncFloat);
+   o->registerVar("LeafE_pot", &getLeafE_POT, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("soil_N", &getSiteSoilN, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("mineralized_soil_N", &getSiteMineralizedN, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("LAI", &getLAI, "", -9999.0F, ncFloat);
@@ -625,9 +635,9 @@ void print_cfluxes (unsigned int time, site** siteptr, UserData* data) {
  
 #ifdef ED
    fprintf(outfile,
-           "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f\n",
+           "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f leafAn_pot %f leafE_pot %f leaffopen %f\n",
            cs->sdata->name_, time*TIMESTEP, cs->site_npp, cs->site_rh, cs->site_nep,
-           cs->site_npp2, cs->site_gpp, cs->site_dndt);
+           cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_avg_leafAn_pot,cs->site_avg_leafE_pot,cs->site_avg_fopen);
 #elif defined MIAMI_LU
    fprintf(outfile,
            "%s time %f npp %8.6f rh %8.6f nep %8.6f dndt %f\n",
@@ -642,10 +652,10 @@ void print_cfluxes (unsigned int time, site** siteptr, UserData* data) {
 
       /* print to files */
 #if defined ED
-      fprintf(outfile, "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f\n",
+      fprintf(outfile, "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f\n",
               cs->sdata->name_, time * TIMESTEP,
               cs->npp[lu], cs->rh[lu] ,cs->nep[lu],
-              cs->npp2[lu], cs->gpp[lu], cs->dndt[lu]);
+              cs->npp2[lu], cs->gpp[lu], cs->dndt[lu],cs->nep3[lu]);
 #elif defined MIAMI_LU
       fprintf(outfile, "%s time %f npp %8.6f rh %8.6f nep %8.6f dndt %f\n",
           cs->sdata->name_, time * TIMESTEP,
@@ -661,9 +671,9 @@ void print_cfluxes (unsigned int time, site** siteptr, UserData* data) {
       while (cp != NULL) {
 #if defined ED
          fprintf(outfile,
-                 "%s time %f pid %p track %u area %f age %5.2f npp %8.6f rh %8.6f  nep %8.6f npp2 %8.6f gpp %8.6f\n",
+                 "%s time %f pid %p track %u area %f age %5.2f npp %8.6f rh %8.6f  nep %8.6f npp2 %8.6f gpp %8.6f leafAn_pot %8.6f leafE_pot %8.6f leaffopen %8.6f\n",
                  cs->sdata->name_, time*TIMESTEP, cp, cp->track, cp->area, cp->age,
-                 cp->npp, cp->rh, cp->nep, cp->npp2, cp->gpp); 
+                 cp->npp, cp->rh, cp->nep, cp->npp2, cp->gpp,cp->avg_leafAn_pot,cp->avg_leafE_pot,cp->avg_fopen);
 #elif defined MIAMI_LU
          fprintf(outfile,
                  "%s time %f pid %p track %u area %f age %f npp %8.6f rh %8.6f nep %8.6f\n" ,

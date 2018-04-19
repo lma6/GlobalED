@@ -50,7 +50,10 @@ struct cohort{
    double old_bdead;
 
    double An_max;             ///< kgC/yr per indiv 
-   double An_pot;             ///< kgC/yr per indiv     
+   double An_pot;             ///< kgC/yr per indiv
+   double leafAn_pot;       ///< kgC/yr per leaf area, correspond to the estimate from Farquhar model
+   double leafE_pot;      ///< kgC/yr per leaf area, correspond to the estimate from Farquhar model
+    
    double An_shut;            ///< kgC/yr per indiv 
    double An_shut_max;        ///< kgC/yr per indiv 
    double fs_open;            ///< fraction of month with stomates open (dimensionless)    

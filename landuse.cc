@@ -186,7 +186,7 @@ int read_transition_rates (site** current_site, UserData* data) {
     count[0] = N_LANDUSE_YEARS;
     count[1] = 1;
     count[2] = 1;
-#if FASTLOAD
+
     for (dlu=0; dlu<N_LANDUSE_TYPES; dlu++) {
         for (tlu=1; tlu<N_LANDUSE_TYPES; tlu++) {
             for (ylu=0;ylu<N_LANDUSE_YEARS;ylu++)
@@ -228,89 +228,6 @@ int read_transition_rates (site** current_site, UserData* data) {
             for (i=0; i<N_LANDUSE_YEARS; i++)
                 cs->sdata->sbh[dlu][i] *= factor;
     }
-#else
-    if (data->lu_file_ncid == 0) {
-        if ((rv = nc_open(data->lu_file, NC_NOWRITE, &ncid)))
-            NCERR(data->lu_file, rv);
-        data->lu_file_ncid = ncid;
-    } else {
-        ncid = data->lu_file_ncid;
-    }
-    
-    for (dlu=0; dlu<N_LANDUSE_TYPES; dlu++) {
-        for (tlu=1; tlu<N_LANDUSE_TYPES; tlu++) {
-            /* skip transitions self->self and v->s (v->s dealt with in sbh/vbh) */
-            if ((dlu != tlu) && !( (dlu == LU_NTRL) && (tlu == LU_SCND) ) ) {
-                if ((dn = lu2charname(dlu)) && (tn = lu2charname(tlu))) {
-                    sprintf(varname, "gfl%c%c", dn, tn);
-                    if ((rv = nc_inq_varid(ncid, varname, &varid)))
-                        NCERR(varname, rv);
-                    if ((rv = nc_get_vara_double(ncid, varid, index, count,
-                                                 &(cs->sdata->beta[dlu][tlu-1][0]))))
-                        NCERR(varname, rv);
-#if FASTLOAD
-                    if (abs(cs->sdata->beta[dlu][tlu-1][100]-data->gfl[dlu][tlu-1][100][cs->sdata->globY_][cs->sdata->globX_])>0)
-                    {
-                        printf("Diff in gfl %d %d %f %f",cs->sdata->globY_,cs->sdata->globX_,cs->sdata->beta[dlu][tlu-1][100],data->gfl[dlu][tlu-1][100][cs->sdata->globY_][cs->sdata->globX_]);
-                        exit(0);
-                    }
-#endif
-                }
-            }
-        }
-    }
-    
-    for (dlu=0; dlu<N_VBH_TYPES; dlu++) {
-        sprintf(varname, "gfvh%d", dlu+1);
-        if ((rv = nc_inq_varid(ncid, varname, &varid)))
-            NCERR(varname, rv);
-        
-        if ((rv = nc_get_vara_double(ncid, varid, index, count,
-                                     &(cs->sdata->vbh[dlu][0]))))
-            NCERR(varname, rv);
-#if FASTLOAD
-        if (abs(cs->sdata->vbh[dlu][100]-data->gfvh[dlu][100][cs->sdata->globY_][cs->sdata->globX_])>0)
-        {
-            printf("Diff in gfvh %d %d %f %f",cs->sdata->globY_,cs->sdata->globX_,cs->sdata->vbh[dlu][100],data->gfvh[dlu][100][cs->sdata->globY_][cs->sdata->globX_]);
-            exit(0);
-        }
-#endif
-    }
-    
-    for (dlu=0; dlu<N_SBH_TYPES; dlu++) {
-        sprintf(varname, "gfsh%d", dlu+1);
-        if ((rv = nc_inq_varid(ncid, varname, &varid)))
-            NCERR(varname, rv);
-        
-        if ((rv = nc_get_vara_double(ncid, varid, index, count,
-                                     &(cs->sdata->sbh[dlu][0]))))
-            NCERR(varname, rv);
-#if FASTLOAD
-        if (abs(cs->sdata->sbh[dlu][100]-data->gfsh[dlu][100][cs->sdata->globY_][cs->sdata->globX_])>0)
-        {
-            printf("Diff in gfsh %d %d %f %f",cs->sdata->globY_,cs->sdata->globX_,cs->sdata->sbh[dlu][100],data->gfsh[dlu][100][cs->sdata->globY_][cs->sdata->globX_]);
-            exit(0);
-        }
-#endif
-    }
-    
-    /*re-normalize from fraction of grid cell area to fraction of the land area*/
-    if (cs->sdata->grid_cell_area_total != cs->sdata->grid_cell_area) {
-        factor = cs->sdata->grid_cell_area_total / cs->sdata->grid_cell_area;
-        for (dlu=0; dlu<N_LANDUSE_TYPES; dlu++)
-            for (tlu=0; tlu<N_LANDUSE_TYPES-1; tlu++)
-                for (i=0; i<N_LANDUSE_YEARS; i++)
-                    cs->sdata->beta[dlu][tlu][i] *= factor;
-        for (dlu=0; dlu<N_VBH_TYPES; dlu++)
-            for (i=0; i<N_LANDUSE_YEARS; i++)
-                cs->sdata->vbh[dlu][i] *= factor;
-        for (dlu=0; dlu<N_SBH_TYPES; dlu++)
-            for (i=0; i<N_LANDUSE_YEARS; i++)
-                cs->sdata->sbh[dlu][i] *= factor;
-    }
-#endif
-    
-    
     
 #if 0
     /* TODO: this needs to be adjusted to use the multi-D lutype indexed arrays - justin */
@@ -515,8 +432,8 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
                   double beta = currents->sdata->beta[dlu][tlu-1][lu_year];
 #if 1
                    if (data->year > N_LANDUSE_YEARS) {
-                       //printf("LU year exceeds 2005 %d %d\n",data->year,N_LANDUSE_YEARS);
-                       beta=0;
+                       //printf("LU year exceeds 2005 %d %d, using 2005 LU transition instead\n",data->year,N_LANDUSE_YEARS);
+                       beta=currents->sdata->beta[dlu][tlu-1][N_LANDUSE_YEARS-1];
                    }
 #endif
                   landuse_transition(&currents, data, dlu, tlu, beta);

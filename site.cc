@@ -129,7 +129,6 @@ double compute_dyl_factor (double lat, double day) {
    return factor;
 }
 
-#if COUPLE_FAR
 bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_period, int light_index, UserData* data)
 {
     double farquhar_results[6];
@@ -137,7 +136,6 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
     double Vcmax25=Vm0;
     double tmp=0,hum=0,swd=0,windspeed=0,CO2=0,Pa=101.3,Tg=25.0,Ts=0;
     
-#if COUPLE_PFTspecific
     shade=light_levels[spp][light_index];
     tf_air[spp][time_period]=0;
     tf_soil[spp][time_period]=0;
@@ -145,16 +143,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
     E[spp][time_period][light_index]=0;
     Anb[spp][time_period][light_index]=0;
     Eb[spp][time_period][light_index]=0;
-#else
-    shade=light_levels[pt][Vm0_bin][light_index];
-    tf_air[pt][Vm0_bin][time_period]=0;
-    tf_soil[pt][Vm0_bin][time_period]=0;
-    An[pt][Vm0_bin][time_period][light_index]=0;
-    E[pt][Vm0_bin][time_period][light_index]=0;
-    Anb[pt][Vm0_bin][time_period][light_index]=0;
-    Eb[pt][Vm0_bin][time_period][light_index]=0;
-#endif
-    
+
 #if CPOUPLE_VcmaxDownreg
     double cumuLAI=log(shade)/(-1.0/(data->cohort_shading*data->L_extinct));   //Derive cumulative LAI that results in the light level
     double Kn = exp(0.00963*data->Vm0_max[spp]* - 2.43);        //Lloyd et al 2011
@@ -164,20 +153,193 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
     printf("Dwonregulate Vcmax cumuLAI %f lite %f Vcmax25 %f %f\n",cumuLAI,shade,data->Vm0_max[spp],Vcmax25);
 #endif
     
-    //double farquhar_results2[6],farquhar_results3[6],tmp,hum,swd;
+    
+    //// Test calculation with FLUXNET2015
+//    printf("start testing fluxnet\n");
+//    char dirpath[500],expname[500],IGBP[100],timestep[10];
 //
-//    hum=0.03;
-//    swd=600;
-//    tmp=0;
-//    for (tmp=0;tmp<50;tmp+=2)
+//    strcpy(dirpath,"/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Data/FLUXNET2015/Subset/");
+//    FILE* siteinfo;
+//    siteinfo=fopen("/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Data/FLUXNET2015/SiteInfo.txt","r");
+//    double lat=0,lon=0,unit_convertor=0;
+//    //////strcpy(expname,"FLX_CA-NS4_FLUXNET2015_FULLSET_2002-2005_1-3_HH");
+//    strcpy(timestep,"_HH");  //Timestep of files
+//
+//    if (!strcmp(timestep,"_HH")) unit_convertor=1e6;    //As unit is different for HH, DD, MM and YY
+//    if (!strcmp(timestep,"_DD")) unit_convertor=12*3600*2.0;
+//    if (!strcmp(timestep,"_MM")) unit_convertor=12*3600*2.0;
+//    if (!strcmp(timestep,"_YY")) unit_convertor=12*3600*2.0;
+//
+//    if (unit_convertor<0.5)
+//    {
+//        printf("Error in unit_convertor %f\n",unit_convertor);
+//        exit(0);
+//    }
+//
+//    while (fscanf(siteinfo,"%s %s %f %f\n",&expname,&IGBP,&lat,&lon)!=EOF)
+//    {
+//        char infilename[500],outfilename[500],buf[500];
+//
+//        //strcpy(expname,"FLX_AR-SLu_FLUXNET2015_FULLSET_2009-2011_1-3");
+//        printf("Processing %s\n",expname);
+//
+//        FILE *infile, *outfile;
+//        strcpy(infilename,dirpath);
+//        strcat(infilename,expname);
+//        strcat(infilename,timestep);
+//        strcat(infilename,".txt");
+//
+//        strcpy(outfilename,dirpath);
+//        strcat(outfilename,expname);
+//        strcat(outfilename,timestep);
+//        strcat(outfilename,"_ED.txt");
+//
+//        infile = fopen(infilename,"r");
+//        outfile = fopen(outfilename,"w");
+//        if(infile==NULL)
+//            printf("infile is null - %s not exist\n",infilename);
+//        if(outfilename==NULL)
+//            printf("outfile is null - %s not exist\n",outfilename);
+//
+//
+//        char tair_FLUXs[100],swd_FLUXs[100],VPD_FLUXs[100],Pa_FLUXs[100],Ws_FLUXs[100],CO2_FLUXs[100],GPP1_FLUXs[100],GPP2_FLUXs[100],GPP3_FLUXs[100],GPP4_FLUXs[100];
+//        double tair_FLUX=0,swd_FLUX=0,VPD_FLUX=0,Pa_FLUX=0,Ws_FLUX=0,CO2_FLUX=0,GPP1_FLUX=0,GPP2_FLUX=0,GPP3_FLUX=0,GPP4_FLUX=0,Vcmax25_FLUX=0;
+//        double results_FLUX[6];
+//        int mon=0;
+//
+//        fscanf(infile, "%s %s %s %s %s %s %s %s %s %s\n",&tair_FLUXs,&swd_FLUXs,&VPD_FLUXs,&Pa_FLUXs,&Ws_FLUXs,&CO2_FLUXs,&GPP1_FLUXs,&GPP2_FLUXs,&GPP3_FLUXs,&GPP4_FLUXs);
+//        printf("Header of infile - %s %s %s %s %s %s %s %s %s %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
+//        fprintf(outfile, "mon TA_F SW_IN_F VPD_F PA_F WS_F CO2_F_MDS GPP_NT_CUT_REF GPP_NT_VUT_REF GPP_DT_CUT_REF GPP_DT_VUT_REF GPP_ED\n");
+//
+//        if(lat>23.5 or lat<-23.5)
 //        {
-//            Farquhar_couple(0,4,data,tmp,tmp,hum,swd,Tg,CA*1e6,0.8,100.0,shade,96,farquhar_results2);
-//            //farquhar(Vcmax25/1e6,CA,tmp,hum,swd,shade,pt,farquhar_results);
-//            //Farquhar_couple(1,4,data,tmp,hum,swd,Tg,CA*1e6,0.8,100.0,shade,16,farquhar_results3);
-//            //printf("Comp vc %f %f %f %f __ %.4f %.4f == %.4f %.4f == %.4f %.4f\n",Vcmax25,tmp,hum,swd,farquhar_results2[1]*1e6,farquhar_results3[1]*1e6,farquhar_results2[2]*1e6,farquhar_results3[2]*1e6,farquhar_results2[3]*1e6,farquhar_results3[3]*1e6);
+//            if (!strcmp(IGBP,"ENF"))    Vcmax25_FLUX=30.0;
+//            if (!strcmp(IGBP,"EBF"))    Vcmax25_FLUX=30.0;  //Using grass for EBF
+//            if (!strcmp(IGBP,"MF"))    Vcmax25_FLUX=30.0;
+//            if (!strcmp(IGBP,"DBF"))    Vcmax25_FLUX=25.0;
+//            if (!strcmp(IGBP,"GRA"))    Vcmax25_FLUX=90.0;
+//            if (!strcmp(IGBP,"CRO"))    Vcmax25_FLUX=90.0;  //Using grass for open cropland
+//            if (!strcmp(IGBP,"OSH"))    Vcmax25_FLUX=90.0;  //Using grass for open shrubland
+//            if (!strcmp(IGBP,"CSH"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
+//            if (!strcmp(IGBP,"SAV"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
+//            if (!strcmp(IGBP,"WSA"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
+//            if (!strcmp(IGBP,"WET"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
+//            if (!strcmp(IGBP,"SNO"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
 //        }
-
+//        else
+//        {
+//            if (!strcmp(IGBP,"ENF"))    Vcmax25_FLUX=30.0;
+//            if (!strcmp(IGBP,"EBF"))    Vcmax25_FLUX=30.0;  //Using grass for EBF
+//            if (!strcmp(IGBP,"MF"))     Vcmax25_FLUX=30.0;
+//            if (!strcmp(IGBP,"DBF"))    Vcmax25_FLUX=30.0;
+//            if (!strcmp(IGBP,"GRA"))    Vcmax25_FLUX=90.0;
+//            if (!strcmp(IGBP,"CRO"))    Vcmax25_FLUX=90.0;  //Using grass for open cropland
+//            if (!strcmp(IGBP,"OSH"))    Vcmax25_FLUX=90.0;  //Using grass for open shrubland
+//            if (!strcmp(IGBP,"CSH"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
+//            if (!strcmp(IGBP,"SAV"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
+//            if (!strcmp(IGBP,"WSA"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
+//            if (!strcmp(IGBP,"WET"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
+//            if (!strcmp(IGBP,"SNO"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
+//        }
+//
+//
+//        while (fscanf(infile,"%s %s %s %s %s %s %s %s %s %s\n",&tair_FLUXs,&swd_FLUXs,&VPD_FLUXs,&Pa_FLUXs,&Ws_FLUXs,&CO2_FLUXs,&GPP1_FLUXs,&GPP2_FLUXs,&GPP3_FLUXs,&GPP4_FLUXs)!=EOF)
+//        {
+//            tair_FLUX=atof(tair_FLUXs);
+//            swd_FLUX=atof(swd_FLUXs);
+//            VPD_FLUX=atof(VPD_FLUXs);
+//            Pa_FLUX=atof(Pa_FLUXs);
+//            Ws_FLUX=atof(Ws_FLUXs);
+//            CO2_FLUX=atof(CO2_FLUXs);
+//            GPP1_FLUX=atof(GPP1_FLUXs);
+//            GPP2_FLUX=atof(GPP2_FLUXs);
+//            GPP3_FLUX=atof(GPP3_FLUXs);
+//            GPP4_FLUX=atof(GPP4_FLUXs);
+//            if (tair_FLUX<-100)
+//            {
+//                printf("Error in tair %f\n",tair_FLUX);
+//                printf("ErrorLine in Tair tair %s swd %s VPD %s Pa %s WS %s CO2 %s GPP1 %s GPP2 %s GPP3 %s GPP4 %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
+//                exit(0);
+//            }
+//            if (swd_FLUX<-100)
+//            {
+//                printf("Error in swd_FLUX %f tair is %f\n", swd_FLUX,tair_FLUX);
+//                printf("ErrorLine SWD tair %s swd %s VPD %s Pa %s WS %s CO2 %s GPP1 %s GPP2 %s GPP3 %s GPP4 %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
+//                exit(0);
+//            }
+//            if (VPD_FLUX<-100)
+//            {
+//                printf("Error in VPD_FLUX %f\n", VPD_FLUX);
+//                printf("ErrorLine in VPD tair %s swd %s VPD %s Pa %s WS %s CO2 %s GPP1 %s GPP2 %s GPP3 %s GPP4 %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
+//                exit(0);
+//
+//            }
+//            if (Pa_FLUX<-100)
+//            {
+//                /*printf("Error in Pa_FLUX %f and assign to 100.0\n", Pa_FLUX);*/
+//                //printf("ErrorLine in Pa tair %s swd %s VPD %s Pa %s WS %s CO2 %s GPP1 %s GPP2 %s GPP3 %s GPP4 %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
+//                Pa_FLUX=101.3;
+//            }
+//            if (Ws_FLUX<-100)
+//            {
+//                printf("Error in Ws_FLUX %f in %d\n", Ws_FLUX,mon);
+//                printf("ErrorLine in Ws tair %s swd %s VPD %s Pa %s WS %s CO2 %s GPP1 %s GPP2 %s GPP3 %s GPP4 %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
+//                exit(0);
+//
+//            }
+//            if (CO2_FLUX<-100)
+//            {
+//                /*printf("Error in CO2_FLUX %f and assign to 350.0\n", CO2_FLUX);*/
+//                //printf("ErrorLine in CO2 tair %s swd %s VPD %s Pa %s WS %s CO2 %s GPP1 %s GPP2 %s GPP3 %s GPP4 %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
+//                CO2_FLUX=400;
+//            }
+//            if (Vcmax25_FLUX<0.05)
+//            {
+//                printf("Error in Vcmax25_FLUX %f\n", Vcmax25_FLUX);
+//                exit(0);
+//            }
+//
+//            double Es=(0.611*exp(17.502*tair_FLUX/(240.97+tair_FLUX)))/1e2;
+//            double Ea=Es-VPD_FLUX/1000.0;
+//
+//            Farquhar_couple(0,0,data,tair_FLUX,tair_FLUX,Ea,swd_FLUX,tair_FLUX,CO2_FLUX,Ws_FLUX,Pa_FLUX,1,Vcmax25_FLUX,results_FLUX);
+//
+////            printf("mon %d tair %f swd %f Ea %f Pa %f ws %f co2 %f gpp1 %f gpp2 %f gpp3 %f gpp4 %f gpp_ED %f Vc %f\n",mon,tair_FLUX,swd_FLUX,Ea/Es,Pa_FLUX,Ws_FLUX,CO2_FLUX,GPP1_FLUX,GPP2_FLUX,GPP3_FLUX,GPP4_FLUX,results_FLUX[1]*unit_convertor,Vcmax25_FLUX);
+//
+//            mon++;
+//            fprintf(outfile, "%d %f %f %f %f %f %f %f %f %f %f %f \n",mon,tair_FLUX,swd_FLUX,VPD_FLUX,Pa_FLUX,Ws_FLUX,CO2_FLUX,GPP1_FLUX,GPP2_FLUX,GPP3_FLUX,GPP4_FLUX,results_FLUX[1]*unit_convertor);
+//        }
+//        fclose(infile);
+//        fclose(outfile);
+//        printf("Done\n");
+//        //
+//
+//    }
 //    exit(0);
+
+    
+//    double temp1=0,hum1=0,swd1=0,co21=0,ws1=0,shade1=1;
+//    int lat_i=186,lon_i=249;
+//    Vcmax25=15;
+//    double farquhar_results1[6],farquhar_results2[6];
+//    for(size_t mon=0;mon<12;mon++)
+//    {
+//        for (size_t hr=mon*24;hr<mon*24+24;hr++)
+//        {
+//            temp1=data->global_tmp[hr][lat_i][lon_i];
+//            hum1=data->global_hum[hr][lat_i][lon_i];
+//            swd1=data->global_swd[hr][lat_i][lon_i];
+//            ws1=data->global_windspeed[hr][lat_i][lon_i];
+//            co21=data->global_CO2[hr][lat_i][lon_i];
+//            Farquhar_couple(0,4,data,temp1,temp1,hum1,swd1,temp1,co21*350/390,ws1,Pa,1,Vcmax25,farquhar_results1);
+//            //Farquhar_couple(pt,4,data,temp1,temp1,hum1,swd1,temp1,350,ws1,Pa,1,15,farquhar_results2);
+//            //farquhar(Vcmax25/1e6,co21/1e6,temp1,temp1,hum1,swd1,shade1,0,farquhar_results1);
+//            //farquhar(Vcmax25/1e6,396.65/1e6,temp1,temp1,hum1,swd1,shade1,0,farquhar_results2);
+//            printf("mon %d hr %d tair %f hum %f swd %f ws %f co2 %f An1 %f An2 %f\n",mon,hr,temp1,hum1,swd1,ws1,co21,farquhar_results1[1]*1e6,farquhar_results2[1]*1e6);
+//        }
+//    }
+//    exit(0);
+    
     
 //#if COUPLE_MERRA2_LUT
     if(data->MERRA2_LUT)
@@ -232,7 +394,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
         }
         //flag for this spp at MERRA2_timestamp and time_period, avoid repeating computation
         is_filled_LUT[data->MERRA2_timestamp-1][spp][time_period]=1;
-        printf("Finished computing of LUT lat %d lon %d mechyear %d timestamp %d mon %d spp %d co2 %f \n",globY_,globX_,data->mechanism_year,data->MERRA2_timestamp-1,time_period,spp,tmp_co2);
+        //printf("Finished computing of LUT lat %d lon %d mechyear %d timestamp %d mon %d spp %d co2 %f \n",globY_,globX_,data->mechanism_year,data->MERRA2_timestamp-1,time_period,spp,tmp_co2);
         //exit(0);
     }
     if (An_LUT[data->MERRA2_timestamp-1][spp][time_period][0]<-1000)
@@ -266,11 +428,8 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
     }
         else
         {
-#if COUPLE_PFTspecific
     for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
     {
-
-#if COUPLE_MERRA2
         tmp=data->global_tmp[mon][globY_][globX_];
         hum=data->global_hum[mon][globY_][globX_];
         swd=data->global_swd[mon][globY_][globX_];
@@ -285,14 +444,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
             CO2=(311+1.290*(data->mechanism_year-1950))/390.0*data->global_CO2[mon][globY_][globX_];
         else
             CO2=data->global_CO2[mon][globY_][globX_];
-#else  //else COUPLE_MERRA2
-        tmp=data->global_tmp[mon][globY_][globX_];
-        hum=data->global_hum[mon][globY_][globX_];
-        swd=data->global_swd[mon][globY_][globX_];
-        windspeed=4;
-        Ts=(data->global_soiltmp[mon][globY_][globX_];
-        CO2=350;
-#endif  //COUPLE_MERRA2
+
             
             //As growth temperature defined in Lombardozzi et all 2015 and Atkin et al 2008 is the preceding 10 days running mean of air temperature, here for simplicity, use mean temperature of current month
             Tg=0;
@@ -313,35 +465,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
             E[spp][time_period][light_index]+=farquhar_results[2];
             Anb[spp][time_period][light_index]+=farquhar_results[3];
             Eb[spp][time_period][light_index]+=farquhar_results[4];
-            
-//            double hum1=0,swd1=0,tmp1=0,shade1=0;
-//            int mon2=5,lati=0,loni=0;
-//            clock_t begin = clock();
-//            for(lati=0;lati<360;lati++)
-//            {
-//                for(loni=0;loni<720;loni++)
-//                {
-//                    for(mon2=0;mon2<12;mon2++)
-//                    {
-//                        for(shade1=1.0;shade1>=0;shade1-=0.05)
-//                        {
-//                            for (size_t co21=280;co21<400;co21+=20)
-//                            {
-//                                hum1=data->global_hum[mon2][lati][loni];
-//                                swd1=data->global_swd[mon2][lati][loni];
-//                                tmp1=data->global_tmp[mon2][lati][loni];
-//                                Farquhar_couple(0,4,data,tmp1,tmp1,hum1,swd1,Tg,co21,windspeed,Pa,shade1,20,farquhar_results);
-//                                //printf("co21 %d hr %d pt %d t %f e %f swd %f ws %f Tg %f An %f Anb %f E %f Eb %f\n",co21,mon2,pt,tmp1,hum1,swd1,windspeed,Tg,farquhar_results[1]*1e6,farquhar_results[3]*1e6,farquhar_results[2]*1e6,farquhar_results[4]*1e6);
-//                                //printf("lat %d lon %d co21 %d hr %d\n",lati,loni,co21,mon2);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//            clock_t end = clock();
-//            double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-//            printf("totaltime %f\n",elapsed_secs);
-//            exit(0);
+
             }
             
             tf_air[spp][time_period]/=24.0;
@@ -350,32 +474,8 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
             E[spp][time_period][light_index]*=3600.0*540.0;
             Anb[spp][time_period][light_index]*=3600.0*360.0;
             Eb[spp][time_period][light_index]*=3600.0*540.0;
-            printf("Finished cal actual lat %d lon %d mechyear %d timestamp %d co2 %f\n",globY_,globX_,data->mechanism_year,data->MERRA2_timestamp-1,time_period,spp,CO2);
-#else
-            for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
-            {
-                //Currently, ambient CO2 concentration is 350 umol
-                //                farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],
-                //        data->global_hum[mon][globY_][globX_],
-                //        data->global_swd[mon][globY_][globX_],
-                //        shade,pt,farquhar_results);
-                
-                Farquhar_couple(pt,spp,data,data->global_tmp[mon][globY_][globX_],data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
-                
-                tf_air[pt][Vm0_bin][time_period]+=farquhar_results[0];
-                tf_soil[pt][Vm0_bin][time_period]+=farquhar_results[0];
-                An[pt][Vm0_bin][time_period][light_index]+=farquhar_results[1];
-                E[pt][Vm0_bin][time_period][light_index]+=farquhar_results[2];
-                Anb[pt][Vm0_bin][time_period][light_index]+=farquhar_results[3];
-                Eb[pt][Vm0_bin][time_period][light_index]+=farquhar_results[4];
-            }
-            tf_air[pt][Vm0_bin][time_period]/=24.0;
-            tf_soil[pt][Vm0_bin][time_period]/=24.0;
-            An[pt][Vm0_bin][time_period][light_index]*=3600.0*360.0;
-            E[pt][Vm0_bin][time_period][light_index]*=3600.0*540.0;
-            Anb[pt][Vm0_bin][time_period][light_index]*=3600.0*360.0;
-            Eb[pt][Vm0_bin][time_period][light_index]*=3600.0*540.0;
-#endif //COUPLE_PFTspecific
+            //printf("Finished cal actual lat %d lon %d mechyear %d timestamp %d co2 %f\n",globY_,globX_,data->mechanism_year,data->MERRA2_timestamp-1,time_period,spp,CO2);
+
     
 //#endif //COUPLE_MERRA2_LUT
             } //COUPLE_MERRA2_LUT
@@ -596,229 +696,6 @@ bool SiteData::farquhar (double Vmax,double CA, double ta, double ts,double ea, 
     return 1;
 }
 
- bool SiteData::farquhar_collatz (double Vmax,double CA, double ta, double ea, double q, double shade, int C4, double outputs[5]) {
-    double shade_thresh, shade_thresh2;
-    /* Scalers for turning boundary resitance */
-    double gh_adj;
-    double an;
-    double g_adj;
-    double capgam, vm, kc, ko, ds, v,Rd;
-    double ci, tl, gg_adj, gg2, maxg, hta, hdriv, hl, lite;
-    double f1, f2, f3, ginc, lasta, laste, lasttf, lastg, lastfunc, maxfunc;
-    int flagv, flagg, gmax, j;
-    double g;
-    double M,B;
-    double rn;
-    double tf, a, e, ab, eb;
-    double theta,beta,leaf_abs,alpha;
-    double kt,A_M,Jp,Je,Jc,Js;
-    
-     double GB=3.0,KAPPA=0.5,LAM=45000.0,CP=1280.1,GH=0.03,DO1=0.01,ALPHA3=0.08,ALPHA4=0.06;
-     int PRECISION=10,BND=0;
-     
-     
-    if (C4)
-    {
-        M = 3.0;
-        B=0.08;
-        theta=0.83;
-        beta=0.93;
-        alpha=0.04;
-    }
-    else
-    {
-        M=9.0;
-        B=0.01;
-        theta=0.95;
-        beta=0.98;
-        leaf_abs=0.86;
-        alpha=0.08;
-    }
-    
-    /* Meteorological conditions */
-    rn = q * shade;
-#if no_downreg
-    shade = 1;
-#endif
-    
-    /* Conversion of Solar influx from W/(m^2s) to mole_of_quanta/(m^2s) PAR, *
-     * empirical relationship from McCree is lite = rn * 0.0000023            *
-     * Prentice's relationship lite = rn / 540000.0 is ~25% - 30% lower       *
-     * lite = rn * 0.0000023; converts watts short wave to Einsteins PAR      *
-     * 1/540000 ~ 0.0000018                                                   */
-#if TROPICAL
-    lite = rn / 540000.0;
-#else
-    lite = rn * 0.0000023; /* assuming par 400-700nm, 0.5 sw is par */
-#endif
-    
-    hta = 2541400.0 * exp(-5415.0 / (ta + 273.2)); //mol per mol humidity of air if it were saturated
-    hdriv = 5415.0 * hta / ((ta + 273.2) * (ta + 273.2)); //Note in tropical this had an extra *hta in denomintaor - I belive this to be incorrect
-    
-    ginc = 1.0;
-    gmax = B + 10.0 * ginc;
-    g = B;
-    
-    shade_thresh = exp(-1.0 * KAPPA * 1.);
-    shade_thresh2 = exp(-1.0 * KAPPA * 4.);
-    
-    v = Vmax;
-    
-    flagv = 0;
-    for (j=0; j<PRECISION; j++) {
-        if (flagv == 0)
-            flagg = 0;
-        else
-            flagg = 1;
-        while ((flagg == 0) && (g < gmax)) {
-            if (BND) {
-                g_adj = GB / (g + GB);
-                gh_adj = GB / 1.275 * 0.029 / GH;
-            } else {
-                g_adj = 1.;
-                gh_adj = 1.;
-            }
-            tl = ta + (rn * KAPPA - LAM * g * g_adj * (hta - ea)) / (CP * GH * gh_adj + LAM * g * g_adj * hdriv);
-            if (tl < ta)
-                tl = ta;
-            //hl = 2541400.0 * exp(-5415.0 / (tl + 273.2));
-            hl=0.6078*exp(17.269*tl/(273.3+tl))/1e2;
-            
-            /* Saturation defficit */
-            ds = hl - ea;
-            
-            /* Saturation defficit */
-            //            ds = hl - ea;
-            //            ci=((g-B)*(CA*GB-capgam*GB)*(1+ds/DO1))/(M*GB+(g-B)*(1+ds/DO1));
-            //            ci=CA-ci/GB-1.6*ci/g;
-            
-            double hs=ea/hl;
-            ci=(g-B)*CA*GB/((g-B)+M*hs*GB);
-            ci=CA-ci/GB-1.6*ci/g;
-            
-            
-            if (C4)
-            {
-                vm=v*pow(2,(tl-25.0)/10.0);
-                vm/=((1+exp(0.3*(13.0-tl)))*(1+exp(0.3*(tl-36.0))));
-                Rd=0.02*v*pow(2,(tl-25)/10);
-                Rd/=(1+exp(1.3*(tl-55)));
-                kt=0.7*pow(2,(tl-25)/10.0);
-                
-                A_M=((vm+alpha*lite)-sqrt(pow(vm+alpha*lite,2.0)-4*theta*vm*alpha*lite))/2/theta;
-                
-                an=((A_M+kt*ci)-sqrt(pow(A_M+kt*ci,2.0)-4*beta*A_M*kt*ci))/2.0/beta;
-                an-=Rd;
-                
-                //printf("g %f ci %f tl %f vm %f Rd %f kt %f A_M %f an %f v1 %f v2 %f v3 %f hs %f ",g,ci*1e6,tl,vm*1e6,Rd*1e6,kt*1e6,A_M*1e6,an*1e6,vm*1e6,alpha*lite*1e6,kt*ci*1e6,hs);
-            }else
-            {
-                kc=30/1e5*pow(2.1,(tl-25.0)/10.0);
-                ko=30*1e3/1e5*pow(1.2,(tl-25.0)/10.0);
-                capgam=0.209/2/(2600*pow(0.57,(tl-25.0)/10.0));
-                vm=v*pow(2.4,(tl-25.0)/10.0);
-                vm/=(1+exp((-220*1e3+703*(tl+273.2))/(8.3146*(tl+273.2))));
-                
-                Rd=0.015*v*pow(2.0,(tl-25.0)/10.0);
-                Rd/=1+exp(1.3*(tl-55.0));
-                
-                Je=leaf_abs*alpha*lite*(ci-capgam)/(ci+2.0*capgam);
-                Jc=vm*(ci-capgam)/(ci+kc*(1+0.209/ko));
-                Js=vm/2.0;
-                
-                Jp=((Je+Jc)-sqrt(pow(Je+Jc,2.0)-4*theta*Je*Jc))/2/theta;
-                an=((Jp+Js)-sqrt(pow(Jp+Js,2.0)-4*beta*Jp*Js))/2/beta;
-                
-                an-=Rd;
-                
-                //printf("g %f ci %f tl %f Je %f Jc %f Js %f Jp %f an %f vm %f Rd %f capgam %f ",g,ci*1e6,tl,Je*1e6,Jc*1e6,Js*1e6,Jp*1e6,an*1e6,vm*1e6,Rd*1e6,capgam*1e6);
-            }
-            
-            
-            f1=an-GB*g/(g+1.6*GB)*(CA-ci);
-            
-            //printf("an_1 %f an_2 %f f1 %f\n",an*1e6,GB*g/(g+1.6*GB)*(CA-ci)*1e6,f1*1e6);
-            
-            
-            if (g == B) {
-                maxfunc = f1;
-                maxg = B;
-                e =(g*GB)/(g+GB) * ds;
-                //double gv=(g*GB)/(g+GB)*(8.314*(tl+273.2)/1e5);
-                //2.454e6 is latend hear of vaporisation of water  (J kg-1)
-                //1.204 is density of dry air  (kg m-3)
-                //1004 is specific heat capacity of dry air  (J kg-1 k-1)
-                //hs*1e5 is gradient of partical pressure of water vapro between air and stomach (Pa)
-                //66.1 is psychrometric constant  (Pa K-1)
-                //e =1/(2.454*1e6)*1.204*1004*gv*ds*1e5/66.1;
-#if TROPICAL
-                tf = exp(3000.0 * (1.0 / 288.2 - 1.0 / (tl + 273.2)));
-#else
-                tf = exp(3000.0 * (1.0 / 288.2 - 1.0 / (ta + 273.2)));
-#endif
-                
-                a=-Rd;
-                if (C4)
-                /* 4/25/00 coorected t func from foley to limit c4s */
-                    tf /= (1.0 + exp(0.4 * (10.0 - ta))) * (1.0 + exp(0.4 * (ta - 50.0)));
-                else
-                    tf /= (1.0 + exp(0.4 * (5.0 - ta))) * (1.0 + exp(0.4 * (ta - 45.0)));
-                
-                /* tl changed to ta and denominator added  by gch 09/29/99 */
-                eb = e;
-                ab = a;
-                flagv = 1;
-                lastg = g;
-                lastfunc = f1;
-                laste = e;
-                lasta = an;
-                lasttf = tf;
-                if (lite < 0.00000001)
-                    flagg = 1;
-                g += ginc / exp(j * log(10.0));
-            } else {
-                if (((f1 < 0.0) && (lastfunc >= 0.0) && abs(f1)<3) || ((f1 > 0.0) && (lastfunc <= 0.0) && abs(f1)<3)) {
-                    maxg = lastg;
-                    maxfunc = lastfunc;
-                    e = laste;
-                    a = lasta;
-                    tf = lasttf;
-                    flagg = 1;
-                    flagv = 0;
-                } else {
-                    lastg = g;
-                    lastfunc = f1;
-                    laste = (g*GB)/(g+GB) * ds;
-                    //double gv=(g*GB)/(g+GB)*(8.314*(tl+273.2)/1e5);
-                    //2.454e6 is latend hear of vaporisation of water  (J kg-1)
-                    //1.204 is density of dry air  (kg m-3)
-                    //1004 is specific heat capacity of dry air  (J kg-1 k-1)
-                    //hs*1e5 is gradient of partical pressure of water vapro between air and stomach (Pa)
-                    //66.1 is psychrometric constant  (Pa K-1)
-                    //laste =1/(2.454*1e6)*1.204*1004*gv*ds*1e5/66.1;
-                    
-                    lasta = an;
-                    lasttf = exp(3000.0 * (1.0 / 288.2 - 1.0 / (ta + 273.2)));
-                    
-                    if (C4)
-                        lasttf /= (1.0 + exp(0.4 * (10.0 - ta))) * (1.0 + exp(0.4 * (ta - 50.0)));
-                    else
-                    /* tl changed to ta and denominator added, gch 09/29/99 */
-                        lasttf /= (1.0 + exp(0.4 * (5.0 - ta))) * (1.0 + exp(0.4 * (ta - 45.0)));
-                    
-                    g += ginc / exp(j * log(10.0));
-                }
-            }
-        }
-        g = maxg + ginc / exp((j + 1.0) * log(10.0));
-    }
-    outputs[0] = tf; outputs[1] = a; outputs[2] = e; outputs[3] = ab; outputs[4] = eb;
-    return 1;
-}
-
-
-
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 //! init_sites
@@ -1292,6 +1169,10 @@ void update_site (site** current_site, UserData* data) {
    cs->site_total_soil_evap         = 0.0;
    /* height */
    cs->site_avg_height              = 0.0;
+    
+    cs->site_avg_fopen=0.0;
+    cs->site_avg_leafAn_pot=0.0;
+    cs->site_avg_leafE_pot=0.0;
 #endif
 
    for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++) {
@@ -1346,6 +1227,11 @@ void update_site (site** current_site, UserData* data) {
       cs->site_dndt               += cs->dndt[lu]*cs->area_fraction[lu];
 #ifdef ED
       cs->site_gpp                += cs->gpp[lu] * cs->area_fraction[lu];
+       
+       cs->site_avg_leafAn_pot+=cs->lu_avg_leafAn_pot[lu]*cs->area_fraction[lu];
+       cs->site_avg_leafE_pot+=cs->lu_avg_leafE_pot[lu]*cs->area_fraction[lu];
+       cs->site_avg_fopen+=cs->lu_avg_fopen[lu]*cs->area_fraction[lu];
+       
       cs->site_npp2               += cs->npp2[lu] * cs->area_fraction[lu];
       cs->site_aa_gpp             += cs->aa_gpp[lu] * cs->area_fraction[lu];
       cs->site_aa_npp2            += cs->aa_npp2[lu] * cs->area_fraction[lu];
@@ -1353,11 +1239,14 @@ void update_site (site** current_site, UserData* data) {
          cs->nep2[lu] = cs->total_c[lu] - cs->last_total_c[lu];
          cs->last_total_c[lu] = cs->total_c[lu];
       }
+       cs->nep3[lu]=cs->total_c[lu] - cs->last_total_c_last_month[lu];
+       cs->last_total_c_last_month[lu]=cs->total_c[lu];
       /* water */
       cs->site_total_water        += cs->water[lu] * cs->area_fraction[lu]; 
       cs->site_total_theta        += cs->theta[lu] * cs->area_fraction[lu];
       cs->site_total_water_uptake += cs->total_water_uptake[lu] * cs->area_fraction[lu];         
-      cs->site_total_water_demand += cs->total_water_demand[lu] * cs->area_fraction[lu];         
+      cs->site_total_water_demand += cs->total_water_demand[lu] * cs->area_fraction[lu];
+
       cs->site_total_perc         += cs->perc[lu] * cs->area_fraction[lu];
       cs->site_total_soil_evap    += cs->soil_evap[lu] * cs->area_fraction[lu];
       /* height */
@@ -1368,6 +1257,8 @@ void update_site (site** current_site, UserData* data) {
       cs->site_nep2 = cs->site_total_c - cs->last_site_total_c;
       cs->last_site_total_c = cs->site_total_c;
    }
+    cs->site_nep3 = cs->site_total_c- cs->last_site_total_c_last_month;
+    cs->last_site_total_c_last_month=cs->site_total_c;
 #ifdef ED
    cs->site_total_soil_N = cs->site_mineralized_soil_N + cs->site_fast_soil_N
       + cs->site_structural_soil_C * 1.0 / data->c2n_structural 
@@ -1438,7 +1329,10 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
    cs->npp2[lu]                    = 0.0;
    cs->gpp[lu]                     = 0.0;
    cs->aa_gpp[lu]                  = 0.0;
-   cs->aa_npp2[lu]                 = 0.0; 
+   cs->aa_npp2[lu]                 = 0.0;
+   cs->lu_avg_fopen[lu]          = 0.0;
+   cs->lu_avg_leafAn_pot[lu]     = 0.0;
+   cs->lu_avg_leafE_pot[lu]       = 0.0;
    /* water */
    cs->water[lu]                   = 0.0;
    cs->theta[lu]                   = 0.0;
@@ -1505,6 +1399,11 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
          cs->dndt[lu]               += cp->dndt * frac;
 #ifdef ED
          cs->gpp[lu]                += cp->gpp * frac;
+          
+          cs->lu_avg_leafAn_pot[lu]+=cp->avg_leafAn_pot*frac;
+          cs->lu_avg_leafE_pot[lu]+=cp->avg_leafE_pot*frac;
+          cs->lu_avg_fopen[lu]+=cp->avg_fopen*frac;
+          
          cs->npp2[lu]               += cp->npp2 * frac;
          cs->aa_gpp[lu]             += cp->aa_gpp * frac;
          cs->aa_npp2[lu]            += cp->aa_npp2 * frac;

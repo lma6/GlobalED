@@ -37,7 +37,9 @@ struct site {
    double total_soil_c[N_LANDUSE_TYPES];
    double total_c[N_LANDUSE_TYPES];          ///< total carbon at site pools
    double last_site_total_c;
+   double last_site_total_c_last_month;
    double last_total_c[N_LANDUSE_TYPES];
+   double last_total_c_last_month[N_LANDUSE_TYPES];
 
    double site_dndt;
    double dndt[N_LANDUSE_TYPES];
@@ -76,11 +78,17 @@ struct site {
    double nep[N_LANDUSE_TYPES];    ///< total nep (kgC/m2/yr)
    double aa_nep[N_LANDUSE_TYPES]; ///< annual average nep
    double site_nep2;               ///< nep2 = total_c(t) - total_c(t-1)
+   double site_nep3;              ///same as site_nep2 but update monthly
    double nep2[N_LANDUSE_TYPES];
+   double nep3[N_LANDUSE_TYPES];
    double site_rh;                 ///< carbon loss to atmosphere
    double site_aa_rh;              ///< annual average carbon loss to atmosphere
    double rh[N_LANDUSE_TYPES];     ///< carbon loss to atmosphere
    double aa_rh[N_LANDUSE_TYPES];  ///< annual average carbon loss to atmosphere
+    
+    double lu_avg_fopen[N_LANDUSE_TYPES];
+    double lu_avg_leafAn_pot[N_LANDUSE_TYPES];
+    double lu_avg_leafE_pot[N_LANDUSE_TYPES];
 #ifdef ED
    double site_gpp;
    double site_aa_gpp;
@@ -110,7 +118,10 @@ struct site {
    double site_total_water_uptake;      
    double site_total_water_demand;
    double site_total_perc;
-   double site_total_soil_evap; 
+   double site_total_soil_evap;
+   double site_avg_fopen;
+   double site_avg_leafAn_pot;
+   double site_avg_leafE_pot;
 #endif
   
    // soil pools
