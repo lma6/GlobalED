@@ -19,6 +19,7 @@ void landuse_transition (site** siteptr, UserData* data,
 void cut_forest (site** siteptr, UserData* data, 
                  int donor_lu, double beta, int bh_type);
 void harvest_croplands (site** siteptr, UserData* data);
+void plant_croplands (site** siteptr, UserData* data);
 void graze_pastures (site** siteptr, UserData* data);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -472,7 +473,7 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
 #endif //COUPLED
 
 #if 1
-      harvest_croplands(&currents, data);
+      //harvest_croplands(&currents, data);
       graze_pastures(&currents, data);
 #endif
 
@@ -483,7 +484,9 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
          if (currents->new_patch[lu]->area > data->min_change_in_area) {
 #ifdef ED
             /* plant */
-            init_cohorts(&(currents->new_patch[lu]), data);
+             //Only plant for non-crop types as crop is planted in plant_crops function which is called based on crop calendar.
+             if (lu != LU_CROP) init_cohorts(&(currents->new_patch[lu]), data);
+            
 #endif
             patch* target = currents->new_patch[lu];
             currentp = currents->youngest_patch[lu];
@@ -517,6 +520,14 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
          }
       }
    }
+    if (data->planting_probability[data->time_period][currents->sdata->globY_][currents->sdata->globX_]>0.8)
+    {
+        plant_croplands(&currents, data);
+    }
+    if (data->harvest_probability[data->time_period][currents->sdata->globY_][currents->sdata->globX_]>0.8)
+    {
+        harvest_croplands(&currents, data);
+    }
 }
 
 
@@ -819,7 +830,9 @@ void harvest_croplands (site** siteptr, UserData* data) {
       currentp->fast_soil_N += data->fraction_balive_2_fast 
          * data->crop_residue * harvested_fast_N / currentp->area;
       /*plant new crop*/
-      init_cohorts(&currentp, data);
+      //init_cohorts(&currentp, data);
+       //Terminate all cohorts and keep the land clear until planting
+       terminate_cohorts(&currentp->tallest,&currentp->shortest, data);
 #elif defined MIAMI_LU
       harvested_structural_C = currentp->total_biomass;
       /*currentp->fast_soil_C += data->fraction_balive_2_fast 
@@ -830,10 +843,32 @@ void harvest_croplands (site** siteptr, UserData* data) {
       /*resest total biomass*/
       currentp->total_biomass = 0.0;
       currentp->total_ag_biomass = 0.0;
+       update_patch (&currentp,data);  //Update patch as all cohorts were already terminated
 #endif /* ED V. MIAMI_LU */
 
       currentp = currentp->older;
    }
+}
+////////////////////////////////////////////////////////////////////////////////
+//! plant_croplands
+//!
+//!
+//! @param
+//! @return
+////////////////////////////////////////////////////////////////////////////////
+void plant_croplands(site** siteptr, UserData* data)
+{
+    //plant the crops by initilizing all cohorts if crop calendar indicates
+    site* currents = *siteptr;
+    patch* currentp = currents->youngest_patch[LU_CROP];
+    while (currentp != NULL)
+    {
+        /*resest total biomass*/
+        currentp->total_biomass = 0.0;
+        currentp->total_ag_biomass = 0.0;
+        init_cohorts(&currentp, data);
+        currentp = currentp->older;
+    }
 }
 
 

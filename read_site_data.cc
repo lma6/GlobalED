@@ -610,6 +610,32 @@ void reset_6d_float(float****** array_6d, size_t dim1, size_t dim2, size_t dim3,
 
 
 #if LANDUSE
+bool loadCropCalendar (UserData* data)
+{
+    int rv, ncid, varid, dlu, tlu, i;
+    char dn, tn;
+    size_t index[3], count[3];
+    double factor;
+    
+    
+    index[0] = 0;
+    index[1] = 0;
+    index[2] = 0;
+    
+    count[0] = 12;
+    count[1] = 360;
+    count[2] = 720;
+    
+    rv = nc_open(data->crop_calendar_file, NC_NOWRITE, &ncid);
+    rv = nc_inq_varid(ncid, "planting_Probability", &varid);
+    rv = nc_get_vara_double(ncid, varid, index, count,&data->planting_probability[0][0][0]);
+    
+    rv = nc_inq_varid(ncid, "harvest_Probability", &varid);
+    rv = nc_get_vara_double(ncid, varid, index, count,&data->harvest_probability[0][0][0]);
+    
+    return 1;
+}
+
 bool loabGlobalLUData (UserData* data)
 {
     int rv, ncid, varid, dlu, tlu, i;

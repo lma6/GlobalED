@@ -108,6 +108,7 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
     
 #if LANDUSE
    loabGlobalLUData(data);
+    loadCropCalendar(data);
 #endif
 
 

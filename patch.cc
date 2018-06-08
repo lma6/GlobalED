@@ -501,7 +501,8 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
       
                      // surviving indivs
                      newcohort->nindivs = currentc->survivorship_from_disturbance(q, data)
-                        * currentc->nindivs * change_in_area / currentp->area;;
+                        * currentc->nindivs * change_in_area / currentp->area;
+                      
                     
                      // Weighted average of dndt 
                      newcohort->dndt = newcohort->nindivs*currentc->dndt/currentc->nindivs;
@@ -567,9 +568,11 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
                target -> younger = NULL;
                currentp -> younger = target;
                currents->youngest_patch[youngest_patch->landuse] = target;
+            
 
                /*terminate cohorts*/
                terminate_cohorts(&target->tallest,&target->shortest,data);
+                
             } else { /*not using track*/  
                if (newp->landuse == LU_SCND)
                   free(newp->phistory);

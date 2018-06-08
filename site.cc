@@ -1,6 +1,6 @@
- #include <cmath>
+#include <cmath>
 #include <cstring>
-
+#include <time.h>
 #include "edmodels.h"
 #include "site.h"
 #include "patch.h"
@@ -145,284 +145,96 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
     Eb[spp][time_period][light_index]=0;
 
 #if CPOUPLE_VcmaxDownreg
-    double cumuLAI=log(shade)/(-1.0/(data->cohort_shading*data->L_extinct));   //Derive cumulative LAI that results in the light level
-    double Kn = exp(0.00963*data->Vm0_max[spp]* - 2.43);        //Lloyd et al 2011
-    cumuLAI/=2.0;    //Suggestion from get_cohort_vm0 function in cohort.cc that only half LAI contributes to shading. --Lei
-    Vcmax25=data->Vm0_max[spp]*exp(-Kn*cumuLAI);   //Downregulation from original defined vcmax of each species
-    if (shade<1e-5) Vcmax25=0;
-    printf("Dwonregulate Vcmax cumuLAI %f lite %f Vcmax25 %f %f\n",cumuLAI,shade,data->Vm0_max[spp],Vcmax25);
+//    double cumuLAI=log(shade)/(-1.0/(data->cohort_shading*data->L_extinct));   //Derive cumulative LAI that results in the light level
+//    double Kn = exp(0.00963*data->Vm0_max[spp]* - 2.43);        //Lloyd et al 2011
+//    cumuLAI/=2.0;    //Suggestion from get_cohort_vm0 function in cohort.cc that only half LAI contributes to shading. --Lei
+//    Vcmax25=data->Vm0_max[spp]*exp(-Kn*cumuLAI);   //Downregulation from original defined vcmax of each species
+//    if (shade<1e-5) Vcmax25=0;
+//    printf("Dwonregulate Vcmax cumuLAI %f lite %f Vcmax25 %f %f %d\n",cumuLAI,shade,data->Vm0_max[spp],Vcmax25,light_index);
 #endif
-    
-    
-    //// Test calculation with FLUXNET2015
-//    printf("start testing fluxnet\n");
-//    char dirpath[500],expname[500],IGBP[100],timestep[10];
-//
-//    strcpy(dirpath,"/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Data/FLUXNET2015/Subset/");
-//    FILE* siteinfo;
-//    siteinfo=fopen("/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Data/FLUXNET2015/SiteInfo.txt","r");
-//    double lat=0,lon=0,unit_convertor=0;
-//    //////strcpy(expname,"FLX_CA-NS4_FLUXNET2015_FULLSET_2002-2005_1-3_HH");
-//    strcpy(timestep,"_HH");  //Timestep of files
-//
-//    if (!strcmp(timestep,"_HH")) unit_convertor=1e6;    //As unit is different for HH, DD, MM and YY
-//    if (!strcmp(timestep,"_DD")) unit_convertor=12*3600*2.0;
-//    if (!strcmp(timestep,"_MM")) unit_convertor=12*3600*2.0;
-//    if (!strcmp(timestep,"_YY")) unit_convertor=12*3600*2.0;
-//
-//    if (unit_convertor<0.5)
-//    {
-//        printf("Error in unit_convertor %f\n",unit_convertor);
-//        exit(0);
-//    }
-//
-//    while (fscanf(siteinfo,"%s %s %f %f\n",&expname,&IGBP,&lat,&lon)!=EOF)
-//    {
-//        char infilename[500],outfilename[500],buf[500];
-//
-//        //strcpy(expname,"FLX_AR-SLu_FLUXNET2015_FULLSET_2009-2011_1-3");
-//        printf("Processing %s\n",expname);
-//
-//        FILE *infile, *outfile;
-//        strcpy(infilename,dirpath);
-//        strcat(infilename,expname);
-//        strcat(infilename,timestep);
-//        strcat(infilename,".txt");
-//
-//        strcpy(outfilename,dirpath);
-//        strcat(outfilename,expname);
-//        strcat(outfilename,timestep);
-//        strcat(outfilename,"_ED.txt");
-//
-//        infile = fopen(infilename,"r");
-//        outfile = fopen(outfilename,"w");
-//        if(infile==NULL)
-//            printf("infile is null - %s not exist\n",infilename);
-//        if(outfilename==NULL)
-//            printf("outfile is null - %s not exist\n",outfilename);
-//
-//
-//        char tair_FLUXs[100],swd_FLUXs[100],VPD_FLUXs[100],Pa_FLUXs[100],Ws_FLUXs[100],CO2_FLUXs[100],GPP1_FLUXs[100],GPP2_FLUXs[100],GPP3_FLUXs[100],GPP4_FLUXs[100];
-//        double tair_FLUX=0,swd_FLUX=0,VPD_FLUX=0,Pa_FLUX=0,Ws_FLUX=0,CO2_FLUX=0,GPP1_FLUX=0,GPP2_FLUX=0,GPP3_FLUX=0,GPP4_FLUX=0,Vcmax25_FLUX=0;
-//        double results_FLUX[6];
-//        int mon=0;
-//
-//        fscanf(infile, "%s %s %s %s %s %s %s %s %s %s\n",&tair_FLUXs,&swd_FLUXs,&VPD_FLUXs,&Pa_FLUXs,&Ws_FLUXs,&CO2_FLUXs,&GPP1_FLUXs,&GPP2_FLUXs,&GPP3_FLUXs,&GPP4_FLUXs);
-//        printf("Header of infile - %s %s %s %s %s %s %s %s %s %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
-//        fprintf(outfile, "mon TA_F SW_IN_F VPD_F PA_F WS_F CO2_F_MDS GPP_NT_CUT_REF GPP_NT_VUT_REF GPP_DT_CUT_REF GPP_DT_VUT_REF GPP_ED\n");
-//
-//        if(lat>23.5 or lat<-23.5)
-//        {
-//            if (!strcmp(IGBP,"ENF"))    Vcmax25_FLUX=30.0;
-//            if (!strcmp(IGBP,"EBF"))    Vcmax25_FLUX=30.0;  //Using grass for EBF
-//            if (!strcmp(IGBP,"MF"))    Vcmax25_FLUX=30.0;
-//            if (!strcmp(IGBP,"DBF"))    Vcmax25_FLUX=25.0;
-//            if (!strcmp(IGBP,"GRA"))    Vcmax25_FLUX=90.0;
-//            if (!strcmp(IGBP,"CRO"))    Vcmax25_FLUX=90.0;  //Using grass for open cropland
-//            if (!strcmp(IGBP,"OSH"))    Vcmax25_FLUX=90.0;  //Using grass for open shrubland
-//            if (!strcmp(IGBP,"CSH"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
-//            if (!strcmp(IGBP,"SAV"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
-//            if (!strcmp(IGBP,"WSA"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
-//            if (!strcmp(IGBP,"WET"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
-//            if (!strcmp(IGBP,"SNO"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
-//        }
-//        else
-//        {
-//            if (!strcmp(IGBP,"ENF"))    Vcmax25_FLUX=30.0;
-//            if (!strcmp(IGBP,"EBF"))    Vcmax25_FLUX=30.0;  //Using grass for EBF
-//            if (!strcmp(IGBP,"MF"))     Vcmax25_FLUX=30.0;
-//            if (!strcmp(IGBP,"DBF"))    Vcmax25_FLUX=30.0;
-//            if (!strcmp(IGBP,"GRA"))    Vcmax25_FLUX=90.0;
-//            if (!strcmp(IGBP,"CRO"))    Vcmax25_FLUX=90.0;  //Using grass for open cropland
-//            if (!strcmp(IGBP,"OSH"))    Vcmax25_FLUX=90.0;  //Using grass for open shrubland
-//            if (!strcmp(IGBP,"CSH"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
-//            if (!strcmp(IGBP,"SAV"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
-//            if (!strcmp(IGBP,"WSA"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
-//            if (!strcmp(IGBP,"WET"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
-//            if (!strcmp(IGBP,"SNO"))    Vcmax25_FLUX=90.0;  //Using grass for closed shrubland
-//        }
-//
-//
-//        while (fscanf(infile,"%s %s %s %s %s %s %s %s %s %s\n",&tair_FLUXs,&swd_FLUXs,&VPD_FLUXs,&Pa_FLUXs,&Ws_FLUXs,&CO2_FLUXs,&GPP1_FLUXs,&GPP2_FLUXs,&GPP3_FLUXs,&GPP4_FLUXs)!=EOF)
-//        {
-//            tair_FLUX=atof(tair_FLUXs);
-//            swd_FLUX=atof(swd_FLUXs);
-//            VPD_FLUX=atof(VPD_FLUXs);
-//            Pa_FLUX=atof(Pa_FLUXs);
-//            Ws_FLUX=atof(Ws_FLUXs);
-//            CO2_FLUX=atof(CO2_FLUXs);
-//            GPP1_FLUX=atof(GPP1_FLUXs);
-//            GPP2_FLUX=atof(GPP2_FLUXs);
-//            GPP3_FLUX=atof(GPP3_FLUXs);
-//            GPP4_FLUX=atof(GPP4_FLUXs);
-//            if (tair_FLUX<-100)
-//            {
-//                printf("Error in tair %f\n",tair_FLUX);
-//                printf("ErrorLine in Tair tair %s swd %s VPD %s Pa %s WS %s CO2 %s GPP1 %s GPP2 %s GPP3 %s GPP4 %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
-//                exit(0);
-//            }
-//            if (swd_FLUX<-100)
-//            {
-//                printf("Error in swd_FLUX %f tair is %f\n", swd_FLUX,tair_FLUX);
-//                printf("ErrorLine SWD tair %s swd %s VPD %s Pa %s WS %s CO2 %s GPP1 %s GPP2 %s GPP3 %s GPP4 %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
-//                exit(0);
-//            }
-//            if (VPD_FLUX<-100)
-//            {
-//                printf("Error in VPD_FLUX %f\n", VPD_FLUX);
-//                printf("ErrorLine in VPD tair %s swd %s VPD %s Pa %s WS %s CO2 %s GPP1 %s GPP2 %s GPP3 %s GPP4 %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
-//                exit(0);
-//
-//            }
-//            if (Pa_FLUX<-100)
-//            {
-//                /*printf("Error in Pa_FLUX %f and assign to 100.0\n", Pa_FLUX);*/
-//                //printf("ErrorLine in Pa tair %s swd %s VPD %s Pa %s WS %s CO2 %s GPP1 %s GPP2 %s GPP3 %s GPP4 %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
-//                Pa_FLUX=101.3;
-//            }
-//            if (Ws_FLUX<-100)
-//            {
-//                printf("Error in Ws_FLUX %f in %d\n", Ws_FLUX,mon);
-//                printf("ErrorLine in Ws tair %s swd %s VPD %s Pa %s WS %s CO2 %s GPP1 %s GPP2 %s GPP3 %s GPP4 %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
-//                exit(0);
-//
-//            }
-//            if (CO2_FLUX<-100)
-//            {
-//                /*printf("Error in CO2_FLUX %f and assign to 350.0\n", CO2_FLUX);*/
-//                //printf("ErrorLine in CO2 tair %s swd %s VPD %s Pa %s WS %s CO2 %s GPP1 %s GPP2 %s GPP3 %s GPP4 %s\n",tair_FLUXs,swd_FLUXs,VPD_FLUXs,Pa_FLUXs,Ws_FLUXs,CO2_FLUXs,GPP1_FLUXs,GPP2_FLUXs,GPP3_FLUXs,GPP4_FLUXs);
-//                CO2_FLUX=400;
-//            }
-//            if (Vcmax25_FLUX<0.05)
-//            {
-//                printf("Error in Vcmax25_FLUX %f\n", Vcmax25_FLUX);
-//                exit(0);
-//            }
-//
-//            double Es=(0.611*exp(17.502*tair_FLUX/(240.97+tair_FLUX)))/1e2;
-//            double Ea=Es-VPD_FLUX/1000.0;
-//
-//            Farquhar_couple(0,0,data,tair_FLUX,tair_FLUX,Ea,swd_FLUX,tair_FLUX,CO2_FLUX,Ws_FLUX,Pa_FLUX,1,Vcmax25_FLUX,results_FLUX);
-//
-////            printf("mon %d tair %f swd %f Ea %f Pa %f ws %f co2 %f gpp1 %f gpp2 %f gpp3 %f gpp4 %f gpp_ED %f Vc %f\n",mon,tair_FLUX,swd_FLUX,Ea/Es,Pa_FLUX,Ws_FLUX,CO2_FLUX,GPP1_FLUX,GPP2_FLUX,GPP3_FLUX,GPP4_FLUX,results_FLUX[1]*unit_convertor,Vcmax25_FLUX);
-//
-//            mon++;
-//            fprintf(outfile, "%d %f %f %f %f %f %f %f %f %f %f %f \n",mon,tair_FLUX,swd_FLUX,VPD_FLUX,Pa_FLUX,Ws_FLUX,CO2_FLUX,GPP1_FLUX,GPP2_FLUX,GPP3_FLUX,GPP4_FLUX,results_FLUX[1]*unit_convertor);
-//        }
-//        fclose(infile);
-//        fclose(outfile);
-//        printf("Done\n");
-//        //
-//
-//    }
-//    exit(0);
-
-    
-//    double temp1=0,hum1=0,swd1=0,co21=0,ws1=0,shade1=1;
-//    int lat_i=186,lon_i=249;
-//    Vcmax25=15;
-//    double farquhar_results1[6],farquhar_results2[6];
-//    for(size_t mon=0;mon<12;mon++)
-//    {
-//        for (size_t hr=mon*24;hr<mon*24+24;hr++)
-//        {
-//            temp1=data->global_tmp[hr][lat_i][lon_i];
-//            hum1=data->global_hum[hr][lat_i][lon_i];
-//            swd1=data->global_swd[hr][lat_i][lon_i];
-//            ws1=data->global_windspeed[hr][lat_i][lon_i];
-//            co21=data->global_CO2[hr][lat_i][lon_i];
-//            Farquhar_couple(0,4,data,temp1,temp1,hum1,swd1,temp1,co21*350/390,ws1,Pa,1,Vcmax25,farquhar_results1);
-//            //Farquhar_couple(pt,4,data,temp1,temp1,hum1,swd1,temp1,350,ws1,Pa,1,15,farquhar_results2);
-//            //farquhar(Vcmax25/1e6,co21/1e6,temp1,temp1,hum1,swd1,shade1,0,farquhar_results1);
-//            //farquhar(Vcmax25/1e6,396.65/1e6,temp1,temp1,hum1,swd1,shade1,0,farquhar_results2);
-//            printf("mon %d hr %d tair %f hum %f swd %f ws %f co2 %f An1 %f An2 %f\n",mon,hr,temp1,hum1,swd1,ws1,co21,farquhar_results1[1]*1e6,farquhar_results2[1]*1e6);
-//        }
-//    }
-//    exit(0);
-    
     
 //#if COUPLE_MERRA2_LUT
     if(data->MERRA2_LUT)
     {
-    if (1-is_filled_LUT[data->MERRA2_timestamp-1][spp][time_period])  ////if MECH LUT has not been computed before
-    {
-        //Compute for all co2 and light combination
-        double tmp_airtemp=0,tmp_soiltemp=0,tmp_hum=0,tmp_swd=0,tmp_windspeed=0,tmp_co2=0,tmp_shade=0;
-        for (size_t lite_i=0;lite_i<N_bins_LUT_LITE;lite_i++)
-        {
-            double tmp_An=0,tmp_Anb=0,tmp_E=0,tmp_Eb=0,tmp_tf_air=0,tmp_tf_soil=0;
-            for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
-            {
-                tmp_airtemp=data->global_tmp[mon][globY_][globX_];
-                tmp_hum=data->global_hum[mon][globY_][globX_];
-                tmp_swd=data->global_swd[mon][globY_][globX_];
-                tmp_windspeed=data->global_windspeed[mon][globY_][globX_];
-                tmp_soiltemp=data->global_soiltmp[mon][globY_][globX_];
-                if(data->mechanism_year<1850)
-                    tmp_co2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
-                else if(data->mechanism_year>=1850 and data->mechanism_year<1950)
-                    tmp_co2=(280.0+0.314*(data->mechanism_year-1850))/390.0*data->global_CO2[mon][globY_][globX_];
-                else if(data->mechanism_year>=1950 and data->mechanism_year<2001)
-                    tmp_co2=(311+1.290*(data->mechanism_year-1950))/390.0*data->global_CO2[mon][globY_][globX_];
-                else
-                    tmp_co2=data->global_CO2[mon][globY_][globX_];
-                
-                tmp_shade=light_levels[spp][LITE_IDX[lite_i]];
-                
-                double tmp_Tg=0;
-                for (size_t mon1=time_period*24;mon1<time_period*24+24;mon1++)
-                {
-                    tmp_Tg+=data->global_tmp[mon1][globY_][globX_];
-                }
-                tmp_Tg/=24.0;
-                
-                Farquhar_couple(pt,spp,data,tmp_airtemp,tmp_soiltemp,tmp_hum,tmp_swd,tmp_Tg,tmp_co2,tmp_windspeed,Pa,tmp_shade,Vcmax25,farquhar_results);
-                
-                tmp_tf_air+=farquhar_results[0];
-                tmp_tf_soil+=farquhar_results[5];
-                tmp_An+=farquhar_results[1];
-                tmp_E+=farquhar_results[2];
-                tmp_Anb+=farquhar_results[3];
-                tmp_Eb+=farquhar_results[4];
-            }
-            tf_LUT_air[data->MERRA2_timestamp-1][spp][time_period]=tmp_tf_air/24.0;
-            tf_LUT_soil[data->MERRA2_timestamp-1][spp][time_period]=tmp_tf_soil/24.0;
-            An_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_An*3600.0*360.0;
-            E_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_E*3600.0*540.0;
-            Anb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_Anb*3600.0*360.0;
-            Eb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_Eb*3600.0*540.0;
-        }
-        //flag for this spp at MERRA2_timestamp and time_period, avoid repeating computation
-        is_filled_LUT[data->MERRA2_timestamp-1][spp][time_period]=1;
-        //printf("Finished computing of LUT lat %d lon %d mechyear %d timestamp %d mon %d spp %d co2 %f \n",globY_,globX_,data->mechanism_year,data->MERRA2_timestamp-1,time_period,spp,tmp_co2);
-        //exit(0);
-    }
-    if (An_LUT[data->MERRA2_timestamp-1][spp][time_period][0]<-1000)
-    {
-        printf("Error in An_LUT initilization\n");
-        exit(0);
-    }
-    int lite_i=0,lite_i_1=0; //co2_i_1 and co2_i are left and right points for linear interpolation, same to lite_i and lite_i_1
-    while (LITE_IDX[lite_i]<=light_index and lite_i<N_bins_LUT_LITE)
-    {
-        lite_i++;
-    }
-    if (lite_i==0) lite_i_1=0;  else    lite_i_1=lite_i-1;
-    double weight_lite=(LITE_IDX[lite_i]-light_index)/(LITE_IDX[lite_i]-LITE_IDX[lite_i-1]);
-    An[spp][time_period][light_index]=weight_lite*An_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
-                                    +(1-weight_lite)*An_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
-    
-    Anb[spp][time_period][light_index]=weight_lite*Anb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
-                                        +(1-weight_lite)*Anb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
-    
-    E[spp][time_period][light_index]=weight_lite*E_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
-                                    +(1-weight_lite)*E_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
-    
-    Eb[spp][time_period][light_index]=weight_lite*Eb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
-                                    +(1-weight_lite)*Eb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
-    
-    tf_air[spp][time_period]=tf_LUT_air[data->MERRA2_timestamp-1][spp][time_period];
-    tf_soil[spp][time_period]=tf_LUT_soil[data->MERRA2_timestamp-1][spp][time_period];
+//    if (1-is_filled_LUT[data->MERRA2_timestamp-1][spp][time_period])  ////if MECH LUT has not been computed before
+//    {
+//        //Compute for all co2 and light combination
+//        double tmp_airtemp=0,tmp_soiltemp=0,tmp_hum=0,tmp_swd=0,tmp_windspeed=0,tmp_co2=0,tmp_shade=0;
+//        for (size_t lite_i=0;lite_i<N_bins_LUT_LITE;lite_i++)
+//        {
+//            double tmp_An=0,tmp_Anb=0,tmp_E=0,tmp_Eb=0,tmp_tf_air=0,tmp_tf_soil=0;
+//            for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
+//            {
+//                tmp_airtemp=data->global_tmp[mon][globY_][globX_];
+//                tmp_hum=data->global_hum[mon][globY_][globX_];
+//                tmp_swd=data->global_swd[mon][globY_][globX_];
+//                tmp_windspeed=data->global_windspeed[mon][globY_][globX_];
+//                tmp_soiltemp=data->global_soiltmp[mon][globY_][globX_];
+//                if(data->mechanism_year<1850)
+//                    tmp_co2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
+//                else if(data->mechanism_year>=1850 and data->mechanism_year<1950)
+//                    tmp_co2=(280.0+0.314*(data->mechanism_year-1850))/390.0*data->global_CO2[mon][globY_][globX_];
+//                else if(data->mechanism_year>=1950 and data->mechanism_year<2001)
+//                    tmp_co2=(311+1.290*(data->mechanism_year-1950))/390.0*data->global_CO2[mon][globY_][globX_];
+//                else
+//                    tmp_co2=data->global_CO2[mon][globY_][globX_];
+//
+//                tmp_shade=light_levels[spp][LITE_IDX[lite_i]];
+//
+//                double tmp_Tg=0;
+//                for (size_t mon1=time_period*24;mon1<time_period*24+24;mon1++)
+//                {
+//                    tmp_Tg+=data->global_tmp[mon1][globY_][globX_];
+//                }
+//                tmp_Tg/=24.0;
+//
+//                Farquhar_couple(pt,spp,data,tmp_airtemp,tmp_soiltemp,tmp_hum,tmp_swd,tmp_Tg,tmp_co2,tmp_windspeed,Pa,tmp_shade,Vcmax25,farquhar_results);
+//
+//                tmp_tf_air+=farquhar_results[0];
+//                tmp_tf_soil+=farquhar_results[5];
+//                tmp_An+=farquhar_results[1];
+//                tmp_E+=farquhar_results[2];
+//                tmp_Anb+=farquhar_results[3];
+//                tmp_Eb+=farquhar_results[4];
+//            }
+//            tf_LUT_air[data->MERRA2_timestamp-1][spp][time_period]=tmp_tf_air/24.0;
+//            tf_LUT_soil[data->MERRA2_timestamp-1][spp][time_period]=tmp_tf_soil/24.0;
+//            An_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_An*3600.0*360.0;
+//            E_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_E*3600.0*540.0;
+//            Anb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_Anb*3600.0*360.0;
+//            Eb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_Eb*3600.0*540.0;
+//        }
+//        //flag for this spp at MERRA2_timestamp and time_period, avoid repeating computation
+//        is_filled_LUT[data->MERRA2_timestamp-1][spp][time_period]=1;
+//        //printf("Finished computing of LUT lat %d lon %d mechyear %d timestamp %d mon %d spp %d co2 %f \n",globY_,globX_,data->mechanism_year,data->MERRA2_timestamp-1,time_period,spp,tmp_co2);
+//        //exit(0);
+//    }
+//    if (An_LUT[data->MERRA2_timestamp-1][spp][time_period][0]<-1000)
+//    {
+//        printf("Error in An_LUT initilization\n");
+//        exit(0);
+//    }
+//    int lite_i=0,lite_i_1=0; //co2_i_1 and co2_i are left and right points for linear interpolation, same to lite_i and lite_i_1
+//    while (LITE_IDX[lite_i]<=light_index and lite_i<N_bins_LUT_LITE)
+//    {
+//        lite_i++;
+//    }
+//    if (lite_i==0) lite_i_1=0;  else    lite_i_1=lite_i-1;
+//    double weight_lite=(LITE_IDX[lite_i]-light_index)/(LITE_IDX[lite_i]-LITE_IDX[lite_i-1]);
+//    An[spp][time_period][light_index]=weight_lite*An_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
+//                                    +(1-weight_lite)*An_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
+//
+//    Anb[spp][time_period][light_index]=weight_lite*Anb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
+//                                        +(1-weight_lite)*Anb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
+//
+//    E[spp][time_period][light_index]=weight_lite*E_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
+//                                    +(1-weight_lite)*E_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
+//
+//    Eb[spp][time_period][light_index]=weight_lite*Eb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
+//                                    +(1-weight_lite)*Eb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
+//
+//    tf_air[spp][time_period]=tf_LUT_air[data->MERRA2_timestamp-1][spp][time_period];
+//    tf_soil[spp][time_period]=tf_LUT_soil[data->MERRA2_timestamp-1][spp][time_period];
 
 //#else  //COUPLE_MERRA2_LUT
     }
@@ -455,9 +267,9 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
             Tg/=24.0;
             
             ////Currently, ambient CO2 concentration is 350 umol
-            //farquhar(Vcmax25/1e6,CA,data->global_tmp[mon][globY_][globX_],Ts,data->global_hum[mon][globY_][globX_],data->global_swd[mon][globY_][globX_],shade,pt,farquhar_results);
+            farquhar(Vcmax25/1e6,CO2,tmp,Ts,hum,swd,shade,pt,farquhar_results);
             
-            Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
+            //Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
             
             tf_air[spp][time_period]+=farquhar_results[0];
             tf_soil[spp][time_period]+=farquhar_results[5];

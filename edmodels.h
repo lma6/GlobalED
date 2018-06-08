@@ -27,10 +27,10 @@
 #define COUPLE_FAR 1
 #define COUPLE_PFTspecific 1
 #define COUPLE_MERRA2 1
-#define COUPLE_MERRA2_LUT 1
+#define COUPLE_MERRA2_LUT 0
 #define COUPLE_TemAccm 0
 #define CPOUPLE_VcmaxDownreg 0
-#define INI_Year 791  //In LANDUSE, it should be 1500; For spin-up. it is 791
+#define INI_Year 0  //In LANDUSE, it should be 1500; For spin-up. it is 791
 #define N_LAI 6
 #define WT_Abg_PROFILE 0
 #define MERRA2_START 1981
@@ -202,6 +202,7 @@ struct UserData {
    const char *gridspec;
    const char *soil_file;
    const char *lu_file;
+   const char *crop_calendar_file;
    const char *lu_init_c_file;
    const char *gfedbf_file;
 
@@ -548,6 +549,9 @@ struct UserData {
     int is_loadMERRA2[MERRA2_END-MERRA2_START+1];
     int MERRA2_LUT;
     int LANDUSE_FLAG;
+    double planting_probability[12][360][720];
+    double harvest_probability[12][360][720];
+    
     double global_tmp[288][360][720];
     double global_hum[288][360][720];
     double global_swd[288][360][720];

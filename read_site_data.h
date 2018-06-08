@@ -198,6 +198,7 @@ size_t read_input_data_layers (UserData* data);
 int read_hurricane_disturbance (site** siteptr, UserData* data);
 char lu2charname2 (int lu);
 bool loabGlobalLUData (UserData* data);
+bool loadCropCalendar (UserData* data);
 bool loadGlobalEnvironmentData(UserData* data);
 bool loadGlobalMechanismLUT(UserData* data);
 bool loadPREMECH (UserData* data);

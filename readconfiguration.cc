@@ -216,7 +216,8 @@ void initialize_model_params(UserData* data) {
     data->mech_c3_file      = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "mech_c3_file");
     data->mech_c4_file      = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "mech_c4_file");      
     data->lu_file           = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "lu_file");
-    data->lu_init_c_file    = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "lu_init_c_file"); 
+    data->lu_init_c_file    = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "lu_init_c_file");
+    data->crop_calendar_file= get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "crop_calendar_file");
     //data->gfedbf_file       = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "gfedbf_file");
 #if FTS
     data->QAIR_FILE         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "QAIR_FILE");
