@@ -830,7 +830,7 @@ bool loadGlobalEnvironmentData(UserData* data)
             strcat(climatename, nc);
         }
     } else if(data->single_year) {
-        strcpy(climatename, data->climate_file);
+        strcpy(climatename, data->climate_file_avg);
     }
 #if 0
     printf("climate file used is %s\n",climatename);
