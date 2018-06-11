@@ -223,7 +223,6 @@ struct UserData {
  
    const char *which_mech_to_use;
    const char *climate_file;
-   const char *climate_file_MERRA2;
    const char *climate_file_avg;
    const char *mech_c3_file;
    const char *mech_c4_file;
@@ -239,9 +238,8 @@ struct UserData {
     
     const char *PREMECH;
     const char *PREMECH_avg;
-    const char *PREMECH_MERRA2;
-    const char *PREMECH_CO2_avg;
     const char *PREMECH_CO2;
+    const char *PREMECH_CO2_avg;
     
    int single_year;
    int do_yearly_mech;

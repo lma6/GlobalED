@@ -238,25 +238,31 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
 
 //#else  //COUPLE_MERRA2_LUT
     }
-        else
-        {
-    for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
+    else
     {
-        tmp=data->global_tmp[mon][globY_][globX_];
-        hum=data->global_hum[mon][globY_][globX_];
-        swd=data->global_swd[mon][globY_][globX_];
-        windspeed=data->global_windspeed[mon][globY_][globX_];
-        Ts=data->global_soiltmp[mon][globY_][globX_];
-        
-        if(data->mechanism_year<1850)
-            CO2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
-        else if(data->mechanism_year>=1850 and data->mechanism_year<1950)
-            CO2=(280.0+0.314*(data->mechanism_year-1850))/390.0*data->global_CO2[mon][globY_][globX_];
-        else if(data->mechanism_year>=1950 and data->mechanism_year<2001)
-            CO2=(311+1.290*(data->mechanism_year-1950))/390.0*data->global_CO2[mon][globY_][globX_];
-        else
-            CO2=data->global_CO2[mon][globY_][globX_];
-
+        for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
+        {
+            tmp=data->global_tmp[mon][globY_][globX_];
+            hum=data->global_hum[mon][globY_][globX_];
+            swd=data->global_swd[mon][globY_][globX_];
+            windspeed=data->global_windspeed[mon][globY_][globX_];
+            Ts=data->global_soiltmp[mon][globY_][globX_];
+            
+            if (data->do_yearly_mech)
+            {
+                if(data->mechanism_year<1850)
+                    CO2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
+                else if(data->mechanism_year>=1850 and data->mechanism_year<1950)
+                    CO2=(280.0+0.314*(data->mechanism_year-1850))/390.0*data->global_CO2[mon][globY_][globX_];
+                else if(data->mechanism_year>=1950 and data->mechanism_year<2001)
+                    CO2=(311+1.290*(data->mechanism_year-1950))/390.0*data->global_CO2[mon][globY_][globX_];
+                else
+                    CO2=data->global_CO2[mon][globY_][globX_];
+            }
+            else if (data->single_year)
+            {
+                CO2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
+            }     
             
             //As growth temperature defined in Lombardozzi et all 2015 and Atkin et al 2008 is the preceding 10 days running mean of air temperature, here for simplicity, use mean temperature of current month
             Tg=0;
@@ -277,22 +283,16 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
             E[spp][time_period][light_index]+=farquhar_results[2];
             Anb[spp][time_period][light_index]+=farquhar_results[3];
             Eb[spp][time_period][light_index]+=farquhar_results[4];
-
-            }
             
-            tf_air[spp][time_period]/=24.0;
-            tf_soil[spp][time_period]/=24.0;
-            An[spp][time_period][light_index]*=3600.0*360.0;
-            E[spp][time_period][light_index]*=3600.0*540.0;
-            Anb[spp][time_period][light_index]*=3600.0*360.0;
-            Eb[spp][time_period][light_index]*=3600.0*540.0;
-            //printf("Finished cal actual lat %d lon %d mechyear %d timestamp %d co2 %f\n",globY_,globX_,data->mechanism_year,data->MERRA2_timestamp-1,time_period,spp,CO2);
+        }
+        tf_air[spp][time_period]/=24.0;
+        tf_soil[spp][time_period]/=24.0;
+        An[spp][time_period][light_index]*=3600.0*360.0;
+        E[spp][time_period][light_index]*=3600.0*540.0;
+        Anb[spp][time_period][light_index]*=3600.0*360.0;
+        Eb[spp][time_period][light_index]*=3600.0*540.0;
+    }
 
-    
-//#endif //COUPLE_MERRA2_LUT
-            } //COUPLE_MERRA2_LUT
-            //printf("lai %d lon %d mon %d lite %d An %f Anb %f E %f Eb %f\n",globY_,globX_,time_period,light_index,An[spp][time_period][light_index],Anb[spp][time_period][light_index],E[spp][time_period][light_index],Eb[spp][time_period][light_index]);
-            //exit(0);
             
     return 1;
 }
