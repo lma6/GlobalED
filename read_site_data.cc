@@ -817,10 +817,10 @@ bool loadGlobalEnvironmentData(UserData* data)
             
             printf("mechanism_year %d MERRA2_timestamp %d\n",data->mechanism_year,data->MERRA2_timestamp);
             sprintf(convert, "%s%d", base, data->MERRA2_timestamp+MERRA2_START-1);
-            strcpy(climatename, data->climate_file_MERRA2);
+            strcpy(climatename, data->climate_file);
             strcat(climatename, convert);
             strcat(climatename, nc);
-            printf("Loading Environmental data from MERRA2 %s\n",climatename);
+            printf("Loading Environmental data from %s\n",climatename);
 
         }
         
@@ -1056,34 +1056,34 @@ bool loadPREMECH (UserData* data)
         strcpy(premech_clim, data->PREMECH);
         sprintf(premech_clim, "%s%d", premech_clim, data->MERRA2_timestamp+MERRA2_START-1);
         strcat(premech_clim, ".nc");
-        printf("Loading premech file from MERRA2 %s\n",premech_clim);
+        printf("Loading premech file from %s\n",premech_clim);
         
         if(data->mechanism_year<=2000) //before 2001, using average climatology co2 and scaling factor
         {
             strcpy(premech_co2, data->PREMECH_CO2_avg);
-            printf("Loading CO2 premech file from MERRA2 %s\n",premech_co2);
+            printf("Loading CO2 premech file from %s\n",premech_co2);
         }
         else if (data->mechanism_year>2000 and data->mechanism_year<2015)//After 2001 but before 2015, use actual data
         {
             strcpy(premech_co2, data->PREMECH_CO2);
             sprintf(premech_co2, "%s%d", premech_co2, data->mechanism_year);
             strcat(premech_co2, ".nc");
-            printf("Loading CO2 premech file from MERRA2 %s\n",premech_co2);
+            printf("Loading CO2 premech file from %s\n",premech_co2);
         }
         else //After 2014, using 2014
         {
             strcpy(premech_co2, data->PREMECH_CO2);
             sprintf(premech_co2, "%s%d", premech_co2, 2014);
             strcat(premech_co2, ".nc");
-            printf("Loading CO2 premech file from MERRA2 %s\n",premech_co2);
+            printf("Loading CO2 premech file from %s\n",premech_co2);
         }
     } else if(data->single_year)
     {
         strcpy(premech_clim, data->PREMECH_avg);
-        printf("Loading premech file from MERRA2 %s\n",premech_clim);
+        printf("Loading premech file from %s\n",premech_clim);
         
         strcpy(premech_co2, data->PREMECH_CO2_avg);
-        printf("Loading CO2 premech file from MERRA2 %s\n",premech_co2);
+        printf("Loading CO2 premech file from %s\n",premech_co2);
     }
     
     if ((rv = nc_open(premech_clim, NC_NOWRITE, &ncid))){

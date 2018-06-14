@@ -273,9 +273,9 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
             Tg/=24.0;
             
             ////Currently, ambient CO2 concentration is 350 umol
-            farquhar(Vcmax25/1e6,CO2,tmp,Ts,hum,swd,shade,pt,farquhar_results);
+            //farquhar(Vcmax25,CO2,tmp,Ts,hum,swd,shade,pt,farquhar_results);
             
-            //Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
+            Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
             
             tf_air[spp][time_period]+=farquhar_results[0];
             tf_soil[spp][time_period]+=farquhar_results[5];
@@ -296,8 +296,14 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
             
     return 1;
 }
-
-bool SiteData::farquhar (double Vmax,double CA, double ta, double ts,double ea, double q, double shade, int C4, double outputs[5]) {
+////////////////////////////////////////////////////////////////////////////////
+//! farquhar
+//!
+//!
+//! @param Vmax in umol/m2/s, CA in umol/mol, ta in Celsius
+//! @return
+////////////////////////////////////////////////////////////////////////////////
+bool SiteData::farquhar (double Vmax,double CA, double ta, double ts,double ea, double q, double shade, int C4, double outputs[6]) {
     //printf("Cal farquhar V %f Ca %f ta %f ea %f q %f shade %f C4 %f\n",Vmax,CA,ta,ea,q,shade,C4);
     double shade_thresh, shade_thresh2;
     /* Scalers for turning boundary resitance */
@@ -314,9 +320,12 @@ bool SiteData::farquhar (double Vmax,double CA, double ta, double ts,double ea, 
     double rn;
     double tf, a, e, ab, eb;
     
+    Vmax /=1e6;
+    CA /= 1e6;
     
     double GB=3.0,KAPPA=0.5,LAM=45000.0,CP=1280.1,GH=0.03,DO1=0.01,ALPHA3=0.08,ALPHA4=0.06;
     int PRECISION=10,BND=0;
+    
     
     if (C4)
     {
@@ -326,6 +335,7 @@ bool SiteData::farquhar (double Vmax,double CA, double ta, double ts,double ea, 
     {
         M = 8.0;
     }
+    
     
     /* Meteorological conditions */
     rn = q * shade;
