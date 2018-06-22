@@ -1132,7 +1132,7 @@ bool loadPREMECH (UserData* data)
     return true;
 }
 
-bool freeGlobalEnvironmentData(UserData* data)
+void freeGlobalEnvironmentData(UserData* data)
 {
     dealloc_2d_float(data->soil_depth,360,720);
     dealloc_2d_float(data->theta_max,360,720);

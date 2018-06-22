@@ -273,9 +273,9 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
             Tg/=24.0;
             
             ////Currently, ambient CO2 concentration is 350 umol
-            //farquhar(Vcmax25,CO2,tmp,Ts,hum,swd,shade,pt,farquhar_results);
+            farquhar(Vcmax25,CO2,tmp,Ts,hum,swd,shade,pt,farquhar_results);
             
-            Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
+            //Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
             
             tf_air[spp][time_period]+=farquhar_results[0];
             tf_soil[spp][time_period]+=farquhar_results[5];

@@ -202,7 +202,7 @@ bool loadCropCalendar (UserData* data);
 bool loadGlobalEnvironmentData(UserData* data);
 bool loadGlobalMechanismLUT(UserData* data);
 bool loadPREMECH (UserData* data);
-bool freeGlobalEnvironmentData(UserData* data);
+void freeGlobalEnvironmentData(UserData* data);
 bool freeGlobalMechanismLUT(UserData* data);
 
 #endif // EDM_READ_SITE_DATA_H_ 

@@ -117,6 +117,7 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
    registerOutputVars(data->outputter);
 
    string restartDir (data->outdir);
+#if 1-LOCAL_MACHINE
    if (data->new_restart_write) {
       data->restartWriter = new Restart(restartDir + "/RESTART/");
       //data->restartWriter = new Restart("/tmp/");
@@ -124,6 +125,7 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
    if (data->restart && data->new_restart_read) {
       data->restartReader = new Restart(data->restart_dir);
    }
+#endif
    site* first_site = NULL;
    init_sites(&first_site, data);
 
@@ -366,7 +368,7 @@ void model (UserData& data) {
                  data.mechanism_year = INI_Year+t1;
                  if (data.mechanism_year<1850)
                  {
-                     data.MERRA2_LUT=1;
+                     data.MERRA2_LUT=0;
                  }
                  else
                  {

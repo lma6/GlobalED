@@ -184,7 +184,7 @@ void free_user_data(UserData* data) {
 //! @param  
 //! @return 
 ////////////////////////////////////////////////////////////////////////////////
-void initialize_model_params(UserData* data) {  
+void initialize_model_params(UserData* data) {
     data->c2b                      = get_val<double>(data, PARAMS, "", "c2b");           /* carbon to biomass conversion */
     data->allometry_type           = get_val<int>(data, PARAMS, "", "allometry_type");           /* which set of allometric equations to use */
 
