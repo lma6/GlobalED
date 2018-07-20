@@ -152,7 +152,7 @@ void create_patch (site** siteptr, patch** pnewp, int landuse,
                                                      * current_site->sdata->theta_max);
    newpatch->total_water_uptake = 0.0;
     
-    //ml-modified: Load restart files, pero is infinite sometimes
+    //CHANGE-ML ml-modified: Load restart files, pero is infinite sometimes
     newpatch->perc=0.0;
 
    /* assign elements of integration array */
@@ -256,6 +256,7 @@ void update_patch (patch** current_patch, UserData* data) {
 
    /* total carbon */
    cp->total_c = cp->total_biomass + cp->total_soil_c;
+    
 
    /* c fluxes */
    if (data->time_period == 0) { /* reset annual averages */
@@ -278,11 +279,12 @@ void update_patch (patch** current_patch, UserData* data) {
    cp->nep     = 0.0;
    cp->npp2    = 0.0;
    cp->gpp     = 0.0;
-   cp->avg_fopen   = 0.0;
-   cp->avg_leafAn_pot = 0.0;
-   cp->avg_leafE_pot=0.0;
+    cp->fs_open     = 0.0;
+    //checkstep
+    cp->npp_avg = 0.0;
+    cp->gpp_avg = 0.0;
    cc = cp->shortest;
-    int tmp_cc_number=0;
+    double tmp_nindiv_number=0;
    while(cc != NULL){
       double hgtmin = data->hgtmin;
       if(data->allometry_type == 1 and !data->is_grass[cc->species] 
@@ -295,28 +297,19 @@ void update_patch (patch** current_patch, UserData* data) {
          cp->npp2 += cc->npp2 * cc->nindivs / cp->area;
          cp->gpp += cc->gpp * cc->nindivs / cp->area;
          cp->dndt += cc->dndt / cp->area;
-          
-          cp->avg_fopen+=cc->fs_open;
-          cp->avg_leafAn_pot+=cc->leafAn_pot;
-          cp->avg_leafE_pot+=cc->leafE_pot;
-          tmp_cc_number++;
+          //checkstep
+          cp->gpp_avg +=cc->gpp_avg * cc->nindivs/cp->area;
+          cp->npp_avg +=cc->npp_avg * cc->nindivs/cp->area;
+          cp->fs_open += cc->fs_open*cc->nindivs / cp->area;
+          tmp_nindiv_number += cc->nindivs / cp->area;
       }
       cc = cc->taller;
    } /* end loop over cohorts */
-    
-    if (tmp_cc_number>0)
-    {
-        cp->avg_fopen/=tmp_cc_number;
-        cp->avg_leafAn_pot/=tmp_cc_number;
-        cp->avg_leafE_pot/=tmp_cc_number;
-    }
+    if (tmp_nindiv_number>0)
+        cp->fs_open /=tmp_nindiv_number;
     else
-    {
-        cp->avg_fopen=0.0;
-        cp->avg_leafAn_pot=0.0;
-        cp->avg_leafE_pot=0.0;
-    }
-    
+        cp->fs_open = 0.0;
+        
     
    cp->nep -= cp->rh;
 #elif defined MIAMI_LU
@@ -844,7 +837,7 @@ void fuse_2_patches (patch** patchptr1, patch** patchptr2,
    /*free the array if present as well*/
    if (dp->landuse == LU_SCND)
       free(dp->phistory);
-#endif  
+#endif
 
    free(dp);
 }
@@ -870,7 +863,7 @@ void terminate_patches (patch** patchptr, UserData* data) {
    }
 
    /* ADJUST AREAS AND VARS OF OTHER PATCHES TO COMPENSATE */
-   if (epsilon > 0.0) { 
+   if (epsilon > 0.0) {
       cp = (*patchptr)->siteptr->youngest_patch[(*patchptr)->landuse];
       while (cp != NULL) {
          cp->area *= (1.0 + epsilon);
@@ -909,12 +902,12 @@ void terminate_patch (patch** patchptr) {
       }
    }
 #endif
-   
-   if (cp->landuse == LU_SCND) 
+
+   if (cp->landuse == LU_SCND)
       free(cp->phistory);
 
    /* update links */
-   if (cp->younger == NULL) 
+   if (cp->younger == NULL)
       cp->siteptr->youngest_patch[cp->landuse] = cp->older;
    else
       cp->younger->older = cp->older;
@@ -942,6 +935,7 @@ void light_levels (patch** patchptr, UserData* data) {
   
    cohort* cc = cp->tallest;
    if(cc !=NULL){ /*make sure not empty patch*/
+       //checkLAI
          cc->lai =  cc->nindivs*(1.0/cp->area)*(cc->bl*data->specific_leaf_area[cc->species]);
       cc->lite = current_site->sdata->L_top;
       cc->lite *= exp(-data->cohort_shading*(data->L_extinct)*(cc->lai));

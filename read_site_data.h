@@ -35,7 +35,9 @@ struct SiteData {
    double soil_temp3[N_CLIMATE];      ///< monthly mean soil temp (deg C) at 3rd layer in MERRA2
    double soil_temp4[N_CLIMATE];      ///< monthly mean soil temp (deg C) at 4th layer in MERRA2
    double soil_temp5[N_CLIMATE];      ///< monthly mean soil temp (deg C) at 5th layer in MERRA2
-   double pet[N_CLIMATE];            ///< potential evapotranspiration (mm/yr) 
+   double pet[N_CLIMATE];            ///< potential evapotranspiration (mm/yr)
+    double dyl_factor[N_CLIMATE];   ///CHANGE-ML
+    
 #endif // ED
    double precip_average;            ///< avg. yrly precip (mm/yr) 
    double temp_average;              ///< average annual temperature (deg C)
@@ -202,6 +204,7 @@ bool loadCropCalendar (UserData* data);
 bool loadGlobalEnvironmentData(UserData* data);
 bool loadGlobalMechanismLUT(UserData* data);
 bool loadPREMECH (UserData* data);
+bool load_GFED(UserData* data);
 void freeGlobalEnvironmentData(UserData* data);
 bool freeGlobalMechanismLUT(UserData* data);
 

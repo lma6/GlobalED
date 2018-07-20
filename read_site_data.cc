@@ -38,9 +38,9 @@ size_t read_input_data_layers (UserData* data) {
 
    printf("gfed bool= %d\n", data->fire_gfed);
    printf("fre_off bool= %d\n", data->fire_off);
-   if(data->fire_gfed){
+   if(!data->fire_off && data->fire_gfed){
       printf("In read_input_data_layer(), fire_gfed bool is true... \n");
-      read_gfed_bf(data);
+      load_GFED(data);
    }	
    
    return nPotentialSites;
@@ -699,6 +699,8 @@ bool loabGlobalLUData (UserData* data)
                                     &(data->gfsh[dlu][0][0][0]))))
             NCERR(varname, rv);
     }
+    
+    rv = nc_close(ncid);
     return 1;
 }
 #endif
@@ -711,6 +713,57 @@ bool loadGlobalEnvironmentData(UserData* data)
     size_t index2[3] = { 0,0,0};
     size_t count1[3]  = { 360, 720};
     size_t count2[3]  = { 12,360, 720};
+    
+
+    // Added below for yearly climate
+    // TODO: this should not be done here. needs to be done once, not every site
+    char nc[4] = ".nc"  ;
+    char base[256] = "";
+    char convert[256];
+    char climatename[256];
+    if (data->do_yearly_mech) {
+        if (data->m_int)
+        {
+            //Currently, using Cyclically repeat the MERRA2 meteorology of 1981-2015 before MERRA2_START, then use actual forcing.
+            //As the length of time doman is not integral multiple of length of MERRA2 forcing, so the first year in simulation
+            //may start from a certain point (i.e. MERRA2_timestamp_mod) to make sure that when run to MERRA2_START year, the actual
+            //annual MERRA2 forcing will be used
+            
+            if (data->mechanism_year>1980)
+            {
+                if (data->mechanism_year<MERRA2_START) //If simulation just start, using MERRA2_timestamp is MERRA2_timestamp_mod
+                {
+                    data->MERRA2_timestamp=(MERRA2_END-MERRA2_START+1)-(MERRA2_START-1-data->mechanism_year)%(MERRA2_END-MERRA2_START+1);
+                }
+                else //Otherwise, MERRA2_timestamp jumpt to next year
+                {
+                    data->MERRA2_timestamp=data->mechanism_year-MERRA2_START+1;
+                }
+                
+                printf("mechanism_year %d MERRA2_timestamp %d\n",data->mechanism_year,data->MERRA2_timestamp);
+                sprintf(convert, "%s%d", base, data->MERRA2_timestamp+MERRA2_START-1);
+                strcpy(climatename, data->climate_file);
+                strcat(climatename, convert);
+                strcat(climatename, nc);
+            }
+            else
+            {
+                strcpy(climatename, data->climate_file_avg);
+            }
+            printf("Loading Environmental data from %s\n",climatename);
+        }
+        
+        if(data->m_string) {
+            strcpy(climatename,data->climate_file);
+            strcat(climatename,data->mech_year_string);
+            strcat(climatename, nc);
+        }
+    } else if(data->single_year) {
+        strcpy(climatename, data->climate_file_avg);
+    }
+#if 0
+    printf("climate file used is %s\n",climatename);
+#endif
     
     if (data->soil_depth==NULL)
     {
@@ -749,8 +802,6 @@ bool loadGlobalEnvironmentData(UserData* data)
     {
         reset_2d_float(data->tau,360,720);
     }
-    
-    
     
     if (data->soil_file_ncid == 0) {
         if ((rv = nc_open(data->soil_file, NC_NOWRITE, &ncid))) {
@@ -792,58 +843,6 @@ bool loadGlobalEnvironmentData(UserData* data)
     ncclose(data->soil_file_ncid);
     data->soil_file_ncid=0;
     
-    // Added below for yearly climate
-    // TODO: this should not be done here. needs to be done once, not every site
-    char nc[4] = ".nc"  ;
-    char base[256] = "";
-    char convert[256];
-    char climatename[256];
-    if (data->do_yearly_mech) {
-        if (data->m_int)
-        {
-            //Currently, using Cyclically repeat the MERRA2 meteorology of 1981-2015 before MERRA2_START, then use actual forcing.
-            //As the length of time doman is not integral multiple of length of MERRA2 forcing, so the first year in simulation
-            //may start from a certain point (i.e. MERRA2_timestamp_mod) to make sure that when run to MERRA2_START year, the actual
-            //annual MERRA2 forcing will be used
-            
-            if (data->mechanism_year<MERRA2_START) //If simulation just start, using MERRA2_timestamp is MERRA2_timestamp_mod
-            {
-                data->MERRA2_timestamp=(MERRA2_END-MERRA2_START+1)-(MERRA2_START-1-data->mechanism_year)%(MERRA2_END-MERRA2_START+1);
-            }
-            else //Otherwise, MERRA2_timestamp jumpt to next year
-            {
-                data->MERRA2_timestamp=data->mechanism_year-MERRA2_START+1;
-            }
-            
-            printf("mechanism_year %d MERRA2_timestamp %d\n",data->mechanism_year,data->MERRA2_timestamp);
-            sprintf(convert, "%s%d", base, data->MERRA2_timestamp+MERRA2_START-1);
-            strcpy(climatename, data->climate_file);
-            strcat(climatename, convert);
-            strcat(climatename, nc);
-            printf("Loading Environmental data from %s\n",climatename);
-
-        }
-        
-        if(data->m_string) {
-            strcpy(climatename,data->climate_file);
-            strcat(climatename,data->mech_year_string);
-            strcat(climatename, nc);
-        }
-    } else if(data->single_year) {
-        strcpy(climatename, data->climate_file_avg);
-    }
-#if 0
-    printf("climate file used is %s\n",climatename);
-#endif
-    
-    if (data->climate_file_ncid == 0) {
-        if ((rv = nc_open(climatename, NC_NOWRITE, &ncid))) {
-            NCERR(climatename, rv);
-        }
-        data->climate_file_ncid = ncid;
-    } else {
-        ncid = data->climate_file_ncid;
-    }
     
     if (data->climate_temp==NULL)
     {
@@ -876,6 +875,15 @@ bool loadGlobalEnvironmentData(UserData* data)
     {
         printf("Start reset climate_soil\n");
         reset_3d_float(data->climate_soil,N_CLIMATE,360,720);
+    }
+    
+    if (data->climate_file_ncid == 0) {
+        if ((rv = nc_open(climatename, NC_NOWRITE, &ncid))) {
+            NCERR(climatename, rv);
+        }
+        data->climate_file_ncid = ncid;
+    } else {
+        ncid = data->climate_file_ncid;
     }
     
     if ((rv = nc_inq_varid(ncid, "precipitation", &varid))) {
@@ -978,21 +986,21 @@ bool loadGlobalEnvironmentData(UserData* data)
         NCERR("soil_temp5", rv);
     }
     //reading 6th soil_temp
-//    if (data->climate_soil6==NULL)
-//    {
-//        printf("Start allocate climate_soil6\n");
-//        data->climate_soil6=malloc_3d_float(N_CLIMATE,360,720);
-//    }
-//    else
-//    {
-//        reset_3d_float(data->climate_soil6,N_CLIMATE,360,720);
-//    }
-//    if ((rv = nc_inq_varid(ncid, "soil_temp6", &varid))) {
-//        NCERR("soil_temp6", rv);
-//    }
-//    if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->climate_soil6[0][0][0]))) {
-//        NCERR("soil_temp6", rv);
-//    }
+    //    if (data->climate_soil6==NULL)
+    //    {
+    //        printf("Start allocate climate_soil6\n");
+    //        data->climate_soil6=malloc_3d_float(N_CLIMATE,360,720);
+    //    }
+    //    else
+    //    {
+    //        reset_3d_float(data->climate_soil6,N_CLIMATE,360,720);
+    //    }
+    //    if ((rv = nc_inq_varid(ncid, "soil_temp6", &varid))) {
+    //        NCERR("soil_temp6", rv);
+    //    }
+    //    if ((rv = nc_get_vara_float(ncid, varid, index2, count2, &data->climate_soil6[0][0][0]))) {
+    //        NCERR("soil_temp6", rv);
+    //    }
     //Take a average of 5 layers
     for (size_t ilat=0;ilat<360;ilat++)
     {
@@ -1022,7 +1030,7 @@ bool loadGlobalEnvironmentData(UserData* data)
     
     ncclose(data->climate_file_ncid);
     data->climate_file_ncid=0;
-    
+
     return 1;
 }
 
@@ -1034,8 +1042,6 @@ bool loadPREMECH (UserData* data)
     size_t index3[3] = { 0, 0, 0 };
     size_t count3[3]  = {288, 360, 720 };
     
-
-    
     if (data->do_yearly_mech)
     {
         //Currently, using Cyclically repeat the MERRA2 meteorology of 1981-2015 before MERRA2_START, then use actual forcing.
@@ -1043,19 +1049,25 @@ bool loadPREMECH (UserData* data)
         //may start from a certain point (i.e. MERRA2_timestamp_mod) to make sure that when run to MERRA2_START year, the actual
         //annual MERRA2 forcing will be used
         
-        if (data->mechanism_year<MERRA2_START) //If simulation just start, using MERRA2_timestamp is MERRA2_timestamp_mod
+        if (data->mechanism_year>1980)
         {
-            data->MERRA2_timestamp=(MERRA2_END-MERRA2_START+1)-(MERRA2_START-1-data->mechanism_year)%(MERRA2_END-MERRA2_START+1);
+            if (data->mechanism_year<MERRA2_START) //If simulation just start, using MERRA2_timestamp is MERRA2_timestamp_mod
+            {
+                data->MERRA2_timestamp=(MERRA2_END-MERRA2_START+1)-(MERRA2_START-1-data->mechanism_year)%(MERRA2_END-MERRA2_START+1);
+            }
+            else //Otherwise, MERRA2_timestamp jumpt to next year
+            {
+                data->MERRA2_timestamp=data->mechanism_year-MERRA2_START+1;
+            }
+            printf("mechanism_year %d MERRA2_timestamp %d\n",data->mechanism_year,data->MERRA2_timestamp);
+            strcpy(premech_clim, data->PREMECH);
+            sprintf(premech_clim, "%s%d", premech_clim, data->MERRA2_timestamp+MERRA2_START-1);
+            strcat(premech_clim, ".nc");
         }
-        else //Otherwise, MERRA2_timestamp jumpt to next year
+        else
         {
-            data->MERRA2_timestamp=data->mechanism_year-MERRA2_START+1;
+            strcpy(premech_clim, data->PREMECH_avg);
         }
-        
-        printf("mechanism_year %d MERRA2_timestamp %d\n",data->mechanism_year,data->MERRA2_timestamp);
-        strcpy(premech_clim, data->PREMECH);
-        sprintf(premech_clim, "%s%d", premech_clim, data->MERRA2_timestamp+MERRA2_START-1);
-        strcat(premech_clim, ".nc");
         printf("Loading premech file from %s\n",premech_clim);
         
         if(data->mechanism_year<=2000) //before 2001, using average climatology co2 and scaling factor
@@ -1096,7 +1108,7 @@ bool loadPREMECH (UserData* data)
     if ((rv = nc_open(premech_co2, NC_NOWRITE, &ncid_co2))){
         NCERR(premech_co2, rv);
     }
-
+    
     if ((rv = nc_inq_varid(ncid, "AirTemp", &varid))) NCERR("AirTemp", rv);
     if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_tmp[0][0][0]))) NCERR("AirTemp", rv);
     
@@ -1127,8 +1139,66 @@ bool loadPREMECH (UserData* data)
     //load spatial CO2 data
     if ((rv = nc_inq_varid(ncid_co2, "co2_ambient", &varid_co2))) NCERR("co2_ambient", rv);
     if ((rv = nc_get_vara_double(ncid_co2, varid_co2, index3, count3, &data->global_CO2[0][0][0]))) NCERR("co2_ambient", rv);
-
     rv = nc_close(ncid);
+    rv = nc_close(ncid_co2);
+
+    return true;
+}
+
+bool load_GFED(UserData* data)
+{
+    int rv, ncid_gfed, varid;
+    size_t k,i,j;
+    char gfed[256];
+    
+    size_t index[3] = { 0, 0, 0 };
+    size_t count[3]  = {12, 360, 720 };
+    
+    if (data->do_yearly_mech)
+    {
+        if(data->mechanism_year<1996 or data->mechanism_year>2016)
+        {
+            strcpy(gfed, data->gfedbf_file_avg);
+        }
+        else if(data->mechanism_year>=1996 && data->mechanism_year<=2016)
+        {
+            strcpy(gfed, data->gfedbf_file);
+            sprintf(gfed, "%s%d", gfed, data->mechanism_year);
+            strcat(gfed, ".nc");
+        }
+    }
+    else if(data->single_year)
+    {
+        strcpy(gfed, data->gfedbf_file_avg);
+    }
+    
+    if ((rv = nc_open(gfed, NC_NOWRITE, &ncid_gfed))) {
+        NCERR(gfed, rv);
+    }
+    
+    printf("Loading GFED file from %s\n",gfed);
+    
+    if ((rv = nc_inq_varid(ncid_gfed, "burnedfraction", &varid))) {
+        NCERR("burnedfraction", rv);
+    }
+    
+    if ((rv = nc_get_vara_double(ncid_gfed, varid, index, count, &(data->gfed_bf[0][0][0])))) {
+        NCERR("burnedfraction", rv);
+    }
+    
+    /* set all missing values to 0 */
+    for (k=0;k<N_CLIMATE;k++){
+        for (i=0; i<data->n_lat; i++) {
+            for (j=0; j<data->n_lon; j++) {
+                if (data->gfed_bf[k][i][j] < 0.0)
+                {
+                    data->gfed_bf[k][i][j] = 0.0;
+                }
+                data->gfed_bf[k][i][j] *= 12.0;  /// Lei - Convert monthly burned area fraction to yearly as all disturbance rate in para.cfg file is yearly based.
+            }
+        }
+    }
+    rv = nc_close(ncid_gfed);
     return true;
 }
 
@@ -1320,7 +1390,6 @@ bool SiteData::readEnvironmentalData (UserData& data)
         //fprintf(stderr, "No soil char data found for site lat %f lon %f\n", cs->lat, cs->lon);
         return false;
     }
-    
     precip_average=0.0;
     temp_average=0.0;
     soil_temp_average=0.0;
@@ -1375,6 +1444,7 @@ bool SiteData::readEnvironmentalData (UserData& data)
         soil_temp5[i] = data.climate_soil5[i*12/N_CLIMATE][globY_][globX_] - 273.15; // convert Kelvin to C
         
     }
+    
     return true;
 }
 

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AB21E3E520EE7FEE00105332 /* libtbb.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = AB21E3E420EE7FEE00105332 /* libtbb.dylib */; };
 		ABC2125020D2ECD400FE4234 /* miami.cc in Sources */ = {isa = PBXBuildFile; fileRef = ABC2121A20D2ECD000FE4234 /* miami.cc */; };
 		ABC2125220D2ECD400FE4234 /* patch.cc in Sources */ = {isa = PBXBuildFile; fileRef = ABC2121F20D2ECD000FE4234 /* patch.cc */; };
 		ABC2125320D2ECD400FE4234 /* disturbance.cc in Sources */ = {isa = PBXBuildFile; fileRef = ABC2122220D2ECD000FE4234 /* disturbance.cc */; };
@@ -49,6 +50,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AB21E3E220EE78AD00105332 /* libtbb.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtbb.dylib; path = ../../../../../usr/local/Cellar/IntelTBB/2017U3/lib/libtbb.dylib; sourceTree = "<group>"; };
+		AB21E3E420EE7FEE00105332 /* libtbb.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtbb.dylib; path = ../../../../../usr/local/Cellar/tbb/2018_U5/lib/libtbb.dylib; sourceTree = "<group>"; };
 		ABC2121020D2EBBB00FE4234 /* GlobalED */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GlobalED; sourceTree = BUILT_PRODUCTS_DIR; };
 		ABC2121A20D2ECD000FE4234 /* miami.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = miami.cc; sourceTree = "<group>"; };
 		ABC2121B20D2ECD000FE4234 /* edmodels.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = edmodels.h; sourceTree = "<group>"; };
@@ -112,6 +115,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AB21E3E520EE7FEE00105332 /* libtbb.dylib in Frameworks */,
 				ABC2127420D2EF0700FE4234 /* libconfig++.dylib in Frameworks */,
 				ABC2127220D2EEF000FE4234 /* libstdc++.tbd in Frameworks */,
 				ABC2126C20D2EECC00FE4234 /* libnetcdf.dylib in Frameworks */,
@@ -192,6 +196,8 @@
 		ABC2126A20D2EECC00FE4234 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				AB21E3E220EE78AD00105332 /* libtbb.dylib */,
+				AB21E3E420EE7FEE00105332 /* libtbb.dylib */,
 				ABC2127320D2EF0700FE4234 /* libconfig++.dylib */,
 				ABC2127120D2EEF000FE4234 /* libstdc++.tbd */,
 				ABC2126F20D2EEE200FE4234 /* libdb_cxx.dylib */,
@@ -403,6 +409,7 @@
 					/usr/local/Cellar/netcdf/4.6.1_2/include/,
 					/usr/local/Cellar/libconfig/1.7.2/include/,
 					/usr/local/Cellar/netcdf/4.1.3/include/,
+					/usr/local/Cellar/tbb/2018_U5/include,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"/usr/local/Cellar/berkeley-db/4.6.21NC/lib/",
@@ -412,6 +419,7 @@
 					/usr/local/Cellar/netcdf/4.6.1_2/lib,
 					"/usr/local/Cellar/berkeley-db/4.6.21NC/lib",
 					/usr/local/Cellar/libconfig/1.7.2/lib,
+					/usr/local/Cellar/tbb/2018_U5/lib,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -426,6 +434,7 @@
 					/usr/local/Cellar/netcdf/4.6.1_2/include/,
 					/usr/local/Cellar/libconfig/1.7.2/include/,
 					/usr/local/Cellar/netcdf/4.1.3/include/,
+					/usr/local/Cellar/tbb/2018_U5/include,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"/usr/local/Cellar/berkeley-db/4.6.21NC/lib/",
@@ -435,6 +444,7 @@
 					/usr/local/Cellar/netcdf/4.6.1_2/lib,
 					"/usr/local/Cellar/berkeley-db/4.6.21NC/lib",
 					/usr/local/Cellar/libconfig/1.7.2/lib,
+					/usr/local/Cellar/tbb/2018_U5/lib,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

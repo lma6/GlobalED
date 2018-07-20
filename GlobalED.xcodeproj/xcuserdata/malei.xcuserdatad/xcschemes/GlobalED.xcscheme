@@ -47,7 +47,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "/Users/lei/Documents/GitHub/GlobalED2"
+      customWorkingDirectory = "/Users/malei/Documents/GitHub/GlobalED2"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -64,7 +64,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "test_output_fire_Rh_modiAllo_termi"
+            argument = "test_outputs_fire"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

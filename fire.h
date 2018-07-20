@@ -4,7 +4,7 @@
 struct patch;
 struct UserData;
 
-void read_gfed_bf  (UserData* data);
+//void read_gfed_bf  (UserData* data);
 double fire (int t, patch** patchptr, UserData* data);
 
 void update_fuel(int t, patch** patchptr, UserData* data);

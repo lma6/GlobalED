@@ -28,6 +28,34 @@ float getSPP3Biomass (site* cs)      { return cs->site_total_spp_biomass[3]; }
 float getSPP4Biomass (site* cs)      { return cs->site_total_spp_biomass[4]; }
 float getSPP5Biomass (site* cs)      { return cs->site_total_spp_biomass[5]; }
 float getSPP6Biomass (site* cs)      { return cs->site_total_spp_biomass[6]; }
+float getLeafAnPot_spp1 (site* cs)      { return cs->Leaf_An_pot[0]; }
+float getLeafAnPot_spp2 (site* cs)      { return cs->Leaf_An_pot[1]; }
+float getLeafAnPot_spp3 (site* cs)      { return cs->Leaf_An_pot[2]; }
+float getLeafAnPot_spp4 (site* cs)      { return cs->Leaf_An_pot[3]; }
+float getLeafAnPot_spp5 (site* cs)      { return cs->Leaf_An_pot[4]; }
+float getLeafAnPot_spp6 (site* cs)      { return cs->Leaf_An_pot[5]; }
+float getLeafAnPot_spp7 (site* cs)      { return cs->Leaf_An_pot[6]; }
+float getLeafAnShut_spp1 (site* cs)      { return cs->Leaf_An_shut[0]; }
+float getLeafAnShut_spp2 (site* cs)      { return cs->Leaf_An_shut[1]; }
+float getLeafAnShut_spp3 (site* cs)      { return cs->Leaf_An_shut[2]; }
+float getLeafAnShut_spp4 (site* cs)      { return cs->Leaf_An_shut[3]; }
+float getLeafAnShut_spp5 (site* cs)      { return cs->Leaf_An_shut[4]; }
+float getLeafAnShut_spp6 (site* cs)      { return cs->Leaf_An_shut[5]; }
+float getLeafAnShut_spp7 (site* cs)      { return cs->Leaf_An_shut[6]; }
+float getLeafEpot_spp1 (site* cs)      { return cs->Leaf_E_pot[0]; }
+float getLeafEpot_spp2 (site* cs)      { return cs->Leaf_E_pot[1]; }
+float getLeafEpot_spp3 (site* cs)      { return cs->Leaf_E_pot[2]; }
+float getLeafEpot_spp4 (site* cs)      { return cs->Leaf_E_pot[3]; }
+float getLeafEpot_spp5 (site* cs)      { return cs->Leaf_E_pot[4]; }
+float getLeafEpot_spp6 (site* cs)      { return cs->Leaf_E_pot[5]; }
+float getLeafEpot_spp7 (site* cs)      { return cs->Leaf_E_pot[6]; }
+float getLeafEShut_spp1 (site* cs)      { return cs->Leaf_E_shut[0]; }
+float getLeafEShut_spp2 (site* cs)      { return cs->Leaf_E_shut[1]; }
+float getLeafEShut_spp3 (site* cs)      { return cs->Leaf_E_shut[2]; }
+float getLeafEShut_spp4 (site* cs)      { return cs->Leaf_E_shut[3]; }
+float getLeafEShut_spp5 (site* cs)      { return cs->Leaf_E_shut[4]; }
+float getLeafEShut_spp6 (site* cs)      { return cs->Leaf_E_shut[5]; }
+float getLeafEShut_spp7 (site* cs)      { return cs->Leaf_E_shut[6]; }
 // Add 0.0000001 to site_total_biomass in denominator to prevent divide by zero errors
 float getPercSPP0    (site* cs)      { return cs->site_total_spp_biomass[0]/(cs->site_total_biomass+0.0000001); }
 float getPercSPP1    (site* cs)      { return cs->site_total_spp_biomass[1]/(cs->site_total_biomass+0.0000001); }
@@ -38,12 +66,9 @@ float getPercSPP5    (site* cs)      { return cs->site_total_spp_biomass[5]/(cs-
 float getPercSPP6    (site* cs)      { return cs->site_total_spp_biomass[6]/(cs->site_total_biomass+0.0000001); }
 
 float getGPP (site* cs)              { return cs->site_gpp; }
+float getGPP_AVG (site* cs)              { return cs->site_gpp_avg; }
+float getFS_OPEN (site* cs)          { return cs->site_fs_open; }      /// CHANGE-ML
 float getGPPAA (site* cs)            { return cs->site_aa_gpp;}
-
-float getLeafFopen (site* cs)            { return cs->site_avg_fopen; }
-float getLeafAn_POT (site* cs)    { return cs->site_avg_leafAn_pot; }
-float getLeafE_POT (site* cs)    { return cs->site_avg_leafE_pot; }
-
 #endif
 float getLAIAA (site* cs)            { return cs->site_aa_lai;}
 float getLAIAA0 (site* cs)           { return cs->site_aa_lai_profile[0];}
@@ -53,7 +78,9 @@ float getLAIAA3 (site* cs)           { return cs->site_aa_lai_profile[3];}
 float getLAIAA4 (site* cs)           { return cs->site_aa_lai_profile[4];}
 float getLAIAA5 (site* cs)           { return cs->site_aa_lai_profile[5];}
 float getNPP (site* cs)              { return cs->site_npp; }
+float getNPP_AVG (site* cs)              { return cs->site_npp_avg; }
 float getRH (site* cs)               { return cs->site_rh; }
+float getRH_AVG (site* cs)               { return cs->site_rh_avg; }
 float getNEP (site* cs)              { return cs->site_nep; }
 float getNPPAA (site* cs)            { return cs->site_aa_npp;}
 float getNEPAA (site* cs)            { return cs->site_aa_nep;}
@@ -191,6 +218,7 @@ float getSiteLU_NPP_AA (site* cs, size_t lu) { return cs->aa_npp[lu]; }
 float getSiteLUSoilC (site* cs, size_t lu)   { return cs->total_soil_c[lu]; }
 #ifdef ED
 float getSiteLU_GPP (site* cs, size_t lu)    { return cs->gpp[lu]; }
+float getSiteLU_FS_OPEN (site* cs, size_t lu)       {return cs->fs_open[lu];}      /// CHANGE-ML
 float getSiteLU_GPP_AA (site* cs, size_t lu) { return cs->aa_gpp[lu]; }
 #endif
 float getLUFrac (site* cs, size_t lu)        { return cs->area_fraction[lu]; }
@@ -221,6 +249,39 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("biomass_spp4", &getSPP4Biomass, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("biomass_spp5", &getSPP5Biomass, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("biomass_spp6", &getSPP6Biomass, "kg/m2", -9999.0F, ncFloat);
+    
+   o->registerVar("Leaf_An_pot_spp1", &getLeafAnPot_spp1, "kg/m2", -9999.0F, ncFloat);
+     o->registerVar("Leaf_An_pot_spp2", &getLeafAnPot_spp2, "kg/m2", -9999.0F, ncFloat);
+     o->registerVar("Leaf_An_pot_spp3", &getLeafAnPot_spp3, "kg/m2", -9999.0F, ncFloat);
+     o->registerVar("Leaf_An_pot_spp4", &getLeafAnPot_spp4, "kg/m2", -9999.0F, ncFloat);
+     o->registerVar("Leaf_An_pot_spp5", &getLeafAnPot_spp5, "kg/m2", -9999.0F, ncFloat);
+     o->registerVar("Leaf_An_pot_spp6", &getLeafAnPot_spp6, "kg/m2", -9999.0F, ncFloat);
+     o->registerVar("Leaf_An_pot_spp7", &getLeafAnPot_spp7, "kg/m2", -9999.0F, ncFloat);
+    
+     o->registerVar("Leaf_An_shut_spp1", &getLeafAnShut_spp1, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_An_shut_spp2", &getLeafAnShut_spp2, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_An_shut_spp3", &getLeafAnShut_spp3, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_An_shut_spp4", &getLeafAnShut_spp4, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_An_shut_spp5", &getLeafAnShut_spp5, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_An_shut_spp6", &getLeafAnShut_spp6, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_An_shut_spp7", &getLeafAnShut_spp7, "kg/m2", -9999.0F, ncFloat);
+    
+    o->registerVar("Leaf_E_pot_spp1", &getLeafEpot_spp1, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_E_pot_spp2", &getLeafEpot_spp2, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_E_pot_spp3", &getLeafEpot_spp3, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_E_pot_spp4", &getLeafEpot_spp4, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_E_pot_spp5", &getLeafEpot_spp5, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_E_pot_spp6", &getLeafEpot_spp6, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_E_pot_spp7", &getLeafEpot_spp7, "kg/m2", -9999.0F, ncFloat);
+    
+    o->registerVar("Leaf_E_shut_spp1", &getLeafEShut_spp1, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_E_shut_spp2", &getLeafEShut_spp2, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_E_shut_spp3", &getLeafEShut_spp3, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_E_shut_spp4", &getLeafEShut_spp4, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_E_shut_spp5", &getLeafEShut_spp5, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_E_shut_spp6", &getLeafEShut_spp6, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Leaf_E_shut_spp7", &getLeafEShut_spp7, "kg/m2", -9999.0F, ncFloat);
+    
    o->registerVar("perc_spp0", &getPercSPP0, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("perc_spp1", &getPercSPP1, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("perc_spp2", &getPercSPP2, "kg/m2", -9999.0F, ncFloat);
@@ -240,19 +301,20 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("dryness_index", &getDrynessIndex, "", -9999.0F, ncFloat);
    o->registerVar("soil_C", &getSiteSoilC, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("NPP", &getNPP, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("NPP_AVG", &getNPP_AVG, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("Rh", &getRH, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("Rh_AVG", &getRH_AVG, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("NEP", &getNEP, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("aa_NPP", &getNPPAA, "kg/m2/yr", -9999.0F, ncFloat);
    o->registerVar("aa_NEP", &getNEPAA, "kg/m2/yr", -9999.0F, ncFloat);
 #ifdef ED
    o->registerVar("GPP", &getGPP, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("GPP_AVG", &getGPP_AVG, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("fs_open", &getFS_OPEN, "", -9999.0F, ncFloat);
    o->registerVar("aa_GPP", &getGPPAA, "kg/m2/yr", -9999.0F, ncFloat);
    o->registerVar("NPP2", &getNPP2, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("NEP2", &getNEP2, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("NEP3", &getNEP3, "kg/m2", -9999.0F, ncFloat);
-   o->registerVar("Leaffopen", &getLeafFopen, "", -9999.0F, ncFloat);
-   o->registerVar("LeafAn_pot", &getLeafAn_POT, "kg/m2", -9999.0F, ncFloat);
-   o->registerVar("LeafE_pot", &getLeafE_POT, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("soil_N", &getSiteSoilN, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("mineralized_soil_N", &getSiteMineralizedN, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("LAI", &getLAI, "", -9999.0F, ncFloat);
@@ -306,6 +368,7 @@ void registerOutputVars(Outputter *o) {
    o->registerLUVar("aa_NPP", &getSiteLU_NPP_AA, "kg/m2", -9999.0F, ncFloat);
 #ifdef ED
    o->registerLUVar("GPP", &getSiteLU_GPP, "kg/m2", -9999.0F, ncFloat);
+    o->registerLUVar("fs_open",&getSiteLU_FS_OPEN,"",-9999.0F, ncFloat);
    o->registerLUVar("aa_GPP", &getSiteLU_GPP_AA, "kg/m2", -9999.0F, ncFloat);
 #endif
    o->registerLUVar("frac", &getLUFrac, "", -9999.0F, ncFloat);
@@ -635,9 +698,13 @@ void print_cfluxes (unsigned int time, site** siteptr, UserData* data) {
  
 #ifdef ED
    fprintf(outfile,
-           "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f leafAn_pot %f leafE_pot %f leaffopen %f\n",
+           "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %f npp_avg %f rh_avg %f fs_open %f An_pot_spp1 %f An_pot_spp2 %f An_pot_spp3 %f An_pot_spp4 %f An_pot_spp5 %f An_pot_spp6 %f An_pot_spp7 %f An_shut_spp1 %f An_shut_spp2 %f An_shut_spp3 %f An_shut_spp4 %f An_shut_spp5 %f An_shut_spp6 %f An_shut_spp7 %f E_pot_spp1 %f E_pot_spp2 %f E_pot_spp3 %f E_pot_spp4 %f E_pot_spp5 %f E_pot_spp6 %f E_pot_spp7 %f E_shut_spp1 %f E_shut_spp2 %f E_shut_spp3 %f E_shut_spp4 %f E_shut_spp5 %f E_shut_spp6 %f E_shut_spp7 %f\n",
            cs->sdata->name_, time*TIMESTEP, cs->site_npp, cs->site_rh, cs->site_nep,
-           cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_avg_leafAn_pot,cs->site_avg_leafE_pot,cs->site_avg_fopen);
+           cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_gpp_avg,cs->site_npp_avg,cs->site_rh_avg,cs->site_fs_open,
+           cs->Leaf_An_pot[0],cs->Leaf_An_pot[1],cs->Leaf_An_pot[2],cs->Leaf_An_pot[3],cs->Leaf_An_pot[4],cs->Leaf_An_pot[5],cs->Leaf_An_pot[6],
+           cs->Leaf_An_shut[0],cs->Leaf_An_shut[1],cs->Leaf_An_shut[2],cs->Leaf_An_shut[3],cs->Leaf_An_shut[4],cs->Leaf_An_shut[5],cs->Leaf_An_shut[6],
+           cs->Leaf_E_pot[0],cs->Leaf_E_pot[1],cs->Leaf_E_pot[2],cs->Leaf_E_pot[3],cs->Leaf_E_pot[4],cs->Leaf_E_pot[5],cs->Leaf_E_pot[6],
+           cs->Leaf_E_shut[0],cs->Leaf_E_shut[1],cs->Leaf_E_shut[2],cs->Leaf_E_shut[3],cs->Leaf_E_shut[4],cs->Leaf_E_shut[5],cs->Leaf_E_shut[6]);
 #elif defined MIAMI_LU
    fprintf(outfile,
            "%s time %f npp %8.6f rh %8.6f nep %8.6f dndt %f\n",
@@ -652,10 +719,10 @@ void print_cfluxes (unsigned int time, site** siteptr, UserData* data) {
 
       /* print to files */
 #if defined ED
-      fprintf(outfile, "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f\n",
+      fprintf(outfile, "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f fs_open %f\n",
               cs->sdata->name_, time * TIMESTEP,
               cs->npp[lu], cs->rh[lu] ,cs->nep[lu],
-              cs->npp2[lu], cs->gpp[lu], cs->dndt[lu],cs->nep3[lu]);
+              cs->npp2[lu], cs->gpp[lu], cs->dndt[lu],cs->nep3[lu],cs->fs_open[lu]);
 #elif defined MIAMI_LU
       fprintf(outfile, "%s time %f npp %8.6f rh %8.6f nep %8.6f dndt %f\n",
           cs->sdata->name_, time * TIMESTEP,
@@ -670,10 +737,11 @@ void print_cfluxes (unsigned int time, site** siteptr, UserData* data) {
       cp = cs->youngest_patch[lu];
       while (cp != NULL) {
 #if defined ED
+          //checkstep
          fprintf(outfile,
-                 "%s time %f pid %p track %u area %f age %5.2f npp %8.6f rh %8.6f  nep %8.6f npp2 %8.6f gpp %8.6f leafAn_pot %8.6f leafE_pot %8.6f leaffopen %8.6f\n",
+                 "%s time %f pid %p track %u area %f age %5.2f npp %8.6f rh %8.6f  nep %8.6f npp2 %8.6f gpp %8.6f npp_avg %8.6f rh_avg %8.6f\n",
                  cs->sdata->name_, time*TIMESTEP, cp, cp->track, cp->area, cp->age,
-                 cp->npp, cp->rh, cp->nep, cp->npp2, cp->gpp,cp->avg_leafAn_pot,cp->avg_leafE_pot,cp->avg_fopen);
+                 cp->npp, cp->rh, cp->nep, cp->npp2, cp->gpp,cp->npp_avg,cp->rh_avg);
 #elif defined MIAMI_LU
          fprintf(outfile,
                  "%s time %f pid %p track %u area %f age %f npp %8.6f rh %8.6f nep %8.6f\n" ,
@@ -1524,8 +1592,9 @@ void print_cohorts (unsigned int time, site** siteptr, UserData* data) {
       while (cp != NULL) {
          cc = (cp->tallest);
          while (cc != NULL) {
+             //checkstep
             fprintf(cohortfile,
-                    "%s t= %f p %p track %u age %f ar %f c %p h %f dbh %f spp %u sta %d n %f ba %f bd %f bl %f blv %f br %f bsw %f gpp %f npp %f resp %f cbr %f Anp %f Ans %f lai %f md %f fso %f r= %f dhdt %f ddbhdt %f dndt %f Ep %f Es %f wu %f fsw %f gr_resp %f\n",
+                    "%s t= %f p %p track %u age %f ar %f c %p h %f dbh %f spp %u sta %d n %f ba %f bd %f bl %f blv %f br %f bsw %f gpp %f npp %f resp %f cbr %f Anp %f Ans %f lai %f md %f fso %f r= %f dhdt %f ddbhdt %f dndt %f Ep %f Es %f wu %f fsw %f gr_resp %f npp_avg %f md_avg %f\n",
                     cs->sdata->name_,
                     time * TIMESTEP,
                     cp, 
@@ -1561,7 +1630,9 @@ void print_cohorts (unsigned int time, site** siteptr, UserData* data) {
                     cc->E_shut,
                     cc->water_uptake,
                     cc->fsw,
-                    cc->gr_resp);
+                    cc->gr_resp,
+                    cc->npp_avg,
+                    cc->md_avg);
             cc = cc->shorter;
          }
          cp = cp->younger;

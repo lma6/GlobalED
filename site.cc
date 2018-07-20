@@ -136,6 +136,9 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
     double Vcmax25=Vm0;
     double tmp=0,hum=0,swd=0,windspeed=0,CO2=0,Pa=101.3,Tg=25.0,Ts=0;
     
+    if (data->light_reg)
+        Vcmax25 *= pow(dyl_factor[time_period],2.0);
+    
     shade=light_levels[spp][light_index];
     tf_air[spp][time_period]=0;
     tf_soil[spp][time_period]=0;
@@ -143,6 +146,23 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
     E[spp][time_period][light_index]=0;
     Anb[spp][time_period][light_index]=0;
     Eb[spp][time_period][light_index]=0;
+    
+//    double tmp1=25.0,Ts1=25.0,hum1=0.02,swd1=100,Tg1=30.0,CO21=400,windspeed1=2.0,shade1=1.0;
+//
+//    for (double Vcmax25=6;Vcmax25<=100;Vcmax25+=2)
+//    {
+//        Farquhar_couple(0,1,data,tmp1,Ts1,hum1,swd1,Tg1,CO21,windspeed1,Pa,shade1,Vcmax25,farquhar_results);
+//        tf_air[spp][time_period]/=24.0;
+//        tf_soil[spp][time_period]/=24.0;
+//        double An1 =farquhar_results[1]*3600.0*360.0*24/1e3;
+//        double E1=farquhar_results[2]*3600.0*540.0*24/1e3;
+//        double Anb1=farquhar_results[3]*3600.0*360.0*24/1e3;
+//        double Eb1=farquhar_results[4]*3600.0*540.0*24/1e3;
+//        printf("Vcmax %f An %f E %f Anb %f Eb %f \n",Vcmax25,An1,E1,Anb1,Eb1);
+//    }
+//    exit(0);
+    
+    
 
 #if CPOUPLE_VcmaxDownreg
 //    double cumuLAI=log(shade)/(-1.0/(data->cohort_shading*data->L_extinct));   //Derive cumulative LAI that results in the light level
@@ -273,9 +293,9 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
             Tg/=24.0;
             
             ////Currently, ambient CO2 concentration is 350 umol
-            farquhar(Vcmax25,CO2,tmp,Ts,hum,swd,shade,pt,farquhar_results);
+            //farquhar(Vcmax25,CO2,tmp,Ts,hum,swd,shade,pt,farquhar_results);
             
-            //Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
+            Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
             
             tf_air[spp][time_period]+=farquhar_results[0];
             tf_soil[spp][time_period]+=farquhar_results[5];
@@ -572,6 +592,14 @@ void init_sites (site** firsts, UserData* data) {
                   new_site->dyl_factor[z] = compute_dyl_factor(new_site->sdata->lat_, z);
                }
             }
+             /// CHANGE-ML
+             if (data->light_reg)
+             {
+                 for(size_t z=0;z<N_CLIMATE;z++)
+                 {
+                     new_site->sdata->dyl_factor[z] = compute_dyl_factor(new_site->sdata->lat_, z);
+                 }
+             }
             if(data->cd_file) {
                fprintf(outfile, "new site name: %s\n", new_site->sdata->name_);
             }
@@ -966,8 +994,10 @@ void update_site (site** current_site, UserData* data) {
    cs->site_total_c                 = 0.0;
    /* c fluxes */
    cs->site_npp                     = 0.0;
+    cs->site_npp_avg                = 0.0;
    cs->site_nep                     = 0.0;
    cs->site_rh                      = 0.0;
+    cs->site_rh_avg                 =  0.0;
    cs->site_dndt                    = 0.0;
    cs->site_aa_lai                  = 0.0;
    for (size_t i=0;i<N_LAI;i++)
@@ -979,6 +1009,8 @@ void update_site (site** current_site, UserData* data) {
    cs->site_aa_rh                   = 0.0;
 #ifdef ED
    cs->site_gpp                     = 0.0;
+    cs->site_gpp_avg                = 0.0;
+    cs->site_fs_open                 = 0.0;
    cs->site_npp2                    = 0.0;
    cs->site_aa_gpp                  = 0.0;
    cs->site_aa_npp2                 = 0.0;
@@ -991,11 +1023,27 @@ void update_site (site** current_site, UserData* data) {
    cs->site_total_soil_evap         = 0.0;
    /* height */
    cs->site_avg_height              = 0.0;
-    
-    cs->site_avg_fopen=0.0;
-    cs->site_avg_leafAn_pot=0.0;
-    cs->site_avg_leafE_pot=0.0;
 #endif
+    
+    for (size_t spp =0;spp<NSPECIES;spp++)
+    {
+        int pt=0,light_index=0,Vm0_bin=0,sepcies=(int)spp;
+        double Vm0=data->Vm0_max[spp];
+        if (spp==0)
+            pt = 1;
+        else
+            pt = 0;
+        if (cs->sdata->An[spp][data->time_period][0]<-1000)
+            cs->sdata->compute_mech(pt,sepcies,Vm0,Vm0_bin,data->time_period,light_index,data);
+        
+        if (cs->sdata->E[spp][data->time_period][0]<-1000)
+            cs->sdata->compute_mech(pt,sepcies,Vm0,0,data->time_period,light_index,data);
+            
+        cs->Leaf_An_pot[spp] = 0.001*cs->sdata->An[spp][data->time_period][0]*12.0;  /// unit is kg C/m2/yr
+        cs->Leaf_An_shut[spp] = 0.001*cs->sdata->Anb[spp][data->time_period][0]*12.0;
+        cs->Leaf_E_pot[spp] = 0.001*cs->sdata->E[spp][data->time_period][0]*12.0;   /// Unit is kg water /m2/yr
+        cs->Leaf_E_shut[spp] = 0.001*cs->sdata->Eb[spp][data->time_period][0]*12.0;
+    }
 
    for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++) {
       update_site_landuse(&cs, lu, data);
@@ -1041,19 +1089,18 @@ void update_site (site** current_site, UserData* data) {
       cs->site_total_c            += cs->total_c[lu] * cs->area_fraction[lu];         
       /* c fluxes */
       cs->site_npp                += cs->npp[lu] * cs->area_fraction[lu];
+       cs->site_npp_avg             += cs->npp_avg[lu] * cs->area_fraction[lu];
       cs->site_nep                += cs->nep[lu] * cs->area_fraction[lu];
-      cs->site_rh                 += cs->rh[lu] * cs->area_fraction[lu];      
+      cs->site_rh                 += cs->rh[lu] * cs->area_fraction[lu];
+       cs->site_rh_avg              += cs->rh_avg[lu] * cs->area_fraction[lu];
       cs->site_aa_npp             += cs->aa_npp[lu] * cs->area_fraction[lu];
       cs->site_aa_nep             += cs->aa_nep[lu] * cs->area_fraction[lu];
       cs->site_aa_rh              += cs->aa_rh[lu] * cs->area_fraction[lu];
       cs->site_dndt               += cs->dndt[lu]*cs->area_fraction[lu];
 #ifdef ED
       cs->site_gpp                += cs->gpp[lu] * cs->area_fraction[lu];
-       
-       cs->site_avg_leafAn_pot+=cs->lu_avg_leafAn_pot[lu]*cs->area_fraction[lu];
-       cs->site_avg_leafE_pot+=cs->lu_avg_leafE_pot[lu]*cs->area_fraction[lu];
-       cs->site_avg_fopen+=cs->lu_avg_fopen[lu]*cs->area_fraction[lu];
-       
+       cs->site_gpp_avg             += cs->gpp_avg[lu] * cs->area_fraction[lu];
+       cs->site_fs_open             += cs->fs_open[lu] * cs->area_fraction[lu];
       cs->site_npp2               += cs->npp2[lu] * cs->area_fraction[lu];
       cs->site_aa_gpp             += cs->aa_gpp[lu] * cs->area_fraction[lu];
       cs->site_aa_npp2            += cs->aa_npp2[lu] * cs->area_fraction[lu];
@@ -1061,7 +1108,7 @@ void update_site (site** current_site, UserData* data) {
          cs->nep2[lu] = cs->total_c[lu] - cs->last_total_c[lu];
          cs->last_total_c[lu] = cs->total_c[lu];
       }
-       cs->nep3[lu]=cs->total_c[lu] - cs->last_total_c_last_month[lu];
+       cs->nep3[lu]=(cs->total_c[lu] - cs->last_total_c_last_month[lu])*N_CLIMATE;   /// Here multiply by N_CLIMATE as in npp_function, all fluxes is yearly based than monthly
        cs->last_total_c_last_month[lu]=cs->total_c[lu];
       /* water */
       cs->site_total_water        += cs->water[lu] * cs->area_fraction[lu]; 
@@ -1079,7 +1126,7 @@ void update_site (site** current_site, UserData* data) {
       cs->site_nep2 = cs->site_total_c - cs->last_site_total_c;
       cs->last_site_total_c = cs->site_total_c;
    }
-    cs->site_nep3 = cs->site_total_c- cs->last_site_total_c_last_month;
+    cs->site_nep3 = (cs->site_total_c- cs->last_site_total_c_last_month)*N_CLIMATE;   /// Here multiply by N_CLIMATE as in npp_function, all fluxes is yearly based than monthly
     cs->last_site_total_c_last_month=cs->site_total_c;
 #ifdef ED
    cs->site_total_soil_N = cs->site_mineralized_soil_N + cs->site_fast_soil_N
@@ -1141,8 +1188,10 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
    cs->total_c[lu]                 = 0.0;
    /* c fluxes */
    cs->npp[lu]                     = 0.0;
+    cs->npp_avg[lu]                 = 0.0;
    cs->nep[lu]                     = 0.0;
    cs->rh[lu]                      = 0.0;
+    cs->rh_avg[lu]                  = 0.0;
    cs->aa_npp[lu]                  = 0.0; 
    cs->aa_nep[lu]                  = 0.0; 
    cs->aa_rh[lu]                   = 0.0;
@@ -1150,11 +1199,10 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
 #ifdef ED
    cs->npp2[lu]                    = 0.0;
    cs->gpp[lu]                     = 0.0;
+    cs->gpp_avg[lu]                 = 0.0;
+    cs->fs_open[lu]                 = 0.0;
    cs->aa_gpp[lu]                  = 0.0;
    cs->aa_npp2[lu]                 = 0.0;
-   cs->lu_avg_fopen[lu]          = 0.0;
-   cs->lu_avg_leafAn_pot[lu]     = 0.0;
-   cs->lu_avg_leafE_pot[lu]       = 0.0;
    /* water */
    cs->water[lu]                   = 0.0;
    cs->theta[lu]                   = 0.0;
@@ -1213,19 +1261,18 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
          cs->total_c[lu]            += cp->total_c * frac;
          /* c fluxes */
          cs->npp[lu]                += cp->npp * frac;
+          cs->npp_avg[lu]               += cp->npp_avg * frac;
          cs->nep[lu]                += cp->nep * frac;
          cs->rh[lu]                 += cp->rh * frac;
+          cs->rh_avg[lu]            += cp->rh_avg * frac;
          cs->aa_npp[lu]             += cp->aa_npp * frac;
          cs->aa_nep[lu]             += cp->aa_nep * frac;
          cs->aa_rh[lu]              += cp->aa_rh * frac;
          cs->dndt[lu]               += cp->dndt * frac;
 #ifdef ED
          cs->gpp[lu]                += cp->gpp * frac;
-          
-          cs->lu_avg_leafAn_pot[lu]+=cp->avg_leafAn_pot*frac;
-          cs->lu_avg_leafE_pot[lu]+=cp->avg_leafE_pot*frac;
-          cs->lu_avg_fopen[lu]+=cp->avg_fopen*frac;
-          
+          cs->gpp_avg[lu]           += cp->gpp_avg * frac;
+          cs->fs_open[lu]           += cp->fs_open * frac;
          cs->npp2[lu]               += cp->npp2 * frac;
          cs->aa_gpp[lu]             += cp->aa_gpp * frac;
          cs->aa_npp2[lu]            += cp->aa_npp2 * frac;
@@ -1235,7 +1282,7 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
          /* TODO: why are these different? -justin */
          cs->total_water_uptake[lu] += cp->total_water_uptake / (cs->area_fraction[lu]*data->area);
          cs->perc[lu]               += cp->perc * frac;
-          //Modified add check
+          //CHANGE-ML
           if (cp->perc>1e18)
           {
               printf("Wrong in perc 1: lat-%f lon-%f perc-%f lu-%d frac-%f\n",cs->sdata->lat_,cs->sdata->lon_,cp->perc,lu,frac);

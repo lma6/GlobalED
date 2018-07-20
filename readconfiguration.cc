@@ -218,7 +218,12 @@ void initialize_model_params(UserData* data) {
     data->lu_file           = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "lu_file");
     data->lu_init_c_file    = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "lu_init_c_file");
     data->crop_calendar_file= get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "crop_calendar_file");
-    //data->gfedbf_file       = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "gfedbf_file");
+    ///CHANGE-ML add monthly GFED IO
+    if(data->gfed_bf)
+    {
+        data->gfedbf_file       = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "gfedbf_file");
+        data->gfedbf_file_avg       = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "gfedbf_file_avg");
+    }
 #if FTS
     data->QAIR_FILE         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "QAIR_FILE");
     data->TAIR_FILE         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "TAIR_FILE");
@@ -339,6 +344,7 @@ void initialize_model_params(UserData* data) {
     /***    MISC                        ***/
     /**************************************/
     data->do_downreg              = get_val<int>(data, PARAMS, "", "do_downreg");
+    data->light_reg              = get_val<int>(data, PARAMS, "", "light_reg");   /// CHANGE-ML
     data->additional_mort         = get_val<int>(data, PARAMS, "", "additional_mort");
     data->mort_s_hemi             = get_val<int>(data, PARAMS, "", "mort_s_hemi");    
     data->hgt_lim_to_repro        = get_val<int>(data, PARAMS, "", "hgt_lim_to_repro");

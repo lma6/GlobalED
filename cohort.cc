@@ -338,6 +338,10 @@ void create_cohort (unsigned int spp, double nindivs, double hite, double dbh,
    newcohort->pt       = data->pt[spp];
    newcohort->gpp      = 0.0;
    newcohort->npp      = 0.0;
+    //checkstep
+    newcohort->gpp_avg = 0.0;
+    newcohort->npp_avg = 0.0;
+    newcohort->md_avg = 0.0;
    newcohort->npp2     = 0.0;
    newcohort->md       = 0.0;
    newcohort->fs_open  = 1.0;
@@ -458,8 +462,8 @@ cohort* next_taller(cohort* current, double* stp){
 void terminate_cohorts(cohort** ptallest, cohort** pshortest, UserData* data){
   
    cohort* currentc = *ptallest;
-   while (currentc != NULL){       
-      cohort* nextc = currentc->shorter;  
+   while (currentc != NULL){
+      cohort* nextc = currentc->shorter;
       /***  cohort size is below threshold   ***/
       /***  remove & adjust size relations among remaining cohorts  ***/
       if(((currentc->nindivs/currentc->patchptr->area)*currentc->b) < data->btol){
@@ -467,10 +471,10 @@ void terminate_cohorts(cohort** ptallest, cohort** pshortest, UserData* data){
          else (currentc->taller)->shorter = currentc->shorter;
          if (currentc->shorter == NULL) *pshortest = currentc->taller;
          else (currentc->shorter)->taller = currentc->taller;
-         free (currentc);        
+         free (currentc);
       }
       currentc = nextc;
-   } 
+   }
    return;
 }
 
@@ -613,6 +617,10 @@ void copy_cohort(cohort** currentc, cohort** copyc){
    n->gpp = o->gpp;             /* net primary PER PLANT!(kg/plant/yr)  */
    n->npp = o->npp;             /* net primary PER PLANT!(kg/plant/yr)  */
    n->npp2 = o->npp2;              /* net primary PER PLANT!(kg/plant/yr)  */
+    //checkstep
+    n->gpp_avg = o->gpp_avg;
+    n->npp_avg = o->npp_avg;
+    n->md_avg = o->md_avg;
    n->resp = o->resp;              /* plant respiration                    */
    n->gr_resp = o->gr_resp;
    n->md = o->md;
@@ -781,6 +789,7 @@ void fuse_cohorts (patch** patchptr, UserData* data) {
          cp = cp->older;
       } /* end loop over patches */
    } /* end if */
+    
 }
 
 ////////////////////////////////////////////////////////////////////////////////

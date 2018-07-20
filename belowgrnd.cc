@@ -142,7 +142,7 @@ void patch::Dsdt (unsigned int time_period, double time, UserData* data) {
       without tracking the slow pool */
 
    /* std values= 1, .3, 1, 0 */
-   double r_fsc=1.0, r_stsc=0.3, r_ssc=1.0, r_psc=0.0; 
+   double r_fsc=1.0, r_stsc=0.3, r_ssc=1.0, r_psc=0.0;
    /* respiration rates of soil pools */
    
    /****************/
@@ -222,7 +222,7 @@ void patch::Dsdt (unsigned int time_period, double time, UserData* data) {
    dstsl = ssl_in - structural_L_loss;
 
    /* loss of C to atmosphere and leaching */
-   rh = r_fsc * fast_C_loss + r_stsc*structural_C_loss 
+   rh = r_fsc * fast_C_loss + r_stsc*structural_C_loss
       + r_ssc*slow_C_loss + r_psc*passive_C_loss;
     
 
@@ -320,23 +320,32 @@ else
     //Compute Td for each layer and then take the average
     double Tmax=45.0,Topt = 35.0,tshr = 0.2,tshl = 2.63,t1=0,t2=0;
 
+    //Layer 1 on MERRA2 & Catchment-CN, 0.0988m
     t1 = (Tmax - currents->sdata->soil_temp1[time_period]) / (Tmax - Topt);
     t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
     Td += pow(t1, tshr) * t2; // rate multiplier due to temp
     
+    //Layer 2 on MERRA2 & Catchment-CN, 0.1952m
     t1 = (Tmax - currents->sdata->soil_temp2[time_period]) / (Tmax - Topt);
     t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
     Td += pow(t1, tshr) * t2; // rate multiplier due to temp
     
+    //Layer 3 on MERRA2 & Catchment-CN, 0.3859m
     t1 = (Tmax - currents->sdata->soil_temp3[time_period]) / (Tmax - Topt);
     t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
     Td += pow(t1, tshr) * t2; // rate multiplier due to temp
     
-//    t1 = (Tmax - currents->sdata->soil_temp4[time_period]) / (Tmax - Topt);
-//    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
-//    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
+    //Layer 4 on MERRA2 & Catchment-CN, 0.7626m
+    t1 = (Tmax - currents->sdata->soil_temp4[time_period]) / (Tmax - Topt);
+    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
+    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
     
-    Td/=3.0;
+    //Layer 5 on MERRA2 & Catchment-CN, 1.5071m
+    t1 = (Tmax - currents->sdata->soil_temp5[time_period]) / (Tmax - Topt);
+    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
+    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
+    
+    Td/=5.0;
 }
    
 

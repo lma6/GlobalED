@@ -41,7 +41,11 @@ struct cohort{
    double gpp_max;   ///< kgC/yr per indiv 
    double npp_max;   ///< kgC/yr per indiv 
    double resp;      ///< plant respiration  kgC/yr per indiv 
-   double md;        ///< plant tissue maintenence kg/plant over timestep kgC/yr per indiv 
+   double md;        ///< plant tissue maintenence kg/plant over timestep kgC/yr per indiv
+    //checkstep
+    double npp_avg;
+    double gpp_avg;
+    double md_avg;
    
    // For rk2 integrator UNITS - see above
    double old_nindivs;                
@@ -50,10 +54,7 @@ struct cohort{
    double old_bdead;
 
    double An_max;             ///< kgC/yr per indiv 
-   double An_pot;             ///< kgC/yr per indiv
-   double leafAn_pot;       ///< kgC/yr per leaf area, correspond to the estimate from Farquhar model
-   double leafE_pot;      ///< kgC/yr per leaf area, correspond to the estimate from Farquhar model
-    
+   double An_pot;             ///< kgC/yr per indiv    
    double An_shut;            ///< kgC/yr per indiv 
    double An_shut_max;        ///< kgC/yr per indiv 
    double fs_open;            ///< fraction of month with stomates open (dimensionless)    

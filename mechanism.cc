@@ -110,8 +110,6 @@ void cohort::npp_function(UserData* data){
     An_max = 0.001*cs->sdata->An[species][time_index][0];  // TODO, should we use current Vm0_bin or 0
     An_shut = 0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1];
     An_shut_max = 0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1];
-
-    leafAn_pot=0.001*cs->sdata->An[species][time_index][light_index];
    
    /*convert from KgC/m2/mon to kgC/yr*/
    An_pot *= data->specific_leaf_area[species]*bl*12; 

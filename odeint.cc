@@ -34,8 +34,18 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
    int iout, flag;
    double deltat;
    int split_factor, split_count;
+    
 
    patch* currentp = *patchptr;
+    //checkstep
+    currentp->rh_avg = 0.0;
+    cohort* currentc = currentp->shortest;
+    while (currentc != NULL) {
+        currentc->gpp_avg = 0.0;
+        currentc->npp_avg = 0.0;
+        currentc->md_avg = 0.0;
+        currentc = currentc->taller;
+    }
    iout = 0;
    while (iout<data->substeps){ 
       split_factor=1;
@@ -62,8 +72,8 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
                currentc->balive += currentc->dbalivedt * deltat / 2.;
                currentc->bdead += currentc->dbdeaddt * deltat / 2.;
                currentc = currentc->taller;
-            }            
-            f(t1 + deltat / 2., currentp);  
+            }
+            f(t1 + deltat / 2., currentp);
             flag = currentp->check_for_negatives(deltat);
             if (flag==0) {
                break;
@@ -77,7 +87,7 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
             split_factor*=2;
             split_count++;
             iout2*=2;
-            currentp->load_old(); 
+            currentp->load_old();
             currentp->load_derivatives();
          } while (true);
          currentp->Update_Water(t1, currentp->siteptr->data, deltat/2.);
@@ -87,16 +97,22 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
          currentp->mineralized_soil_N = currentp->old_mineralized_soil_N + currentp->dmsn * deltat;
          currentp->fast_soil_N = currentp->old_fast_soil_N + currentp->dfsn * deltat;
          currentp->passive_soil_C = currentp->old_passive_soil_C + currentp->dpsc * deltat;
-         currentp->structural_soil_L = currentp->old_structural_soil_L + currentp->dstsl * deltat; 
-                  
+         currentp->structural_soil_L = currentp->old_structural_soil_L + currentp->dstsl * deltat;
+          
          cohort* currentc = currentp->shortest;
          while (currentc != NULL) {
             currentc->nindivs = currentc->old_nindivs + currentc->dndt * deltat;
             currentc->dbh = currentc->old_dbh + currentc->ddbhdt * deltat;
             currentc->balive = currentc->old_balive + currentc->dbalivedt * deltat; 
-            currentc->bdead = currentc->old_bdead + currentc->dbdeaddt * deltat;  
+            currentc->bdead = currentc->old_bdead + currentc->dbdeaddt * deltat;
+             //checkstep
+             currentc->gpp_avg += currentc->gpp*1./(data->substeps*split_factor);
+             currentc->npp_avg += currentc->npp*1./(data->substeps*split_factor);
+             currentc->md_avg += currentc->md*1./(data->substeps*split_factor);
             currentc = currentc->taller;
          }
+          //checkstep
+          currentp->rh_avg +=currentp->rh*1./(data->substeps*split_factor);
          iout2++;
       }
       iout++;
@@ -148,7 +164,8 @@ static void f(double t, void *f_data){
       /* printf("f: currentc %p \n",currentc); */
       currentc->Growth_Derivatives(t,data);  
       currentc=currentc->taller;
-   }   
+   }
+
    currentp->Litter(t,data);
    currentp->Dsdt(data->time_period,t,data);
    return;
@@ -193,10 +210,7 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
        currentc->E_pot *= currentc->leaf_area*N_CLIMATE/1000.0;
        currentc->E_shut = currents->sdata->Eb[spp][time_index][N_LIGHT-1];
        currentc->E_shut *= currentc->leaf_area*N_CLIMATE/1000.0;
-       
-       currentc->leafE_pot=currents->sdata->E[spp][time_index][light_index]/1000.0;
-
-
+ 
       /*NITROGEN UPTAKE**************************/
       /* set fs_open to 1 and */
       /* calc implied nitrogen uptake (kgN/yr) per plant*/
@@ -211,14 +225,7 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
       if(data->water_competition) {
         double water_supply;
         double wilt_factor;
-        water_supply=data->water1*currentc->br*water*data->mass_of_water;
-          //ml-modified: to test why limited water supply could depress grass in Crop and Pasture.
-          //Need to change back once test is done.
-//        if (data->is_grass[currentc->species])
-//        {
-//            water_supply=data->water1*currentc->br*water*data->mass_of_water*0.25;
-//        }
-        
+        water_supply=data->water1*currentc->br*water*data->mass_of_water;        
         currentc->fsw = (water_supply-currentc->E_shut)/(currentc->E_pot + water_supply-currentc->E_shut);
         if (currentc->fsw<0) {
            //If demand>supply, stomates shut and leaves wilt to the extent that supply := demand

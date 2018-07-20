@@ -18,6 +18,7 @@ bool leaf_on_date(int, site**);
 //! phenology
 //! 
 //!
+
 //! @param  
 //! @return 
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,7 +40,7 @@ void phenology (int t, patch** patchptr, UserData* data) {
          /* temp=10 degrees gives good growing season pattern */
          if( ((data->phenology[spp] == 1) && (currentp->theta < THETA_CRIT))
             || ((data->phenology[spp] == 2)
-                && (currents->sdata->temp[data->time_period] < 10.0)))
+                && (currents->sdata->temp[data->time_period] < 10.0)))  // 10.0
          {
             currentc->status = 5; /* set status to indicate leaf drop */
             double leaf_litter = (1.0 - L_FRACT) * currentc->bl * (currentc->nindivs / currentp->area);

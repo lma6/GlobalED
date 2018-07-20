@@ -31,11 +31,9 @@ struct patch {
    double basal_area;                  ///< Total stem basal area in patch (cm2/m2)
    double basal_area_spp[NSPECIES];    ///< cm^2/m^2
    double gpp;                         ///< kgC/(yr*m^2)
+    double fs_open;                     /// CHANGE-ML
    double aa_gpp;                      ///< kgC/(timestep*m^2)
    double aa_npp2;                     ///< Annual average npp kgC/(timestep*m^2)
-   double avg_fopen;                       ///stomatal open
-   double avg_leafAn_pot;                     ///kgC/(yr*m^2)
-   double avg_leafE_pot;           ///Rate of evapotation mm/yr
 #endif
    double aa_lai;           ///< Annual average LAI m^2/m^2
    double aa_lai_profile[N_LAI];
@@ -50,6 +48,10 @@ struct patch {
    double rh;               ///< Soil carbon lost to atmosphere kgC/(yr m^2)
    double aa_rh;            ///< Annual average rh
    double litter;           ///< Patch level litter flux KgC/m2/yr
+    //checkstep
+    double npp_avg;
+    double gpp_avg;
+    double rh_avg;
    
    // disturbance values
    double fuel;

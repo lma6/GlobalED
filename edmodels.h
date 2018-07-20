@@ -13,31 +13,36 @@
 #define NCERR(s, e) { printf("Error: %s %s\n", s, nc_strerror(e)); exit(62); }
 #define ABS(a)    (((a) < 0) ? -(a) : (a))
 
-#define LOCAL_MACHINE 1  ///change_copy
+
+/// Lei - All changes from original ED model are flaged as "CHANGE-ML". Search this keyword to locate them
+
+/// CHANGE-ML
+#define LOCAL_MACHINE 1  ///change it to 0 when copy to cluster.
 // THREADING: CHOOSE ONE OR NEITHER OF THE FOLLOWING TWO
 // Buggy with landuse
 #if 1-LOCAL_MACHINE
 #define MODEL_CONFIG_FILE "models.cfg"
-#define GCD 0 ///< Grand Central Dispatch. Works on Mac only
 #define TBB 1 ///< Intel Thread Building Blocks
+#define GCD 0 ///< Grand Central Dispatch. Works on Mac only
 #endif
 
 #if LOCAL_MACHINE
 /// Turn off above 1, then type the below command in local terminal
-//// scp -r /Users/lei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_local/
+//// scp -r /Users/malei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_local/
 #define MODEL_CONFIG_FILE "models_local.cfg"
-#define GCD 0 ///< Grand Central Dispatch. Works on Mac only
 #define TBB 0 ///< Intel Thread Building Blocks
+#define GCD 0 ///< Grand Central Dispatch. Works on Mac only
 #define ED 1
 #define MAIN 1
 #endif
+
 
 
 ////////////////////////////////////////
 //    LAND USE
 ////////////////////////////////////////
 #define LANDUSE 0 ///< Flag to turn on land use dynamics
-#define FASTLOAD 1
+#define FASTLOAD 2
 #define COUPLE_FAR 1
 #define COUPLE_PFTspecific 1
 #define COUPLE_MERRA2 1
@@ -74,7 +79,7 @@ const float CO2_VALUE[]={280}; //co2 concentration in nittial LUT, the number of
 #define CLIMATE_INPUT_INTERVALS 4 ///< 4 is 6 hrly, 24 is hrly...
 #define N_SUB N_CLIMATE
 #define COHORT_FREQ N_CLIMATE/12  ///< Freq of cohort_dynamics in N_SUB units (mnthly)
-#define PATCH_FREQ N_CLIMATE
+#define PATCH_FREQ N_CLIMATE  ///CHANGE-ML original value is 12, i.e. yearly patch dynamic. For monthly dynamic, need to be 1
 #define LANDUSE_FREQ N_CLIMATE    ///< Freq of land use dynamics in N_SUB units
 #elif defined MIAMI_LU
 #define N_CLIMATE 1               ///< 12 is monthly 
@@ -219,6 +224,7 @@ struct UserData {
    const char *crop_calendar_file;
    const char *lu_init_c_file;
    const char *gfedbf_file;
+   const char *gfedbf_file_avg;
 
    int is_site;        ///< Set to 1 to select region, 0 for site
    const char *region; ///< E.g.: GLOBAL, AMAZONIA, US, EUS ...
@@ -232,8 +238,8 @@ struct UserData {
 
    int fire_suppression_stop;
    int fire_suppression;
-   int fire_off;
-   int fire_gfed;
+   int fire_off;    /// CHANGE-ML
+   int fire_gfed;   /// CHANGE-ML
  
    const char *which_mech_to_use;
    const char *climate_file;
@@ -318,7 +324,7 @@ struct UserData {
    int cohort_fission;          ///< cohort fission flag, 1=yes to cohort fission
    int cohort_termination;      ///< terminate small cohorts 
    double f_area;               ///< 0.01 min area of patch as a fraction of total area
-   double btol;                 ///< 0.0001 termination tol. for cohort biomass (kg m^-2)
+   double btol;                 ///< 0.0001 termination tol. for cohort biomass (kg m^-2)   //CHANGE-ML  may be changed to very small value to avoid zero GPP in fire-intensive sites
    double profile_tol;          ///< 0.2 fractional tolerance for patch spp hgt profiles
    double dbhmax;               ///< max dbh value used in hgt profile comparison
    unsigned int n_dbh_bins;     ///< no. of dbh bins used when comparing patches
@@ -337,6 +343,7 @@ struct UserData {
    //    MISC                        
    ////////////////////////////////////////
    int do_downreg;        ///< Set to 1 to downregulate Vm0 value based on LAI and day length
+    int light_reg;   ///CHANGE-ML
    int additional_mort;   ///< Bool to add mortality to all PFTs (den_ind_mort in ED_pft.defaults.cfg)
    int mort_s_hemi;       ///< Use different value for mortality in Southern hemisphere (den_ind_mort_s_hemi in ED_pft.defaults.cfg)
    int hgt_lim_to_repro;  ///< Bool to have minimum height for reproduction (repro_ht_thresh in ED_pft.defaults.cfg)
@@ -546,8 +553,11 @@ struct UserData {
    double ** init_csc;
    double ** init_psc;
    double ** init_pb;
-   // Yannick GFED   
-   double ** gfed_bf; ///< declaring pointer to burned fraction data   
+   // Yannick GFED
+   //double *** gfed_bf; ///< declaring pointer to burned fraction data
+    
+    // Lei GFED
+    double gfed_bf[12][360][720];
 
    /*Mechanism look up table for FTS ONLY*/
    
@@ -575,6 +585,7 @@ struct UserData {
     //double global_soiltmp4[288][360][720]; //4th layer in MERRA2 soil tempetature
     //double global_soiltmp5[288][360][720]; //5th layer in MERRA2 soil tempetature
     //double global_soiltmp6[288][360][720]; //6th layer in MERRA2 soil tempetature
+    
     
 #if LANDUSE
     float gfl[N_LANDUSE_TYPES][N_LANDUSE_TYPES-1][N_LANDUSE_YEARS][360][720];

@@ -70,8 +70,10 @@ struct site {
   
    // cfluxes
    double site_npp;                ///< total npp (kgC/m2/yr)
+    double site_npp_avg;
    double site_aa_npp;             ///< annual average npp
    double npp[N_LANDUSE_TYPES];    ///< total npp (kgC/m2/yr)
+    double npp_avg[N_LANDUSE_TYPES];    ///< total npp (kgC/m2/yr)
    double aa_npp[N_LANDUSE_TYPES]; ///< annual average npp
    double site_nep;                ///< total nep (kgC/m2/yr)
    double site_aa_nep;             ///< annual average nep
@@ -82,17 +84,19 @@ struct site {
    double nep2[N_LANDUSE_TYPES];
    double nep3[N_LANDUSE_TYPES];
    double site_rh;                 ///< carbon loss to atmosphere
+    double site_rh_avg;                 ///< carbon loss to atmosphere
    double site_aa_rh;              ///< annual average carbon loss to atmosphere
    double rh[N_LANDUSE_TYPES];     ///< carbon loss to atmosphere
+    double rh_avg[N_LANDUSE_TYPES];     ///< carbon loss to atmosphere
    double aa_rh[N_LANDUSE_TYPES];  ///< annual average carbon loss to atmosphere
-    
-    double lu_avg_fopen[N_LANDUSE_TYPES];
-    double lu_avg_leafAn_pot[N_LANDUSE_TYPES];
-    double lu_avg_leafE_pot[N_LANDUSE_TYPES];
 #ifdef ED
    double site_gpp;
+    double site_gpp_avg;
+    double site_fs_open;             /// CHANGE-ML
    double site_aa_gpp;
    double gpp[N_LANDUSE_TYPES];
+    double gpp_avg[N_LANDUSE_TYPES];
+    double fs_open[N_LANDUSE_TYPES];            /// CHANGE-ML
    double aa_gpp[N_LANDUSE_TYPES];
    double site_npp2;                ///< integrated npp over the timestep
    double site_aa_npp2;             ///< annual average npp
@@ -119,9 +123,6 @@ struct site {
    double site_total_water_demand;
    double site_total_perc;
    double site_total_soil_evap;
-   double site_avg_fopen;
-   double site_avg_leafAn_pot;
-   double site_avg_leafE_pot;
 #endif
   
    // soil pools
@@ -190,6 +191,11 @@ struct site {
    double E[2][101];
    double E_shut[2][101];
    double tf[2];
+    
+    double Leaf_An_pot[NSPECIES];
+    double Leaf_An_shut[NSPECIES];
+    double Leaf_E_pot[NSPECIES];
+    double Leaf_E_shut[NSPECIES];
 
    
    double ave_temp[24];
