@@ -39,8 +39,14 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
    patch* currentp = *patchptr;
     //checkstep
     currentp->rh_avg = 0.0;
+    currentp->gpp_avg = 0.0;
+    currentp->npp_avg = 0.0;
     cohort* currentc = currentp->shortest;
     while (currentc != NULL) {
+        currentc->p[0] = 0.0;
+        currentc->p[1]  = 0.0;
+        currentc->p_avg[0]  = 0.0;
+        currentc->p_avg[1]  = 0.0;
         currentc->gpp_avg = 0.0;
         currentc->npp_avg = 0.0;
         currentc->md_avg = 0.0;
@@ -55,6 +61,18 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
          currentp->save_old();
          f(t1, currentp);
          currentp->copy_derivatives();
+          ///CarbonConserve
+          cohort* mlcc= NULL;
+          double all_tb_before=0.0, all_sc_before=0.0, all_tc_before=0.0;
+          double all_tb_after=0.0, all_sc_after = 0.0, all_tc_after=0.0, all_repro=0.0, all_npp_after = 0.0, all_rh_after = 0.0;
+          double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
+          mlcc = currentp->shortest;
+          while (mlcc!=NULL) {
+              all_tb_before += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
+              mlcc = mlcc->taller;
+          }
+          all_sc_before = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
+          all_tc_before = all_tb_before + all_sc_before;
          do {//Repeat until compare_derivatives returns true, halving dt each time
             deltat = data->deltat * 1. / (data->substeps*split_factor);
             currentp->Update_Water(t1, currentp->siteptr->data, deltat/2.);
@@ -90,33 +108,98 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
             currentp->load_old();
             currentp->load_derivatives();
          } while (true);
-         currentp->Update_Water(t1, currentp->siteptr->data, deltat/2.);
-         currentp->fast_soil_C = currentp->old_fast_soil_C + currentp->dfsc * deltat;
-         currentp->structural_soil_C = currentp->old_structural_soil_C + currentp->dstsc * deltat;
-         currentp->slow_soil_C = currentp->old_slow_soil_C + currentp->dssc * deltat;
-         currentp->mineralized_soil_N = currentp->old_mineralized_soil_N + currentp->dmsn * deltat;
-         currentp->fast_soil_N = currentp->old_fast_soil_N + currentp->dfsn * deltat;
-         currentp->passive_soil_C = currentp->old_passive_soil_C + currentp->dpsc * deltat;
-         currentp->structural_soil_L = currentp->old_structural_soil_L + currentp->dstsl * deltat;
+          
+          ///CarbonConserve -- Lei Ma
+          /// Here, the oder of updating soil carbon pool and cohort attribures are reversed because Litter() should be called after update of all cohorts.
+          /// Because the above do_while for loop just check whether deriative in current substep are valid. If yes, then update cohorts using the checked deriatives. If not, make more substep.
+          /// However, calculation of litter should use final cohort density after deltat rather than ones in deltat/2.0. Therefore, we need to update cohorts first, then call Listter() and Dsdt() again.
+          
+          /// This block is original
+//         currentp->Update_Water(t1, currentp->siteptr->data, deltat/2.);
+//         currentp->fast_soil_C = currentp->old_fast_soil_C + currentp->dfsc * deltat;
+//         currentp->structural_soil_C = currentp->old_structural_soil_C + currentp->dstsc * deltat;
+//         currentp->slow_soil_C = currentp->old_slow_soil_C + currentp->dssc * deltat;
+//         currentp->mineralized_soil_N = currentp->old_mineralized_soil_N + currentp->dmsn * deltat;
+//         currentp->fast_soil_N = currentp->old_fast_soil_N + currentp->dfsn * deltat;
+//         currentp->passive_soil_C = currentp->old_passive_soil_C + currentp->dpsc * deltat;
+//         currentp->structural_soil_L = currentp->old_structural_soil_L + currentp->dstsl * deltat;
+          /// The above is original
           
          cohort* currentc = currentp->shortest;
+          double tmp_gpp_avg = 0.0, tmp_npp_avg = 0.0, tmp_repro_avg = 0.0;
          while (currentc != NULL) {
             currentc->nindivs = currentc->old_nindivs + currentc->dndt * deltat;
             currentc->dbh = currentc->old_dbh + currentc->ddbhdt * deltat;
             currentc->balive = currentc->old_balive + currentc->dbalivedt * deltat; 
             currentc->bdead = currentc->old_bdead + currentc->dbdeaddt * deltat;
+             ///CarbonConserve
+             currentc->Allocate_Biomass(data);
              //checkstep
-             currentc->gpp_avg += currentc->gpp*1./(data->substeps*split_factor);
-             currentc->npp_avg += currentc->npp*1./(data->substeps*split_factor);
-             currentc->md_avg += currentc->md*1./(data->substeps*split_factor);
+             //currentc->gpp_avg += currentc->gpp*1./(data->substeps*split_factor);
+             //currentc->npp_avg += currentc->npp*1./(data->substeps*split_factor);
+             //currentc->md_avg += currentc->md*1./(data->substeps*split_factor);
+             /// Here, cohorts die before photosynthesis, there updated cohort density is used than old_nindivs
+             tmp_gpp_avg += currentc->gpp * currentc->nindivs/currentp->area;
+             tmp_npp_avg += currentc->npp * currentc->nindivs/currentp->area;
+             tmp_repro_avg += currentc->p[0] * currentc->nindivs/currentp->area;
+             currentc->p_avg[0] += currentc->p[0]*currentc->nindivs*1./(data->substeps*split_factor);
+             currentc->p_avg[1] += currentc->p[1]*currentc->nindivs*1./(data->substeps*split_factor);
             currentc = currentc->taller;
          }
+          /// This block is added by Lei, should delelte if it does not work
+          currentp->Litter(t1+deltat, data);
+          currentp->Dsdt(data->time_period, t1+deltat, data);
+          currentp->Update_Water(t1, currentp->siteptr->data, deltat/2.);
+          currentp->fast_soil_C = currentp->old_fast_soil_C + currentp->dfsc * deltat;
+          currentp->structural_soil_C = currentp->old_structural_soil_C + currentp->dstsc * deltat;
+          currentp->slow_soil_C = currentp->old_slow_soil_C + currentp->dssc * deltat;
+          currentp->mineralized_soil_N = currentp->old_mineralized_soil_N + currentp->dmsn * deltat;
+          currentp->fast_soil_N = currentp->old_fast_soil_N + currentp->dfsn * deltat;
+          currentp->passive_soil_C = currentp->old_passive_soil_C + currentp->dpsc * deltat;
+          currentp->structural_soil_L = currentp->old_structural_soil_L + currentp->dstsl * deltat;
+          /// The above is added by Lei.
+          
           //checkstep
+          currentp->gpp_avg +=tmp_gpp_avg*1./(data->substeps*split_factor);
+          currentp->npp_avg +=tmp_npp_avg*1./(data->substeps*split_factor);
           currentp->rh_avg +=currentp->rh*1./(data->substeps*split_factor);
+//          total_litter += currentp->litter *1./(data->substeps*split_factor);
+//          total_repro += tmp_repro_avg*1./(data->substeps*split_factor);
          iout2++;
+          
+          ///CarbonConserve
+          mlcc = currentp->shortest;
+          while (mlcc != NULL) {
+              all_tb_after += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
+              all_npp_after += mlcc->npp*mlcc->nindivs/currentp->area;
+              all_repro += (mlcc->p[0]+mlcc->p[1])*mlcc->nindivs/currentp->area;
+              mlcc = mlcc->taller;
+          }
+          all_rh_after = currentp->rh;
+          all_sc_after = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
+          all_tc_after = all_tb_after + all_sc_after;
+          actual_dt_tc = all_tc_after - all_tc_before;
+          esti_dt_tc = (all_npp_after-all_rh_after-all_repro*(1-data->sd_mort))*deltat;
+          
+          if (abs(actual_dt_tc - esti_dt_tc)>1e-9)
+          {
+              printf("Carbon leakage in substep_integration: imbalance    %.15f actual_dt_tc %.15f esti_dt_tc  %.15f\n",actual_dt_tc-esti_dt_tc,actual_dt_tc,esti_dt_tc);
+              printf("                                     : patch_tc_bf  %.15f patch_sc_bf  %.15f patch_tb_bf %.15f\n",all_tc_before,all_sc_before,all_tb_before);
+              printf("                                     : patch_tc_af  %.15f patch_sc_af  %.15f patch_tb_af %.15f\n",all_tc_after,all_sc_after,all_tb_after);
+              printf("                                     : patch_npp_af %.15f patch_rh_af  %.15f patch_repro %.15f\n",all_npp_after,all_rh_after,all_repro);
+              printf(" --------------------------------------------------------------------------------------\n");
+          }
       }
       iout++;
    }
+    currentc =  currentp->shortest;
+    double test_repro = 0.0;
+    while (currentc!=NULL) {
+        currentc->p[0] = currentc->p_avg[0]/currentc->nindivs;
+        currentc->p[1] = currentc->p_avg[1]/currentc->nindivs;
+        test_repro +=(currentc->p_avg[0]+currentc->p_avg[1])/currentp->area;
+        currentc = currentc->taller;
+    }
    return 0;   /* return to community dynamics */
 }
 

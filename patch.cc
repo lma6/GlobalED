@@ -214,6 +214,13 @@ void update_patch (patch** current_patch, UserData* data) {
          cp->total_spp_babove[cc->species]  +=cc->babove * cc->nindivs;
          cp->total_ag_biomass               += cc->babove * cc->nindivs;
          cp->total_biomass                  += cc->b * cc->nindivs;
+          ///CarbonConserve
+         // cp->total_biomass                  += (cc->balive+cc->bdead) * cc->nindivs;
+          if(abs(cc->balive+cc->bdead-cc->b)>1e-9)
+          {
+              printf("Carbon leakage in update_patch: cc_spp %d cc_b %.15f cc_ba %.15f cc_bd %.15f cc_n %.15f \n",cc->species,cc->b,cc->balive,cc->bdead,cc->nindivs);
+          }
+         
          cp->basal_area                     += (M_PI/4.0) * pow(cc->dbh, 2.0) * cc->nindivs;
          cp->basal_area_spp[cc->species]    += (M_PI/4.0) * pow(cc->dbh, 2.0) * cc->nindivs;      
          cp->lai += cc->lai;
@@ -281,8 +288,8 @@ void update_patch (patch** current_patch, UserData* data) {
    cp->gpp     = 0.0;
     cp->fs_open     = 0.0;
     //checkstep
-    cp->npp_avg = 0.0;
-    cp->gpp_avg = 0.0;
+    //cp->npp_avg = 0.0;
+    //cp->gpp_avg = 0.0;
    cc = cp->shortest;
     double tmp_nindiv_number=0;
    while(cc != NULL){
@@ -298,8 +305,10 @@ void update_patch (patch** current_patch, UserData* data) {
          cp->gpp += cc->gpp * cc->nindivs / cp->area;
          cp->dndt += cc->dndt / cp->area;
           //checkstep
-          cp->gpp_avg +=cc->gpp_avg * cc->nindivs/cp->area;
-          cp->npp_avg +=cc->npp_avg * cc->nindivs/cp->area;
+          /// Comment on this line, as npp and gpp of patch depends on cohort density which change in each substep in cm_sodeint function.
+          /// Thefore, the patch should be calculate in each integration substep.
+          //cp->gpp_avg +=cc->gpp_avg * cc->nindivs/cp->area;
+          //cp->npp_avg +=cc->npp_avg * cc->nindivs/cp->area;
           cp->fs_open += cc->fs_open*cc->nindivs / cp->area;
           tmp_nindiv_number += cc->nindivs / cp->area;
       }
@@ -549,7 +558,9 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
 	       newp->water /= newp->area;
 	       newp->theta /= newp->area;
 	       newp->rh /= newp->area;
-
+            ///CarbonConserve
+            newp->npp_avg /= newp->area;
+            newp->rh_avg /= newp->area;
                /**************************/
                /***  INSERT NEW PATCH   **/    
                /**************************/  
@@ -726,7 +737,7 @@ void fuse_2_patches (patch** patchptr1, patch** patchptr2,
 
    patch* dp = *patchptr1;
    patch* rp = *patchptr2;
-
+    
    double new_area = rp->area + dp->area;
 
    /* area weighted average of ages */
@@ -754,6 +765,11 @@ void fuse_2_patches (patch** patchptr1, patch** patchptr2,
                 + rp->water * rp->area) / new_area;
    rp->theta = (dp->theta * dp->area 
                 + rp->theta * rp->area) / new_area;
+    
+    ///CarbonConserve
+    rp->gpp_avg = (dp->gpp_avg*dp->area+rp->gpp_avg*rp->area)/new_area;
+    rp->npp_avg = (dp->npp_avg*dp->area+rp->npp_avg*rp->area)/new_area;
+    rp->rh_avg = (dp->rh_avg*dp->area+rp->rh_avg*rp->area)/new_area;
   
    /* average of repro buffers */
    for (size_t i=0; i<NSPECIES; i++)

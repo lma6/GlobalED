@@ -64,7 +64,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "test_output_fire_Rh_modiAllo_termi"
+            argument = "test_CarbonConserve_site_collC"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

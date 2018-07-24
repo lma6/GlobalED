@@ -801,8 +801,58 @@ void community_dynamics (unsigned int t, double t1, double t2,
    /*****************************/
    for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++) {
       patch* currentp = currents->youngest_patch[lu];
-      if (currentp != NULL) 
+       ///CarbonConserve
+       patch* mlcp = NULL;
+       double all_tb_before=0.0, all_sc_before=0.0, all_tc_before = 0.0;
+       double all_tb_after =0.0, all_sc_after=0.0, all_tc_after = 0.0;
+       double esti_dt_tc = 0.0, actual_dt_tc = 0.0;
+       double all_npp_avg = 0.0, all_rh_avg = 0.0;
+       mlcp =currents->youngest_patch[lu];
+       while (mlcp!=NULL) {
+           double tmp_tb = 0.0;
+           cohort* mlcc = mlcp->shortest;
+           while (mlcc!=NULL) {
+               tmp_tb+=(mlcc->balive+mlcc->bdead)*mlcc->nindivs;
+               mlcc=mlcc->taller;
+           }
+           tmp_tb /= mlcp->area;
+           all_tb_before += tmp_tb*mlcp->area/data->area;
+           all_sc_before += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
+           mlcp=mlcp->older;
+       }
+       all_tc_before = all_tb_before+all_sc_before;
+      if (currentp != NULL)
          cohort_dynamics(t, t1, t2, &currentp, outfile, data);
+       ///CarbonConserve
+       mlcp =currents->youngest_patch[lu];
+       while (mlcp!=NULL) {
+           double tmp_tb = 0.0;
+           cohort* mlcc = mlcp->shortest;
+           while (mlcc!=NULL) {
+               tmp_tb+=(mlcc->balive+mlcc->bdead)*mlcc->nindivs;
+               //printf("Ck cohort_dynamics: cc_spp %d cc_b %.15f cc_n %.15f cp_b %.15f\n",mlcc->species,mlcc->balive+mlcc->bdead,mlcc->nindivs,tmp_tb);
+               mlcc=mlcc->taller;
+           }
+           tmp_tb /=mlcp->area;
+           all_tb_after += tmp_tb*mlcp->area/data->area;
+           all_sc_after += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
+           esti_dt_tc += (mlcp->npp_avg-mlcp->rh_avg)*data->deltat*mlcp->area/data->area;
+           all_npp_avg += mlcp->npp_avg*mlcp->area/data->area;
+           all_rh_avg += mlcp->rh_avg*mlcp->area/data->area;
+           mlcp=mlcp->older;
+       }
+       all_tc_after = all_tb_after+all_sc_after;
+       actual_dt_tc = all_tc_after - all_tc_before;
+       esti_dt_tc = (all_npp_avg-all_rh_avg)*data->deltat;
+
+       if (abs(actual_dt_tc-esti_dt_tc)>1e-9)
+       {
+           printf("Carbon leakage in cohort_dynamics: imbalance  %.15f actual_dt_tc %.15f esti_dt_tc %.15f\n",actual_dt_tc-esti_dt_tc,actual_dt_tc,esti_dt_tc);
+           printf("                                 : site_tc_bf %.15f site_sc_bf   %.15f site_tb_bf %.15f\n",all_tc_before,all_sc_before,all_tb_before);
+           printf("                                 : site_tc_af %.15f site_sc_af   %.15f site_tb_af %.15f\n",all_tc_after,all_sc_after,all_tb_after);
+           printf("                                 : site_npp  %.15f site_rh   %.15f \n",all_npp_avg,all_rh_avg);
+           printf(" --------------------------------------------------------------------------------------\n");
+       }
       if (currents->skip_site)
          return;
    } 
@@ -823,7 +873,54 @@ void community_dynamics (unsigned int t, double t1, double t2,
 
        for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++) {
           if ( (lu != LU_CROP) && (currents->youngest_patch[lu] != NULL) ) {
+              ///CarbonConserve
+              patch* mlcp = NULL;
+              mlcp = currents->youngest_patch[lu];
+              double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before = 0.0, all_npp_avg_before = 0.0, all_rh_avg_before = 0.0;
+              double all_tb_after = 0.0, all_sc_after = 0.0, all_tc_after = 0.0, all_npp_avg_after = 0.0, all_rh_avg_after = 0.0;
+              double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
+              while (mlcp!=NULL) {
+                  cohort* mlcc = mlcp->shortest;
+                  double tmp_tb = 0.0;
+                  while (mlcc!=NULL) {
+                      tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
+                      mlcc = mlcc->taller;
+                  }
+                  all_tb_before +=tmp_tb*mlcp->area/data->area;
+                  all_sc_before += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
+                  all_npp_avg_before += mlcp->npp_avg*mlcp->area/data->area;
+                  all_rh_avg_before += mlcp->rh_avg*mlcp->area/data->area;
+                  mlcp=mlcp->older;
+              }
+              all_tc_before = all_tb_before + all_sc_before;
+              
              patch_dynamics(t, &(currents->youngest_patch[lu]), outfile, data);
+              ///CarbonConserve
+              mlcp =currents->youngest_patch[lu];
+              while (mlcp!=NULL) {
+                  cohort* mlcc = mlcp->shortest;
+                  double tmp_tb = 0.0;
+                  while (mlcc!=NULL) {
+                      tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
+                      mlcc=mlcc->taller;
+                  }
+                  all_tb_after += tmp_tb*mlcp->area/data->area;
+                  all_sc_after += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
+                  esti_dt_tc += (mlcp->npp_avg-mlcp->rh_avg)*data->deltat*mlcp->area/data->area;
+                  all_npp_avg_after += mlcp->npp_avg*mlcp->area/data->area;
+                  all_rh_avg_after += mlcp->rh_avg*mlcp->area/data->area;
+                  mlcp = mlcp->older;
+              }
+              all_tc_after = all_tb_after + all_sc_after;
+              actual_dt_tc = all_tc_after - all_tc_before;
+              
+              if (abs(all_tc_after-all_tc_before)>1e-9)
+              {
+                  printf("Carbon leakage in patch_dynamics : imbalance  %.15f site_tc_af %.15f site_tc_bf  %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
+                  printf("                                 : site_sc_bf %.15f site_tb_bf %.15f site_npp_bf %.15f site_rh_bf %.15f\n",all_sc_before,all_tb_before,all_npp_avg_before,all_rh_avg_before);
+                  printf("                                 : site_sc_af %.15f site_tb_af %.15f site_npp_af %.15f site_rh_af %.15f\n",all_sc_after,all_tb_after,all_npp_avg_after,all_rh_avg_after);
+                  printf(" --------------------------------------------------------------------------------------\n");
+              }
           }
        }
    } /*PATCH_DYNAMICS*/

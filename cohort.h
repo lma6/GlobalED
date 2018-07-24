@@ -67,7 +67,9 @@ struct cohort{
    double cbr[N_CLIMATE];     ///< carbon balance ratio Dimensionless
    double cbr_bar;            ///< running average carbon balance ratio  
    double payment_to_Nfixers; ///< carbon flux to symbionts kgC/yr 
-   double p[2];               ///< reproduction seed and clonal kgC/yr per indiv 
+   double p[2];               ///< reproduction seed and clonal kgC/yr per indiv
+    ///CarbonConserve
+    double p_avg[2];
    int status;                ///< growth status of plant 
 
    double Vm0;                ///< vm for that cohort, called in mechanism code 

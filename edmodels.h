@@ -30,7 +30,7 @@
 /// Turn off above 1, then type the below command in local terminal
 //// scp -r /Users/malei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_local/
 #define MODEL_CONFIG_FILE "models_local.cfg"
-#define TBB 0 ///< Intel Thread Building Blocks
+#define TBB 1 ///< Intel Thread Building Blocks
 #define GCD 0 ///< Grand Central Dispatch. Works on Mac only
 #define ED 1
 #define MAIN 1

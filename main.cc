@@ -472,8 +472,29 @@ void model (UserData& data) {
       site* siteptr = data.first_site;
       while (siteptr != NULL) {
 #if !GCD && !TBB
-         community_dynamics(t, t1, t2, &siteptr, &data);
-         update_site(&siteptr, &data);
+          ///CarbonConserve
+          update_site(&siteptr, &data);
+          site* currents = data.first_site;
+          /// Variables starting with all means total of the entire site. before means results befor implementing a process
+          double all_tb_before =currents->site_total_biomass, all_sc_before=currents->site_total_soil_c, all_tc_before =currents->site_total_c;
+          double all_tb_after = 0.0, all_sc_after = 0.0, all_tc_after = 0.0;
+          double esti_dt_tc = 0.0, actual_dt_tc= 0.0;
+          community_dynamics(t, t1, t2, &siteptr, &data);
+          update_site(&siteptr, &data);
+          ///CarbonConserve
+          all_tb_after = currents->site_total_biomass;
+          all_sc_after = currents->site_total_soil_c;
+          all_tc_after = currents->site_total_c;
+          actual_dt_tc = all_tc_after- all_tc_before;
+          esti_dt_tc = (currents->site_npp_avg-currents->site_rh_avg)*data.deltat;
+          if (abs(actual_dt_tc-esti_dt_tc)<1e-9)
+          {
+              printf("Carbon leakage in community_dynamics: imbalance  %.15f actual_dt_tc %.15f esti_dt_tc %.15f\n",actual_dt_tc-esti_dt_tc,actual_dt_tc,esti_dt_tc);
+              printf("                                    : site_tc_bf %.15f site_sc_bf   %.15f site_tb_bf %.15f\n",all_tc_before,all_sc_before,all_tb_before);
+              printf("                                    : site_tc_af %.15f site_sc_af   %.15f site_tb_af %.15f\n",all_tc_after,all_sc_after,all_tb_after);
+              printf("                                    : site_npp  %.15f site_rh   %.15f\n",currents->site_npp_avg,currents->site_rh_avg);
+              printf(" --------------------------------------------------------------------------------------\n");
+          }
 #endif
          
          if(data.print_output_files) {
@@ -482,6 +503,7 @@ void model (UserData& data) {
          siteptr = siteptr->next_site;
       }
    }
+    
 }
 
 

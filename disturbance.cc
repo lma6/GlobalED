@@ -267,6 +267,9 @@ void aggregate_in_soil_state_from_disturbance ( patch** target_patch,
    tp->theta              += dp->theta * change_in_area;
    tp->rh                 += dp->rh * change_in_area ;
    tp->soil_evap          += dp->soil_evap * change_in_area ;
+    ///CarbonConserve
+    tp->npp_avg         += dp->npp_avg * change_in_area ;
+    tp->rh_avg          += dp->rh_avg * change_in_area;
 #endif /* ED */
 }
 
