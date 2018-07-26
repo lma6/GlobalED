@@ -472,6 +472,8 @@ void model (UserData& data) {
       site* siteptr = data.first_site;
       while (siteptr != NULL) {
 #if !GCD && !TBB
+          
+#if CHECK_C_CONSERVE
           ///CarbonConserve
           update_site(&siteptr, &data);
           site* currents = data.first_site;
@@ -479,8 +481,11 @@ void model (UserData& data) {
           double all_tb_before =currents->site_total_biomass, all_sc_before=currents->site_total_soil_c, all_tc_before =currents->site_total_c;
           double all_tb_after = 0.0, all_sc_after = 0.0, all_tc_after = 0.0;
           double esti_dt_tc = 0.0, actual_dt_tc= 0.0;
+#endif
           community_dynamics(t, t1, t2, &siteptr, &data);
           update_site(&siteptr, &data);
+          
+#if CHECK_C_CONSERVE
           ///CarbonConserve
           all_tb_after = currents->site_total_biomass;
           all_sc_after = currents->site_total_soil_c;
@@ -495,6 +500,8 @@ void model (UserData& data) {
               printf("                                    : site_npp  %.15f site_rh   %.15f\n",currents->site_npp_avg,currents->site_rh_avg);
               printf(" --------------------------------------------------------------------------------------\n");
           }
+#endif
+          
 #endif
          
          if(data.print_output_files) {

@@ -61,6 +61,8 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
          currentp->save_old();
          f(t1, currentp);
          currentp->copy_derivatives();
+          
+#if CHECK_C_CONSERVE
           ///CarbonConserve
           cohort* mlcc= NULL;
           double all_tb_before=0.0, all_sc_before=0.0, all_tc_before=0.0;
@@ -73,6 +75,8 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
           }
           all_sc_before = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
           all_tc_before = all_tb_before + all_sc_before;
+#endif
+          
          do {//Repeat until compare_derivatives returns true, halving dt each time
             deltat = data->deltat * 1. / (data->substeps*split_factor);
             currentp->Update_Water(t1, currentp->siteptr->data, deltat/2.);
@@ -147,6 +151,7 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
             currentc = currentc->taller;
          }
           /// This block is added by Lei, should delelte if it does not work
+          ///CarbonConserve
           currentp->Litter(t1+deltat, data);
           currentp->Dsdt(data->time_period, t1+deltat, data);
           currentp->Update_Water(t1, currentp->siteptr->data, deltat/2.);
@@ -159,14 +164,15 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
           currentp->structural_soil_L = currentp->old_structural_soil_L + currentp->dstsl * deltat;
           /// The above is added by Lei.
           
-          //checkstep
+          //CarbonConserve
           currentp->gpp_avg +=tmp_gpp_avg*1./(data->substeps*split_factor);
           currentp->npp_avg +=tmp_npp_avg*1./(data->substeps*split_factor);
           currentp->rh_avg +=currentp->rh*1./(data->substeps*split_factor);
 //          total_litter += currentp->litter *1./(data->substeps*split_factor);
 //          total_repro += tmp_repro_avg*1./(data->substeps*split_factor);
          iout2++;
-          
+
+#if CHECK_C_CONSERVE
           ///CarbonConserve
           mlcc = currentp->shortest;
           while (mlcc != NULL) {
@@ -189,6 +195,7 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
               printf("                                     : patch_npp_af %.15f patch_rh_af  %.15f patch_repro %.15f\n",all_npp_after,all_rh_after,all_repro);
               printf(" --------------------------------------------------------------------------------------\n");
           }
+#endif
       }
       iout++;
    }

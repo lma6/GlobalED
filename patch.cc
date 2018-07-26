@@ -139,6 +139,11 @@ void create_patch (site** siteptr, patch** pnewp, int landuse,
    newpatch->rh               = 0.0;
    newpatch->nep              = 0.0;
    newpatch->npp              = 0.0;
+    ///CarbonConserve
+    newpatch->gpp_avg           = 0.0;
+    newpatch->npp_avg           = 0.0;
+    newpatch->rh_avg            = 0.0;
+    
    newpatch->fire_dndt_factor = 0.0;
    newpatch->A                = 0.0;
 
@@ -559,6 +564,7 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
 	       newp->theta /= newp->area;
 	       newp->rh /= newp->area;
             ///CarbonConserve
+            newp->gpp_avg /= newp->area;
             newp->npp_avg /= newp->area;
             newp->rh_avg /= newp->area;
                /**************************/

@@ -24,6 +24,7 @@
 #define MODEL_CONFIG_FILE "models.cfg"
 #define TBB 1 ///< Intel Thread Building Blocks
 #define GCD 0 ///< Grand Central Dispatch. Works on Mac only
+#define CHECK_C_CONSERVE 0
 #endif
 
 #if LOCAL_MACHINE
@@ -34,6 +35,7 @@
 #define GCD 0 ///< Grand Central Dispatch. Works on Mac only
 #define ED 1
 #define MAIN 1
+#define CHECK_C_CONSERVE 1
 #endif
 
 
@@ -41,7 +43,7 @@
 ////////////////////////////////////////
 //    LAND USE
 ////////////////////////////////////////
-#define LANDUSE 0 ///< Flag to turn on land use dynamics
+#define LANDUSE 1 ///< Flag to turn on land use dynamics
 #define FASTLOAD 2
 #define COUPLE_FAR 1
 #define COUPLE_PFTspecific 1

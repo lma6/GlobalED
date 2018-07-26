@@ -698,7 +698,7 @@ void print_cfluxes (unsigned int time, site** siteptr, UserData* data) {
  
 #ifdef ED
    fprintf(outfile,
-           "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %f npp_avg %f rh_avg %f fs_open %f An_pot_spp1 %f An_pot_spp2 %f An_pot_spp3 %f An_pot_spp4 %f An_pot_spp5 %f An_pot_spp6 %f An_pot_spp7 %f An_shut_spp1 %f An_shut_spp2 %f An_shut_spp3 %f An_shut_spp4 %f An_shut_spp5 %f An_shut_spp6 %f An_shut_spp7 %f E_pot_spp1 %f E_pot_spp2 %f E_pot_spp3 %f E_pot_spp4 %f E_pot_spp5 %f E_pot_spp6 %f E_pot_spp7 %f E_shut_spp1 %f E_shut_spp2 %f E_shut_spp3 %f E_shut_spp4 %f E_shut_spp5 %f E_shut_spp6 %f E_shut_spp7 %f\n",
+           "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %f npp_avg %.20f rh_avg %.20f fs_open %f An_pot_spp1 %f An_pot_spp2 %f An_pot_spp3 %f An_pot_spp4 %f An_pot_spp5 %f An_pot_spp6 %f An_pot_spp7 %f An_shut_spp1 %f An_shut_spp2 %f An_shut_spp3 %f An_shut_spp4 %f An_shut_spp5 %f An_shut_spp6 %f An_shut_spp7 %f E_pot_spp1 %f E_pot_spp2 %f E_pot_spp3 %f E_pot_spp4 %f E_pot_spp5 %f E_pot_spp6 %f E_pot_spp7 %f E_shut_spp1 %f E_shut_spp2 %f E_shut_spp3 %f E_shut_spp4 %f E_shut_spp5 %f E_shut_spp6 %f E_shut_spp7 %f\n",
            cs->sdata->name_, time*TIMESTEP, cs->site_npp, cs->site_rh, cs->site_nep,
            cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_gpp_avg,cs->site_npp_avg,cs->site_rh_avg,cs->site_fs_open,
            cs->Leaf_An_pot[0],cs->Leaf_An_pot[1],cs->Leaf_An_pot[2],cs->Leaf_An_pot[3],cs->Leaf_An_pot[4],cs->Leaf_An_pot[5],cs->Leaf_An_pot[6],
@@ -979,7 +979,7 @@ void print_biomass (unsigned int time, site** siteptr, UserData* data) {
    /* print to files */
    cp = *cs->oldest_patch;
 #if defined ED
-   fprintf(outfile, "%s t= %5.5f total_c %8.5f tb %8.5f tagb %8.5f ba %8.5f lai %8.5f havg %8.5f ",
+   fprintf(outfile, "%s t= %5.5f total_c %.20f tb %8.5f tagb %8.5f ba %8.5f lai %8.5f havg %8.5f ",
            cs->sdata->name_,
            time * TIMESTEP,
            cs->site_total_c,

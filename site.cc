@@ -801,6 +801,7 @@ void community_dynamics (unsigned int t, double t1, double t2,
    /*****************************/
    for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++) {
       patch* currentp = currents->youngest_patch[lu];
+#if CHECK_C_CONSERVE
        ///CarbonConserve
        patch* mlcp = NULL;
        double all_tb_before=0.0, all_sc_before=0.0, all_tc_before = 0.0;
@@ -821,8 +822,12 @@ void community_dynamics (unsigned int t, double t1, double t2,
            mlcp=mlcp->older;
        }
        all_tc_before = all_tb_before+all_sc_before;
+#endif
+       
       if (currentp != NULL)
          cohort_dynamics(t, t1, t2, &currentp, outfile, data);
+       
+#if CHECK_C_CONSERVE
        ///CarbonConserve
        mlcp =currents->youngest_patch[lu];
        while (mlcp!=NULL) {
@@ -853,6 +858,8 @@ void community_dynamics (unsigned int t, double t1, double t2,
            printf("                                 : site_npp  %.15f site_rh   %.15f \n",all_npp_avg,all_rh_avg);
            printf(" --------------------------------------------------------------------------------------\n");
        }
+#endif
+       
       if (currents->skip_site)
          return;
    } 
@@ -873,6 +880,7 @@ void community_dynamics (unsigned int t, double t1, double t2,
 
        for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++) {
           if ( (lu != LU_CROP) && (currents->youngest_patch[lu] != NULL) ) {
+#if CHECK_C_CONSERVE
               ///CarbonConserve
               patch* mlcp = NULL;
               mlcp = currents->youngest_patch[lu];
@@ -893,8 +901,11 @@ void community_dynamics (unsigned int t, double t1, double t2,
                   mlcp=mlcp->older;
               }
               all_tc_before = all_tb_before + all_sc_before;
+#endif
               
              patch_dynamics(t, &(currents->youngest_patch[lu]), outfile, data);
+
+#if CHECK_C_CONSERVE
               ///CarbonConserve
               mlcp =currents->youngest_patch[lu];
               while (mlcp!=NULL) {
@@ -921,6 +932,7 @@ void community_dynamics (unsigned int t, double t1, double t2,
                   printf("                                 : site_sc_af %.15f site_tb_af %.15f site_npp_af %.15f site_rh_af %.15f\n",all_sc_after,all_tb_after,all_npp_avg_after,all_rh_avg_after);
                   printf(" --------------------------------------------------------------------------------------\n");
               }
+#endif
           }
        }
    } /*PATCH_DYNAMICS*/
