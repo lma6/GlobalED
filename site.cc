@@ -804,8 +804,8 @@ void community_dynamics (unsigned int t, double t1, double t2,
 #if CHECK_C_CONSERVE
        ///CarbonConserve
        patch* mlcp = NULL;
-       double all_tb_before=0.0, all_sc_before=0.0, all_tc_before = 0.0;
-       double all_tb_after =0.0, all_sc_after=0.0, all_tc_after = 0.0;
+       double all_tb_before=0.0, all_sc_before=0.0, all_tc_before = 0.0, all_fire_emission_before = 0.0;
+       double all_tb_after =0.0, all_sc_after=0.0, all_tc_after = 0.0, all_fire_emission_after = 0.0;
        double esti_dt_tc = 0.0, actual_dt_tc = 0.0;
        double all_npp_avg = 0.0, all_rh_avg = 0.0;
        mlcp =currents->youngest_patch[lu];
@@ -821,6 +821,7 @@ void community_dynamics (unsigned int t, double t1, double t2,
            all_sc_before += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
            mlcp=mlcp->older;
        }
+       all_fire_emission_before = 0.0;
        all_tc_before = all_tb_before+all_sc_before;
 #endif
        
@@ -844,11 +845,12 @@ void community_dynamics (unsigned int t, double t1, double t2,
            esti_dt_tc += (mlcp->npp_avg-mlcp->rh_avg)*data->deltat*mlcp->area/data->area;
            all_npp_avg += mlcp->npp_avg*mlcp->area/data->area;
            all_rh_avg += mlcp->rh_avg*mlcp->area/data->area;
+           all_fire_emission_after += mlcp->fire_emission*mlcp->area/data->area;
            mlcp=mlcp->older;
        }
        all_tc_after = all_tb_after+all_sc_after;
        actual_dt_tc = all_tc_after - all_tc_before;
-       esti_dt_tc = (all_npp_avg-all_rh_avg)*data->deltat;
+       esti_dt_tc = (all_npp_avg-all_rh_avg-all_fire_emission_after+all_fire_emission_before)*data->deltat;
 
        if (abs(actual_dt_tc-esti_dt_tc)>1e-9)
        {
@@ -884,8 +886,8 @@ void community_dynamics (unsigned int t, double t1, double t2,
               ///CarbonConserve
               patch* mlcp = NULL;
               mlcp = currents->youngest_patch[lu];
-              double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before = 0.0, all_npp_avg_before = 0.0, all_rh_avg_before = 0.0;
-              double all_tb_after = 0.0, all_sc_after = 0.0, all_tc_after = 0.0, all_npp_avg_after = 0.0, all_rh_avg_after = 0.0;
+              double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before = 0.0, all_npp_avg_before = 0.0, all_rh_avg_before = 0.0, all_fire_emission_before = 0.0, all_area_before = 0.0;
+              double all_tb_after = 0.0, all_sc_after = 0.0, all_tc_after = 0.0, all_npp_avg_after = 0.0, all_rh_avg_after = 0.0, all_fire_emission_after = 0.0, all_area_after = 0.0;
               double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
               while (mlcp!=NULL) {
                   cohort* mlcc = mlcp->shortest;
@@ -898,6 +900,8 @@ void community_dynamics (unsigned int t, double t1, double t2,
                   all_sc_before += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
                   all_npp_avg_before += mlcp->npp_avg*mlcp->area/data->area;
                   all_rh_avg_before += mlcp->rh_avg*mlcp->area/data->area;
+                  all_fire_emission_before += mlcp->fire_emission*mlcp->area/data->area;
+                  all_area_before += mlcp->area;
                   mlcp=mlcp->older;
               }
               all_tc_before = all_tb_before + all_sc_before;
@@ -920,16 +924,19 @@ void community_dynamics (unsigned int t, double t1, double t2,
                   esti_dt_tc += (mlcp->npp_avg-mlcp->rh_avg)*data->deltat*mlcp->area/data->area;
                   all_npp_avg_after += mlcp->npp_avg*mlcp->area/data->area;
                   all_rh_avg_after += mlcp->rh_avg*mlcp->area/data->area;
+                  all_fire_emission_after += mlcp->fire_emission*mlcp->area/data->area;
+                  all_area_after += mlcp->area;
                   mlcp = mlcp->older;
               }
-              all_tc_after = all_tb_after + all_sc_after;
+              all_tc_after = all_tb_after + all_sc_after + (all_fire_emission_after-all_fire_emission_before)*data->deltat*COHORT_FREQ;
               actual_dt_tc = all_tc_after - all_tc_before;
               
               if (abs(all_tc_after-all_tc_before)>1e-9)
               {
                   printf("Carbon leakage in patch_dynamics : imbalance  %.15f site_tc_af %.15f site_tc_bf  %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-                  printf("                                 : site_sc_bf %.15f site_tb_bf %.15f site_npp_bf %.15f site_rh_bf %.15f\n",all_sc_before,all_tb_before,all_npp_avg_before,all_rh_avg_before);
-                  printf("                                 : site_sc_af %.15f site_tb_af %.15f site_npp_af %.15f site_rh_af %.15f\n",all_sc_after,all_tb_after,all_npp_avg_after,all_rh_avg_after);
+                  printf("                                 : site_sc_bf %.15f site_tb_bf %.15f site_npp_bf %.15f site_rh_bf %.15f site_fire_bf %.15f\n",all_sc_before,all_tb_before,all_npp_avg_before,all_rh_avg_before,all_fire_emission_before);
+                  printf("                                 : site_sc_af %.15f site_tb_af %.15f site_npp_af %.15f site_rh_af %.15f site_fire_af %.15f\n",all_sc_after,all_tb_after,all_npp_avg_after,all_rh_avg_after,all_fire_emission_after);
+                  printf("                                 : site_lat %.3f site_lon %.3f LU %d\n",currents->sdata->lat_,currents->sdata->lon_,lu);
                   printf(" --------------------------------------------------------------------------------------\n");
               }
 #endif
@@ -941,7 +948,85 @@ void community_dynamics (unsigned int t, double t1, double t2,
    /************************************/
    /******* LANDUSE DYNAMICS ***********/
    /************************************/
+#if CHECK_C_CONSERVE
+    ///CarbonConserve
+    double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before = 0.0, all_npp_avg_before = 0.0, all_rh_avg_before = 0.0, all_fire_emission_before = 0.0;
+    double all_tb_after = 0.0, all_sc_after = 0.0, all_tc_after = 0.0, all_npp_avg_after = 0.0, all_rh_avg_after = 0.0, all_fire_emission_after = 0.0;
+    double all_forest_harv_c_before = 0.0, all_crop_harv_c_before = 0.0, all_past_harv_c_before = 0.0;
+    double all_forest_harv_c_after = 0.0, all_crop_harv_c_after = 0.0, all_past_harv_c_after = 0.0;
+    double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
+    for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++)
+    {
+        double tmp_all_tb = 0.0, tmp_all_sc = 0.0, tmp_all_tc = 0.0;
+        if (currents->youngest_patch[lu] != NULL)
+        {
+            patch* mlcp = currents->youngest_patch[lu];
+            while (mlcp!=NULL) {
+                cohort* mlcc = mlcp->shortest;
+                double tmp_tb = 0.0;
+                while (mlcc!=NULL) {
+                    tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
+                    mlcc = mlcc->taller;
+                }
+                all_tb_before +=tmp_tb*mlcp->area/data->area;
+                all_sc_before += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
+                all_npp_avg_before += mlcp->npp_avg*mlcp->area/data->area;
+                all_rh_avg_before += mlcp->rh_avg*mlcp->area/data->area;
+                all_fire_emission_before += mlcp->fire_emission*mlcp->area/data->area;
+                all_forest_harv_c_before += mlcp->forest_harvested_c * mlcp->area/data->area;
+                all_past_harv_c_before += mlcp->past_harvested_c * mlcp->area/data->area;
+                all_crop_harv_c_before += mlcp->crop_harvested_c * mlcp->area/ data->area;
+                tmp_all_tb += tmp_tb * mlcp->area/data->area;
+                tmp_all_sc +=(mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
+                mlcp=mlcp->older;
+            }
+            //printf("ck lu patches_bf LU %2d tb %.15f sc %.15f tc %.15f\n",lu,tmp_all_tb,tmp_all_sc,tmp_all_tb+tmp_all_sc);
+        }
+    }
+    all_tc_before = all_tb_before + all_sc_before + all_fire_emission_before*data->deltat;
+#endif
    landuse_dynamics(t, &currents, data);
+    
+#if CHECK_C_CONSERVE
+    for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++)
+    {
+        double tmp_all_tb = 0.0, tmp_all_sc = 0.0, tmp_all_tc = 0.0;
+        if (currents->youngest_patch[lu] != NULL)
+        {
+            patch* mlcp = currents->youngest_patch[lu];
+            while (mlcp!=NULL) {
+                cohort* mlcc = mlcp->shortest;
+                double tmp_tb = 0.0;
+                while (mlcc!=NULL) {
+                    tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
+                    mlcc = mlcc->taller;
+                }
+                all_tb_after +=tmp_tb*mlcp->area/data->area;
+                all_sc_after += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
+                all_npp_avg_after += mlcp->npp_avg*mlcp->area/data->area;
+                all_rh_avg_after += mlcp->rh_avg*mlcp->area/data->area;
+                all_fire_emission_after += mlcp->fire_emission*mlcp->area/data->area;
+                all_forest_harv_c_after += mlcp->forest_harvested_c * mlcp->area/data->area;
+                all_past_harv_c_after += mlcp->past_harvested_c * mlcp->area/data->area;
+                all_crop_harv_c_after += mlcp->crop_harvested_c * mlcp->area/ data->area;
+                tmp_all_tb += tmp_tb * mlcp->area/data->area;
+                tmp_all_sc +=(mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
+                mlcp=mlcp->older;
+            }
+        }
+        //printf("ck lu patches_af LU %2d tb %.15f sc %.15f tc %.15f\n",lu,tmp_all_tb,tmp_all_sc,tmp_all_tb+tmp_all_sc);
+    }
+    all_tc_after = all_tb_after + all_sc_after + (all_fire_emission_after + all_forest_harv_c_after-all_forest_harv_c_before + all_crop_harv_c_after-all_crop_harv_c_before + all_past_harv_c_after-all_past_harv_c_before)*data->deltat;
+    if (abs(all_tc_after-all_tc_before)>1e-9)
+    {
+        printf("Carbon leakage in landuse_dynamics : imbalance  %.15f site_tc_af %.15f site_tc_bf  %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
+        printf("                                   : site_sc_bf %.15f site_tb_bf %.15f site_npp_bf %.15f site_rh_bf %.15f site_fr_bf %.15f site_f_hrC_bf %.15f site_p_hrC_bf %.15f site_c_hrC_bf %.15f\n",all_sc_before,all_tb_before,all_npp_avg_before,all_rh_avg_before,all_fire_emission_before,all_forest_harv_c_before,all_past_harv_c_before,all_crop_harv_c_before);
+        printf("                                   : site_sc_af %.15f site_tb_af %.15f site_npp_af %.15f site_rh_af %.15f site_fr_af %.15f site_f_hrC_af %.15f site_p_hrC_af %.15f site_c_hrC_af %.15f\n",all_sc_after,all_tb_after,all_npp_avg_after,all_rh_avg_after,all_fire_emission_after,all_forest_harv_c_after,all_past_harv_c_after,all_crop_harv_c_after);
+        printf("                                   : site_lat %.3f site_lon %.3f\n",currents->sdata->lat_,currents->sdata->lon_);
+        printf(" --------------------------------------------------------------------------------------\n");
+    }
+#endif
+    
 #endif
 
    if(data->cd_file) {
@@ -1107,6 +1192,13 @@ void update_site (site** current_site, UserData* data) {
    cs->site_nep                     = 0.0;
    cs->site_rh                      = 0.0;
     cs->site_rh_avg                 =  0.0;
+    ///CarbonConserve
+    cs->site_fire_emission          = 0.0;
+#ifdef LANDUSE
+    cs->site_forest_harvest         = 0.0;
+    cs->site_pasture_harvest        = 0.0;
+    cs->site_crop_harvest           = 0.0;
+#endif
    cs->site_dndt                    = 0.0;
    cs->site_aa_lai                  = 0.0;
    for (size_t i=0;i<N_LAI;i++)
@@ -1206,6 +1298,15 @@ void update_site (site** current_site, UserData* data) {
       cs->site_aa_nep             += cs->aa_nep[lu] * cs->area_fraction[lu];
       cs->site_aa_rh              += cs->aa_rh[lu] * cs->area_fraction[lu];
       cs->site_dndt               += cs->dndt[lu]*cs->area_fraction[lu];
+       
+       ///CarbonConserve
+       cs->site_fire_emission       += cs->fire_emission[lu]*cs->area_fraction[lu];
+#ifdef LANDUSE
+       cs->site_forest_harvest      += cs->forest_harvest[lu]*cs->area_fraction[lu];
+       cs->site_pasture_harvest     += cs->pasture_harvest[lu]*cs->area_fraction[lu];
+       cs->site_crop_harvest        += cs->crop_harvest[lu]*cs->area_fraction[lu];
+#endif
+       
 #ifdef ED
       cs->site_gpp                += cs->gpp[lu] * cs->area_fraction[lu];
        cs->site_gpp_avg             += cs->gpp_avg[lu] * cs->area_fraction[lu];
@@ -1301,6 +1402,13 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
    cs->nep[lu]                     = 0.0;
    cs->rh[lu]                      = 0.0;
     cs->rh_avg[lu]                  = 0.0;
+    ///CarbonConserve
+    cs->fire_emission[lu]           = 0.0;
+#ifdef LANDUSE
+    cs->forest_harvest[lu]          = 0.0;
+    cs->crop_harvest[lu]            = 0.0;
+    cs->pasture_harvest[lu]         = 0.0;
+#endif
    cs->aa_npp[lu]                  = 0.0; 
    cs->aa_nep[lu]                  = 0.0; 
    cs->aa_rh[lu]                   = 0.0;
@@ -1378,6 +1486,15 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
          cs->aa_nep[lu]             += cp->aa_nep * frac;
          cs->aa_rh[lu]              += cp->aa_rh * frac;
          cs->dndt[lu]               += cp->dndt * frac;
+          
+          ///CarbonConserve
+          cs->fire_emission[lu]         += cp->fire_emission*frac;
+#if LANDUSE
+          cs->forest_harvest[lu]        += cp->forest_harvested_c*frac;
+          cs->pasture_harvest[lu]       += cp->past_harvested_c*frac;
+          cs->crop_harvest[lu]          += cp->crop_harvested_c*frac;
+#endif
+          
 #ifdef ED
          cs->gpp[lu]                += cp->gpp * frac;
           cs->gpp_avg[lu]           += cp->gpp_avg * frac;

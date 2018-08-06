@@ -219,6 +219,7 @@ void patch::Litter (double time, UserData* data ) {
     double fast_litter = 0.0;
     double fast_litter_n = 0.0;
     double struct_litter = 0.0;
+    fire_c_loss = 0.0;
     
     cohort* cc = shortest;
     while ( cc != NULL ) {
@@ -232,6 +233,14 @@ void patch::Litter (double time, UserData* data ) {
                                ( 1.0 - cc->survivorship_from_disturbance(1, data) ) *
                                cc->patchptr->fire_dndt_factor *
                                cc->nindivs ) / area;
+        if (cc->patchptr->fire_dndt_factor>0.0)
+        {
+            /// when fire disturbance rate is smaller than treefall, dndt calculate will include contribution of fire
+            /// Therefore, when the original ED code calculate compute liter, part of dead biomass due to fire will be partially deducted and lose as smoke.
+            /// The above line collect this part biomass  -- Lei
+            fire_c_loss += cc->siteptr->sdata->loss_fraction[1]*(cc->old_balive+cc->old_bdead)*(1.0-cc->survivorship_from_disturbance(1, data))*cc->patchptr->fire_dndt_factor*cc->nindivs/area;
+            //printf("check fire emission %.15f %.15f %.15f\n",cc->old_balive*cc->patchptr->siteptr->sdata->loss_fraction[1]*(1.0-cc->survivorship_from_disturbance(1, data))*cc->patchptr->fire_dndt_factor*cc->nindivs/area,(1.0-cc->survivorship_from_disturbance(1, data)),cc->patchptr->fire_dndt_factor);
+        }
         fast_litter += data->fraction_balive_2_fast * plant_litter;
         fast_litter_n +=  data->fraction_balive_2_fast *
         ( 1.0 / data->c2n_leaf[spp] ) * plant_litter;

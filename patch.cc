@@ -143,6 +143,13 @@ void create_patch (site** siteptr, patch** pnewp, int landuse,
     newpatch->gpp_avg           = 0.0;
     newpatch->npp_avg           = 0.0;
     newpatch->rh_avg            = 0.0;
+    newpatch->fire_emission     = 0.0;
+    newpatch->fire_c_loss       = 0.0;
+#if LANDUSE
+    newpatch->forest_harvested_c = 0.0;
+    newpatch->past_harvested_c = 0.0;
+    newpatch->crop_harvested_c = 0.0;
+#endif
     
    newpatch->fire_dndt_factor = 0.0;
    newpatch->A                = 0.0;
@@ -218,14 +225,19 @@ void update_patch (patch** current_patch, UserData* data) {
          cp->total_spp_biomass[cc->species] +=cc->b * cc->nindivs;
          cp->total_spp_babove[cc->species]  +=cc->babove * cc->nindivs;
          cp->total_ag_biomass               += cc->babove * cc->nindivs;
-         cp->total_biomass                  += cc->b * cc->nindivs;
-          ///CarbonConserve
-         // cp->total_biomass                  += (cc->balive+cc->bdead) * cc->nindivs;
+//         cp->total_biomass                  += cc->b * cc->nindivs;
+#if CHECK_C_CONSERVE
           if(abs(cc->balive+cc->bdead-cc->b)>1e-9)
           {
               printf("Carbon leakage in update_patch: cc_spp %d cc_b %.15f cc_ba %.15f cc_bd %.15f cc_n %.15f \n",cc->species,cc->b,cc->balive,cc->bdead,cc->nindivs);
           }
-         
+#endif
+          ///CarbonConserve
+          if(abs(cc->balive+cc->bdead-cc->b)>1e-9)
+          {
+              cc->b = cc->balive + cc->bdead;
+          }
+         cp->total_biomass                  += cc->b * cc->nindivs;
          cp->basal_area                     += (M_PI/4.0) * pow(cc->dbh, 2.0) * cc->nindivs;
          cp->basal_area_spp[cc->species]    += (M_PI/4.0) * pow(cc->dbh, 2.0) * cc->nindivs;      
          cp->lai += cc->lai;
@@ -515,7 +527,9 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
                      newcohort->dndt = newcohort->nindivs*currentc->dndt/currentc->nindivs;
                     
                      // disturbances such as fire can modify cohort properties
-                     cohort_modifications_from_disturbance(q, &newcohort, data);
+                      ///CarbonConserve
+                      /// Pass newp into the below function to receive fire emission
+                     cohort_modifications_from_disturbance(q, &newcohort,&newp, data);
        
                      // insert
                      insert_cohort(&newcohort, &newp->tallest, &newp->shortest, data);
@@ -567,6 +581,7 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
             newp->gpp_avg /= newp->area;
             newp->npp_avg /= newp->area;
             newp->rh_avg /= newp->area;
+            newp->fire_emission /= newp->area;
                /**************************/
                /***  INSERT NEW PATCH   **/    
                /**************************/  
@@ -578,11 +593,25 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
                target -> younger = NULL;
                currentp -> younger = target;
                currents->youngest_patch[youngest_patch->landuse] = target;
-            
+                
+                double tmp_total_tb = 0.0, tmp_total_sc = 0.0, tmp_total_tc = 0.0;
+                patch* mlcp =currents->youngest_patch[youngest_patch->landuse];
+                while (mlcp!=NULL) {
+                    cohort* mlcc = mlcp->shortest;
+                    double tmp_tb = 0.0;
+                    while (mlcc!=NULL) {
+                        tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
+                        mlcc = mlcc->taller;
+                    }
+                    tmp_total_tb += tmp_tb*mlcp->area/data->area;
+                    tmp_total_sc += (mlcp->fast_soil_C+mlcp->structural_soil_C+mlcp->slow_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
+                    mlcp = mlcp->older;
+                }
+                //printf("tmpck tb %.15f sc %.15f tc %.15f\n",tmp_total_tb,tmp_total_sc,tmp_total_tb+tmp_total_sc);
+                
 
                /*terminate cohorts*/
                terminate_cohorts(&target->tallest,&target->shortest,data);
-                
             } else { /*not using track*/  
                if (newp->landuse == LU_SCND)
                   free(newp->phistory);
@@ -610,8 +639,13 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
                fprintf(outfile, "terminating patches \n");  
 
             /* TODO: should this also be done for secondary? - justin */
-            if (youngest_patch->landuse == LU_NTRL)
-               terminate_patches(&youngest_patch, data);
+//            if (youngest_patch->landuse == LU_NTRL)
+//            {
+//                terminate_patches(&youngest_patch, data);
+//            }
+             ////CarbonConserve
+             /// Respond to Justin, I think this should be done for all types of patches as long as they are too small -- Lei
+             terminate_patches(&youngest_patch, data);
          }
 
       }  /* end t%PATCH_FREQ */
@@ -776,6 +810,12 @@ void fuse_2_patches (patch** patchptr1, patch** patchptr2,
     rp->gpp_avg = (dp->gpp_avg*dp->area+rp->gpp_avg*rp->area)/new_area;
     rp->npp_avg = (dp->npp_avg*dp->area+rp->npp_avg*rp->area)/new_area;
     rp->rh_avg = (dp->rh_avg*dp->area+rp->rh_avg*rp->area)/new_area;
+    rp->fire_emission = (dp->fire_emission*dp->area+rp->fire_emission*rp->area)/new_area;
+#if LANDUSE
+    rp->forest_harvested_c = (dp->forest_harvested_c*dp->area+rp->forest_harvested_c*rp->area)/new_area;
+    rp->past_harvested_c = (dp->past_harvested_c*dp->area+rp->past_harvested_c*rp->area)/new_area;
+    rp->crop_harvested_c = (dp->crop_harvested_c*dp->area+rp->crop_harvested_c*rp->area)/new_area;
+#endif
   
    /* average of repro buffers */
    for (size_t i=0; i<NSPECIES; i++)
@@ -874,27 +914,122 @@ void fuse_2_patches (patch** patchptr1, patch** patchptr2,
 void terminate_patches (patch** patchptr, UserData* data) {
 
    double epsilon = 0.0;
-   patch* cp = (*patchptr)->siteptr->youngest_patch[(*patchptr)->landuse];
+    ///CarbonConserve
+    double scale_area= 1.0, scale_nIndiv=1.0, scale_soil_C=1.0, scale_GPP=1.0, scale_NPP=1.0, scale_Rh=1.0, scale_fire_emission = 1.0;
+    double scale_fst_harv = 1.0, scale_past_harv = 1.0, scale_crop_harv = 1.0;
+    double area_terminated_patches = 0.0, Biomass_terminated_patches = 0.0, soil_C_terminated_patches = 0.0, GPP_terminated_patches = 0.0, NPP_terminated_patches = 0.0, Rh_terminated_patches = 0.0, fire_emission_terminated_patches = 0.0;
+    double crop_harv_terminated_patches = 0.0, fst_harv_terminated_patches = 0.0, past_harv_terminated_patches = 0.0;
+    double area_all_patches = 0.0, Biomass_all_patches = 0.0, soil_C_all_patches = 0.0, GPP_all_patches = 0.0, NPP_all_patches = 0.0, Rh_all_patches = 0.0, fire_emission_all_patches = 0.0;
+    double crop_harv_all_patches = 0.0, fst_harv_all_patches = 0.0, past_harv_all_patches = 0.0;
+    double fast_litter = 0.0, fast_litter_n = 0.0, struct_litter = 0.0;
+    
+    cohort* cc = NULL;
+    patch* cp = (*patchptr)->siteptr->youngest_patch[(*patchptr)->landuse];
+    site* currents = (*patchptr)->siteptr;
+    int landuse = (*patchptr)->landuse;
    while (cp != NULL) {
       patch* np = cp->older;
+       ///CarbonConserve
+       cc = cp->shortest;
+       double tmp_biomass = 0.0;
+       while (cc!=NULL) {
+           tmp_biomass += cc->b*cc->nindivs;
+           fast_litter += data->fraction_balive_2_fast *cc->balive*cc->nindivs;
+           fast_litter_n +=  data->fraction_balive_2_fast *(1.0/data->c2n_leaf[cc->species])*cc->balive*cc->nindivs;
+           struct_litter += cc->bdead*cc->nindivs +(1.0-data->fraction_balive_2_fast)*cc->balive*cc->nindivs;
+           cc = cc->taller;
+       }
+       Biomass_all_patches += tmp_biomass;
+       soil_C_all_patches += (cp->fast_soil_C+cp->slow_soil_C+cp->structural_soil_C+cp->passive_soil_C)*cp->area;
+       GPP_all_patches += cp->gpp_avg*cp->area;
+       NPP_all_patches += cp->npp_avg*cp->area;
+       Rh_all_patches += cp->rh_avg*cp->area;
+       fire_emission_all_patches += cp->fire_emission*cp->area;
+#if LANDUSE
+       fst_harv_all_patches += cp->forest_harvested_c*cp->area;
+       past_harv_all_patches += cp->past_harvested_c*cp->area;
+       crop_harv_all_patches += cp->crop_harvested_c*cp->area;
+#endif
+       area_all_patches += cp->area;
       if (cp->area < data->f_area * data->area) {
          epsilon += cp->area / data->area;
-         terminate_patch(&cp);
+          Biomass_terminated_patches += tmp_biomass;
+          soil_C_terminated_patches += (cp->fast_soil_C+cp->slow_soil_C+cp->structural_soil_C+cp->passive_soil_C)*cp->area;
+          GPP_terminated_patches += cp->gpp_avg*cp->area;
+          NPP_terminated_patches += cp->npp_avg*cp->area;
+          Rh_terminated_patches += cp->rh_avg*cp->area;
+          fire_emission_terminated_patches += cp->fire_emission*cp->area;
+#if LANDUSE
+          fst_harv_terminated_patches += cp->forest_harvested_c*cp->area;
+          past_harv_terminated_patches += cp->past_harvested_c*cp->area;
+          crop_harv_terminated_patches += cp->crop_harvested_c*cp->area;
+#endif
+          area_terminated_patches += cp->area;
+         terminate_patch(&cp,data);
       }
       cp = np;
    }
 
    /* ADJUST AREAS AND VARS OF OTHER PATCHES TO COMPENSATE */
    if (epsilon > 0.0) {
-      cp = (*patchptr)->siteptr->youngest_patch[(*patchptr)->landuse];
+       scale_area = area_all_patches/(area_all_patches-area_terminated_patches);
+       scale_nIndiv = Biomass_all_patches/(Biomass_all_patches-Biomass_terminated_patches);
+       scale_GPP =GPP_all_patches/(GPP_all_patches-GPP_terminated_patches)/scale_area;
+       scale_NPP = NPP_all_patches/(NPP_all_patches-NPP_terminated_patches)/scale_area;
+       scale_Rh = Rh_all_patches/(Rh_all_patches-Rh_terminated_patches)/scale_area;
+       scale_soil_C = soil_C_all_patches/(soil_C_all_patches-soil_C_terminated_patches)/scale_area;
+       scale_fire_emission = fire_emission_all_patches/(fire_emission_all_patches-fire_emission_terminated_patches)/scale_area;
+       if (scale_fire_emission!=scale_fire_emission)
+           scale_fire_emission = 1.0;
+#if LANDUSE
+       scale_fst_harv = fst_harv_all_patches/(fst_harv_all_patches-fst_harv_terminated_patches)/scale_area;
+       scale_past_harv = past_harv_all_patches/(past_harv_all_patches-past_harv_terminated_patches)/scale_area;
+       scale_crop_harv = crop_harv_all_patches/(crop_harv_all_patches-crop_harv_terminated_patches)/scale_area;
+       if (scale_fst_harv!=scale_fst_harv)
+           scale_fst_harv = 1.0;
+       if (scale_past_harv!=scale_past_harv)
+           scale_past_harv = 1.0;
+       if (scale_crop_harv!=scale_crop_harv)
+           scale_crop_harv = 1.0;
+#endif
+      cp = currents->youngest_patch[landuse];
       while (cp != NULL) {
-         cp->area *= (1.0 + epsilon);
+         //cp->area *= (1.0 + epsilon);
+          cp->area *= scale_area;
 #ifdef ED
-         cohort* cc = cp->tallest;
-         while (cc != NULL) {
-            cc->nindivs *= (1.0 + epsilon);
-            cc = cc->shorter;
-         }
+          cp->fast_soil_C *= scale_soil_C;
+          cp->slow_soil_C *= scale_soil_C;
+          cp->structural_soil_C *= scale_soil_C;
+          cp->passive_soil_C *= scale_soil_C;
+          cp->gpp_avg *= scale_GPP;
+          cp->npp_avg *= scale_NPP;
+          cp->rh_avg *= scale_Rh;
+          cp->fire_emission *=scale_fire_emission;
+#if LANDUSE
+          cp->forest_harvested_c *=scale_fst_harv;
+          cp->past_harvested_c *= scale_past_harv;
+          cp->crop_harvested_c *= scale_crop_harv;
+#endif
+          if (abs(Biomass_all_patches-Biomass_terminated_patches)<1e-9)   // other non-terminated patches are empty
+          {
+              ///To compensate carbon leakage from terminated patches by adjusting individual density of remaining patches
+              /// only work for case that remaining patches do have cohorts. However, for some case, the remaining patches
+              /// has zero biomass (i.e. empty cohorts), adjusting nIndiv will make no difference. For this case, the biomass
+              /// of terminated patches will put in soil carbon pool of each patches.
+              cp->fast_soil_C += fast_litter/area_all_patches;
+              cp->structural_soil_C += struct_litter/area_all_patches;
+              cp->structural_soil_L += (data->l2n_stem/data->c2n_stem) * struct_litter/area_all_patches;
+              cp->fast_soil_N       += fast_litter_n/area_all_patches;
+          }
+          else   // if adjusting nIndiv still work
+          {
+              cohort* cc = cp->tallest;
+              while (cc != NULL) {
+                  //cc->nindivs *= (1.0 + epsilon);
+                  cc->nindivs *= scale_nIndiv;
+                  cc = cc->shorter;
+              }
+          }
          cp = cp->older;
 #endif
       }
@@ -908,7 +1043,7 @@ void terminate_patches (patch** patchptr, UserData* data) {
 //! @param  
 //! @return 
 ////////////////////////////////////////////////////////////////////////////////
-void terminate_patch (patch** patchptr) {
+void terminate_patch (patch** patchptr,UserData* data) {
    patch* cp = *patchptr;
 
 #ifdef ED

@@ -52,6 +52,15 @@ struct patch {
     double npp_avg;
     double gpp_avg;
     double rh_avg;
+    ///CarbonConserve
+    double fire_c_loss;   /// Save c loss in Litter() due to fire
+    double fire_emission;
+#if LANDUSE
+    double LU_emission;
+    double crop_harvested_c;
+    double past_harvested_c;
+    double forest_harvested_c;
+#endif
    
    // disturbance values
    double fuel;
@@ -189,7 +198,7 @@ void update_patch (patch** current_patch, UserData* data);
 void patch_dynamics (unsigned int t, patch** patchptr, 
                      FILE* outfile, UserData* data);
 void terminate_patches (patch** patchptr, UserData* data);
-void terminate_patch (patch** patchptr);
+void terminate_patch (patch** patchptr, UserData* data);
 void fuse_patches (unsigned int t, patch** patchptr, UserData* data);
 void fuse_2_patches (patch** patchptr1, patch** patchptr2, 
                      short update_ptrs, UserData* data);

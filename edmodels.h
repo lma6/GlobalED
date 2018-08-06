@@ -17,7 +17,7 @@
 /// Lei - All changes from original ED model are flaged as "CHANGE-ML". Search this keyword to locate them
 
 /// CHANGE-ML
-#define LOCAL_MACHINE 1  ///change it to 0 when copy to cluster.
+#define LOCAL_MACHINE 0  ///change it to 0 when copy to cluster.
 // THREADING: CHOOSE ONE OR NEITHER OF THE FOLLOWING TWO
 // Buggy with landuse
 #if 1-LOCAL_MACHINE
@@ -29,13 +29,13 @@
 
 #if LOCAL_MACHINE
 /// Turn off above 1, then type the below command in local terminal
-//// scp -r /Users/malei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_local/
+//// scp -r /Users/lei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_local/
 #define MODEL_CONFIG_FILE "models_local.cfg"
-#define TBB 1 ///< Intel Thread Building Blocks
+#define TBB 0 ///< Intel Thread Building Blocks
 #define GCD 0 ///< Grand Central Dispatch. Works on Mac only
 #define ED 1
 #define MAIN 1
-#define CHECK_C_CONSERVE 1
+#define CHECK_C_CONSERVE 0
 #endif
 
 

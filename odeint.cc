@@ -41,6 +41,13 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
     currentp->rh_avg = 0.0;
     currentp->gpp_avg = 0.0;
     currentp->npp_avg = 0.0;
+    currentp->fire_emission = 0.0;
+    
+#if LANDUSE
+    currentp->forest_harvested_c = 0.0;
+    currentp->past_harvested_c = 0.0;
+    currentp->crop_harvested_c = 0.0;
+#endif
     cohort* currentc = currentp->shortest;
     while (currentc != NULL) {
         currentc->p[0] = 0.0;
@@ -65,14 +72,15 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
 #if CHECK_C_CONSERVE
           ///CarbonConserve
           cohort* mlcc= NULL;
-          double all_tb_before=0.0, all_sc_before=0.0, all_tc_before=0.0;
-          double all_tb_after=0.0, all_sc_after = 0.0, all_tc_after=0.0, all_repro=0.0, all_npp_after = 0.0, all_rh_after = 0.0;
+          double all_tb_before=0.0, all_sc_before=0.0, all_tc_before=0.0, all_fire_emission_before = 0.0;
+          double all_tb_after=0.0, all_sc_after = 0.0, all_tc_after=0.0, all_repro=0.0, all_npp_after = 0.0, all_rh_after = 0.0, all_fire_emission_after = 0.0;
           double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
           mlcc = currentp->shortest;
           while (mlcc!=NULL) {
               all_tb_before += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
               mlcc = mlcc->taller;
           }
+          all_fire_emission_before = currentp->fire_emission;
           all_sc_before = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
           all_tc_before = all_tb_before + all_sc_before;
 #endif
@@ -168,6 +176,7 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
           currentp->gpp_avg +=tmp_gpp_avg*1./(data->substeps*split_factor);
           currentp->npp_avg +=tmp_npp_avg*1./(data->substeps*split_factor);
           currentp->rh_avg +=currentp->rh*1./(data->substeps*split_factor);
+          currentp->fire_emission += currentp->fire_c_loss*1./(data->substeps*split_factor);
 //          total_litter += currentp->litter *1./(data->substeps*split_factor);
 //          total_repro += tmp_repro_avg*1./(data->substeps*split_factor);
          iout2++;
@@ -181,18 +190,20 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
               all_repro += (mlcc->p[0]+mlcc->p[1])*mlcc->nindivs/currentp->area;
               mlcc = mlcc->taller;
           }
+          all_fire_emission_after = currentp->fire_emission;
           all_rh_after = currentp->rh;
           all_sc_after = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
           all_tc_after = all_tb_after + all_sc_after;
           actual_dt_tc = all_tc_after - all_tc_before;
-          esti_dt_tc = (all_npp_after-all_rh_after-all_repro*(1-data->sd_mort))*deltat;
+          esti_dt_tc = (all_npp_after-all_rh_after-all_repro*(1-data->sd_mort)-currentp->fire_c_loss)*deltat;
           
           if (abs(actual_dt_tc - esti_dt_tc)>1e-9)
           {
-              printf("Carbon leakage in substep_integration: imbalance    %.15f actual_dt_tc %.15f esti_dt_tc  %.15f\n",actual_dt_tc-esti_dt_tc,actual_dt_tc,esti_dt_tc);
-              printf("                                     : patch_tc_bf  %.15f patch_sc_bf  %.15f patch_tb_bf %.15f\n",all_tc_before,all_sc_before,all_tb_before);
-              printf("                                     : patch_tc_af  %.15f patch_sc_af  %.15f patch_tb_af %.15f\n",all_tc_after,all_sc_after,all_tb_after);
-              printf("                                     : patch_npp_af %.15f patch_rh_af  %.15f patch_repro %.15f\n",all_npp_after,all_rh_after,all_repro);
+              printf("Carbon leakage in substep_integ%d : imbalance    %.15f actual_dt_tc %.15f esti_dt_tc  %.15f\n",iout,actual_dt_tc-esti_dt_tc,actual_dt_tc,esti_dt_tc);
+              printf("                                 : patch_tc_bf  %.15f patch_sc_bf  %.15f patch_tb_bf %.15f\n",all_tc_before,all_sc_before,all_tb_before);
+              printf("                                 : patch_tc_af  %.15f patch_sc_af  %.15f patch_tb_af %.15f patch_fire_emi_bf %.15f\n",all_tc_after,all_sc_after,all_tb_after,all_fire_emission_before);
+              printf("                                 : patch_npp_af %.15f patch_rh_af  %.15f patch_repro %.15f patch_fire_emi_af %.15f\n",all_npp_after,all_rh_after,all_repro,all_fire_emission_after);
+              printf("                                    : site_lat %.3f site_lon %.3f area %.6f\n",currentp->siteptr->sdata->lat_,currentp->siteptr->sdata->lon_,currentp->area);
               printf(" --------------------------------------------------------------------------------------\n");
           }
 #endif
@@ -403,7 +414,10 @@ int patch::check_for_negatives(double dt){
    //Return: 0 if no problems detected
    //        1 if negative/impending negative (fixed by smaller dt)
    //        2 if Nan - bug somewhere, stop modelling site
-   if ((dwdt+dfsc+dstsc+dssc+dmsn+dfsn+dpsc+dstsl)*0!=0) return 2;
+   if ((dwdt+dfsc+dstsc+dssc+dmsn+dfsn+dpsc+dstsl)*0!=0)
+   {
+       return 2;
+   }
 
    if ((water<0)|(fast_soil_C<0)|(structural_soil_C<0)|(slow_soil_C<0)|(mineralized_soil_N<0)|(fast_soil_N<0)|(structural_soil_L<0))
    {

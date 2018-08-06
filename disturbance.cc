@@ -122,6 +122,8 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
    patch* tp = *target_patch;
 
    site* cs = tp->siteptr;
+    
+    double tmp_biomass = 0.0;
 
    double fast_litter   = 0.0;
    double struct_litter = 0.0;
@@ -146,6 +148,14 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
                ( 1.0 - data->fraction_balive_2_fast ) * 
                data->fraction_harvest_left_on_site * cc->balive * 
                ( cc->nindivs / dp->area );
+             
+#if LANDUSE
+             ///CarbonConserve
+             ///Currently, harvest in primay & secondary and LU change will call this function with flag 9.
+             ///I will put all harvested c into forest_harvested_c pool no matter which kind of activity occur.
+             ///In next update, the c loss due to LU change may be out into LU_emission instead of forest_harvested_c
+             tp->forest_harvested_c += (1-data->fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*12.0;
+#endif
          }
       }
 #if 0
@@ -198,7 +208,18 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
                ( 1.0 - data->fraction_balive_2_fast ) * 
                ( 1.0 - cs->sdata->loss_fraction[q] ) * cc->balive * 
                ( 1.0 - cc->survivorship_from_disturbance(q, data) ) *
-               ( cc->nindivs / dp->area );  
+               ( cc->nindivs / dp->area );
+             
+             ///CarbonConserve
+             /// carbon loss from fire
+             tmp_biomass += (cc->balive+cc->bdead)*cc->nindivs/dp->area;
+             if (q==1)
+             {
+                 /// Here the biomass loss from fire is multipled by 12 as fire_emission is considered as flux and all fluxes variables in ED is yearly-based
+                 tp->fire_emission += cs->sdata->loss_fraction[q]*cc->balive*(1.0 -cc->survivorship_from_disturbance(q, data))*cc->nindivs*change_in_area/dp->area*12.0;
+                 tp->fire_emission += cs->sdata->loss_fraction[q]*cc->bdead*(1.0 -cc->survivorship_from_disturbance(q, data))*cc->nindivs*change_in_area/dp->area*12.0;
+             }
+             
             }
          }
       cc=cc->taller;
@@ -271,6 +292,13 @@ void aggregate_in_soil_state_from_disturbance ( patch** target_patch,
     tp->npp_avg         += dp->npp_avg * change_in_area ;
     tp->rh_avg          += dp->rh_avg * change_in_area;
     tp->gpp_avg         += dp->gpp_avg * change_in_area;
+    tp->fire_emission   += dp->fire_emission * change_in_area;
+#if LANDUSE
+    tp->forest_harvested_c += dp->forest_harvested_c * change_in_area;
+    tp->crop_harvested_c += dp->crop_harvested_c * change_in_area;
+    tp->past_harvested_c += dp->past_harvested_c * change_in_area;
+#endif
+    
 #endif /* ED */
 }
 

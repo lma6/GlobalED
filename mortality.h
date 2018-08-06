@@ -3,7 +3,10 @@
 
 struct cohort;
 
-void cohort_modifications_from_disturbance(int q, cohort** pcurrentc, 
+//void cohort_modifications_from_disturbance(int q, cohort** pcurrentc,UserData* data);
+
+///CarbonConserve
+void cohort_modifications_from_disturbance(int q, cohort** pcurrentc, patch** newp,
                                            UserData* data);
 
 

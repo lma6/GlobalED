@@ -476,10 +476,12 @@ void model (UserData& data) {
 #if CHECK_C_CONSERVE
           ///CarbonConserve
           update_site(&siteptr, &data);
-          site* currents = data.first_site;
+          site* currents = siteptr;
           /// Variables starting with all means total of the entire site. before means results befor implementing a process
           double all_tb_before =currents->site_total_biomass, all_sc_before=currents->site_total_soil_c, all_tc_before =currents->site_total_c;
-          double all_tb_after = 0.0, all_sc_after = 0.0, all_tc_after = 0.0;
+          double all_f_harv_before = currents->site_forest_harvest, all_p_harv_before = currents->site_pasture_harvest, all_c_harv_before = currents->site_crop_harvest;
+          double all_tb_after = 0.0, all_sc_after = 0.0, all_tc_after = 0.0, all_fire_emission_after = 0.0;
+          double all_f_harv_after = 0.0, all_p_harv_after = 0.0, all_c_harv_after = 0.0;
           double esti_dt_tc = 0.0, actual_dt_tc= 0.0;
 #endif
           community_dynamics(t, t1, t2, &siteptr, &data);
@@ -490,14 +492,19 @@ void model (UserData& data) {
           all_tb_after = currents->site_total_biomass;
           all_sc_after = currents->site_total_soil_c;
           all_tc_after = currents->site_total_c;
+          all_fire_emission_after = currents->site_fire_emission;
+          all_f_harv_after = currents->site_forest_harvest;
+          all_p_harv_after = currents->site_pasture_harvest;
+          all_c_harv_after = currents->site_crop_harvest;
           actual_dt_tc = all_tc_after- all_tc_before;
-          esti_dt_tc = (currents->site_npp_avg-currents->site_rh_avg)*data.deltat;
-          if (abs(actual_dt_tc-esti_dt_tc)<1e-9)
+          esti_dt_tc = (currents->site_npp_avg-currents->site_rh_avg-currents->site_fire_emission-all_f_harv_after-all_p_harv_after-all_c_harv_after)*data.deltat;
+          if (abs(actual_dt_tc-esti_dt_tc)>1e-9)
           {
               printf("Carbon leakage in community_dynamics: imbalance  %.15f actual_dt_tc %.15f esti_dt_tc %.15f\n",actual_dt_tc-esti_dt_tc,actual_dt_tc,esti_dt_tc);
-              printf("                                    : site_tc_bf %.15f site_sc_bf   %.15f site_tb_bf %.15f\n",all_tc_before,all_sc_before,all_tb_before);
-              printf("                                    : site_tc_af %.15f site_sc_af   %.15f site_tb_af %.15f\n",all_tc_after,all_sc_after,all_tb_after);
+              printf("                                    : site_tc_bf %.15f site_sc_bf   %.15f site_tb_bf %.15f site_f_harc_bf %.15f site_p_harv_bf %.15f site_c_harv_bf %.15f\n",all_tc_before,all_sc_before,all_tb_before,all_f_harv_before,all_p_harv_before,all_c_harv_before);
+              printf("                                    : site_tc_af %.15f site_sc_af   %.15f site_tb_af %.15f site_f_harv_af %.15f site_p_harv_af %.15f site_c_harv_af %.15f\n",all_tc_after,all_sc_after,all_tb_after,all_f_harv_after,all_p_harv_after,all_c_harv_after);
               printf("                                    : site_npp  %.15f site_rh   %.15f\n",currents->site_npp_avg,currents->site_rh_avg);
+              printf("                                    : site_lat %.3f site_lon %.3f\n",currents->sdata->lat_,currents->sdata->lon_);
               printf(" --------------------------------------------------------------------------------------\n");
           }
 #endif

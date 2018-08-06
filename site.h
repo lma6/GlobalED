@@ -107,6 +107,18 @@ struct site {
    double site_litter;         
    double litter[N_LANDUSE_TYPES];  ///< annual average carbon loss to atmosphere
    double hurricane_litter;
+    ///CarbonConserve
+    double site_fire_emission;          ///(kgC/m2/yr)
+    double fire_emission[N_LANDUSE_TYPES];   /// (kgC/m2/yr), Carbon loss to atmosphere from fire
+#ifdef LANDUSE
+    double site_forest_harvest;
+    double site_pasture_harvest;
+    double site_crop_harvest;
+    double forest_harvest[N_LANDUSE_TYPES];  /// (kgC/m2/yr), harvested carbon from forest
+    double pasture_harvest[N_LANDUSE_TYPES]; /// (kgC/m2/yr), harvested carbon from pasture
+    double crop_harvest[N_LANDUSE_TYPES];  /// (kgC/m2/yr), harvested carbon from cropland
+#endif
+
 
    // water
    double months_below_rain_crit[N_LANDUSE_TYPES]; ///<used in new fire model

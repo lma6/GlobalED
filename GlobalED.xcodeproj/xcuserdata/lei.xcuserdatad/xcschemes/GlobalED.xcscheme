@@ -64,7 +64,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "test_CarbonConserve_site_LU"
+            argument = "test_CarbonConserve_v1_LU_est_rst1700"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

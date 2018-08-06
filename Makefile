@@ -22,7 +22,7 @@ LIB =-L/apps/netcdf/4.1.3/lib -L/apps/IntelTBB/2017U3/lib/intel64/gcc4.4 -L/apps
 # add  -g for debug, -g3 for debug and optomize, -O2 for optimize
 #      -Wall for full warnings
 #      -pg for profiling
-CXXFLAGS = $(INC) -c -Wall -g
+CXXFLAGS = $(INC) -c -Wall
 LDFLAGS = $(LIB) -lm -lnetcdf -lnetcdf_c++ -ltbb -ldb_cxx -lconfig++ -lstdc++
 
 CMN_SRCS = site.cc patch.cc miami.cc belowgrnd.cc \

@@ -52,27 +52,34 @@ double cohort::survivorship_from_disturbance ( int q, UserData* data ) {
 //! @param  
 //! @return 
 ////////////////////////////////////////////////////////////////////////////////
-void cohort_modifications_from_disturbance ( int q, cohort** pcurrentc, 
+void cohort_modifications_from_disturbance ( int q, cohort** pcurrentc, patch** newp,
                                              UserData* data ) {   
    cohort* cc = *pcurrentc;
-
+    ///CarbonConserve
+    patch* np = *newp;
    /* q is disturbance track */
 
    /* grass species lose all leaf biomass and are returned to HMIN in Fires */
 
    if ( q == 1 ) {
       if ( data->is_grass[cc->species] ) {
+          ///CarbonConserve
+          double old_balive = cc->balive, old_bdead = cc->bdead;
          cc->hite = data->hgt_min[cc->species];
          cc->dbh = cc->Dbh(data);     
          cc->bdead = cc->Bdead(data);
          cc->balive = cc->balive - cc->bl;
          cc->bl = 0.0;
          cc->b = cc->balive + cc->bdead;
+          
+          ///CarbonConserve
+          np->fire_emission += (old_balive+old_bdead-cc->balive-cc->bdead)*cc->nindivs*12.0;
       }
    }
 
    /*NOTE, CARBON LEAK IN CLOSED MODE BECAUSE BIOMASS CHANGE NOT YET LOADED INTO
      LITTER, GOES TO ATM MBY IMPLICATION*/
+    /* NORE, THERE WILL NO CARBON LEAK IF CHAGE OF BIOMASS IS PUT INTO fire_emission OF PATCH IN CarbonConserve Modification by Lei */
 }
 
 ////////////////////////////////////////////////////////////////////////////////

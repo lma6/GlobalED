@@ -66,7 +66,6 @@ float getPercSPP5    (site* cs)      { return cs->site_total_spp_biomass[5]/(cs-
 float getPercSPP6    (site* cs)      { return cs->site_total_spp_biomass[6]/(cs->site_total_biomass+0.0000001); }
 
 float getGPP (site* cs)              { return cs->site_gpp; }
-float getGPP_AVG (site* cs)              { return cs->site_gpp_avg; }
 float getFS_OPEN (site* cs)          { return cs->site_fs_open; }      /// CHANGE-ML
 float getGPPAA (site* cs)            { return cs->site_aa_gpp;}
 #endif
@@ -78,9 +77,18 @@ float getLAIAA3 (site* cs)           { return cs->site_aa_lai_profile[3];}
 float getLAIAA4 (site* cs)           { return cs->site_aa_lai_profile[4];}
 float getLAIAA5 (site* cs)           { return cs->site_aa_lai_profile[5];}
 float getNPP (site* cs)              { return cs->site_npp; }
-float getNPP_AVG (site* cs)              { return cs->site_npp_avg; }
 float getRH (site* cs)               { return cs->site_rh; }
-float getRH_AVG (site* cs)               { return cs->site_rh_avg; }
+///CarbonConserve
+float getGPP_AVG (site* cs)          { return cs->site_gpp_avg; }
+float getNPP_AVG (site* cs)          { return cs->site_npp_avg; }
+float getRH_AVG (site* cs)           { return cs->site_rh_avg; }
+float getFIRE_EMISSION (site* cs)    { return cs->site_fire_emission;}
+#if LANDUSE
+float getFOREST_HARVEST (site* cs)   { return cs->site_forest_harvest;}
+float getPASTURE_HARVEST (site* cs)  {return cs->site_pasture_harvest;};
+float getCROP_HARVEST (site* cs)     {return cs->site_crop_harvest;};
+#endif
+
 float getNEP (site* cs)              { return cs->site_nep; }
 float getNPPAA (site* cs)            { return cs->site_aa_npp;}
 float getNEPAA (site* cs)            { return cs->site_aa_nep;}
@@ -307,6 +315,14 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("NEP", &getNEP, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("aa_NPP", &getNPPAA, "kg/m2/yr", -9999.0F, ncFloat);
    o->registerVar("aa_NEP", &getNEPAA, "kg/m2/yr", -9999.0F, ncFloat);
+    ///CarbonConserve
+    o->registerVar("fire_emission", &getFIRE_EMISSION, "kg/m2/yr", -9999.0F, ncFloat);
+#if LANDUSE
+    o->registerVar("forest_harvest", &getFOREST_HARVEST, "kg/m2/yr", -9999.0F, ncFloat);
+    o->registerVar("pasture_harvest", &getPASTURE_HARVEST, "kg/m2/yr", -9999.0F, ncFloat);
+    o->registerVar("crop_harvest", &getCROP_HARVEST, "kg/m2/yr", -9999.0F, ncFloat);
+#endif
+    
 #ifdef ED
    o->registerVar("GPP", &getGPP, "kg/m2", -9999.0F, ncFloat);
     o->registerVar("GPP_AVG", &getGPP_AVG, "kg/m2", -9999.0F, ncFloat);
@@ -697,14 +713,28 @@ void print_cfluxes (unsigned int time, site** siteptr, UserData* data) {
       outfile = fopen(filename,"a");
  
 #ifdef ED
-   fprintf(outfile,
-           "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %f npp_avg %.20f rh_avg %.20f fs_open %f An_pot_spp1 %f An_pot_spp2 %f An_pot_spp3 %f An_pot_spp4 %f An_pot_spp5 %f An_pot_spp6 %f An_pot_spp7 %f An_shut_spp1 %f An_shut_spp2 %f An_shut_spp3 %f An_shut_spp4 %f An_shut_spp5 %f An_shut_spp6 %f An_shut_spp7 %f E_pot_spp1 %f E_pot_spp2 %f E_pot_spp3 %f E_pot_spp4 %f E_pot_spp5 %f E_pot_spp6 %f E_pot_spp7 %f E_shut_spp1 %f E_shut_spp2 %f E_shut_spp3 %f E_shut_spp4 %f E_shut_spp5 %f E_shut_spp6 %f E_shut_spp7 %f\n",
-           cs->sdata->name_, time*TIMESTEP, cs->site_npp, cs->site_rh, cs->site_nep,
-           cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_gpp_avg,cs->site_npp_avg,cs->site_rh_avg,cs->site_fs_open,
-           cs->Leaf_An_pot[0],cs->Leaf_An_pot[1],cs->Leaf_An_pot[2],cs->Leaf_An_pot[3],cs->Leaf_An_pot[4],cs->Leaf_An_pot[5],cs->Leaf_An_pot[6],
-           cs->Leaf_An_shut[0],cs->Leaf_An_shut[1],cs->Leaf_An_shut[2],cs->Leaf_An_shut[3],cs->Leaf_An_shut[4],cs->Leaf_An_shut[5],cs->Leaf_An_shut[6],
-           cs->Leaf_E_pot[0],cs->Leaf_E_pot[1],cs->Leaf_E_pot[2],cs->Leaf_E_pot[3],cs->Leaf_E_pot[4],cs->Leaf_E_pot[5],cs->Leaf_E_pot[6],
-           cs->Leaf_E_shut[0],cs->Leaf_E_shut[1],cs->Leaf_E_shut[2],cs->Leaf_E_shut[3],cs->Leaf_E_shut[4],cs->Leaf_E_shut[5],cs->Leaf_E_shut[6]);
+    
+#ifdef LANDUSE
+    fprintf(outfile,
+            "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %f npp_avg %.20f rh_avg %.20f fire_emission %.15f forest_harvest %.15f pasture_harvest %.15f crop_harvest %.15f fs_open %f An_pot_spp1 %f An_pot_spp2 %f An_pot_spp3 %f An_pot_spp4 %f An_pot_spp5 %f An_pot_spp6 %f An_pot_spp7 %f An_shut_spp1 %f An_shut_spp2 %f An_shut_spp3 %f An_shut_spp4 %f An_shut_spp5 %f An_shut_spp6 %f An_shut_spp7 %f E_pot_spp1 %f E_pot_spp2 %f E_pot_spp3 %f E_pot_spp4 %f E_pot_spp5 %f E_pot_spp6 %f E_pot_spp7 %f E_shut_spp1 %f E_shut_spp2 %f E_shut_spp3 %f E_shut_spp4 %f E_shut_spp5 %f E_shut_spp6 %f E_shut_spp7 %f\n",
+            cs->sdata->name_, time*TIMESTEP, cs->site_npp, cs->site_rh, cs->site_nep,
+            cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_gpp_avg,cs->site_npp_avg,cs->site_rh_avg,cs->site_fire_emission,cs->site_forest_harvest,cs->site_pasture_harvest,cs->site_crop_harvest,cs->site_fs_open,
+            cs->Leaf_An_pot[0],cs->Leaf_An_pot[1],cs->Leaf_An_pot[2],cs->Leaf_An_pot[3],cs->Leaf_An_pot[4],cs->Leaf_An_pot[5],cs->Leaf_An_pot[6],
+            cs->Leaf_An_shut[0],cs->Leaf_An_shut[1],cs->Leaf_An_shut[2],cs->Leaf_An_shut[3],cs->Leaf_An_shut[4],cs->Leaf_An_shut[5],cs->Leaf_An_shut[6],
+            cs->Leaf_E_pot[0],cs->Leaf_E_pot[1],cs->Leaf_E_pot[2],cs->Leaf_E_pot[3],cs->Leaf_E_pot[4],cs->Leaf_E_pot[5],cs->Leaf_E_pot[6],
+            cs->Leaf_E_shut[0],cs->Leaf_E_shut[1],cs->Leaf_E_shut[2],cs->Leaf_E_shut[3],cs->Leaf_E_shut[4],cs->Leaf_E_shut[5],cs->Leaf_E_shut[6]);
+#else
+    fprintf(outfile,
+            "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %f npp_avg %.20f rh_avg %.20f fire_emission %.15f fs_open %f An_pot_spp1 %f An_pot_spp2 %f An_pot_spp3 %f An_pot_spp4 %f An_pot_spp5 %f An_pot_spp6 %f An_pot_spp7 %f An_shut_spp1 %f An_shut_spp2 %f An_shut_spp3 %f An_shut_spp4 %f An_shut_spp5 %f An_shut_spp6 %f An_shut_spp7 %f E_pot_spp1 %f E_pot_spp2 %f E_pot_spp3 %f E_pot_spp4 %f E_pot_spp5 %f E_pot_spp6 %f E_pot_spp7 %f E_shut_spp1 %f E_shut_spp2 %f E_shut_spp3 %f E_shut_spp4 %f E_shut_spp5 %f E_shut_spp6 %f E_shut_spp7 %f\n",
+            cs->sdata->name_, time*TIMESTEP, cs->site_npp, cs->site_rh, cs->site_nep,
+            cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_gpp_avg,cs->site_npp_avg,cs->site_rh_avg,cs->site_fire_emission,cs->site_fs_open,
+            cs->Leaf_An_pot[0],cs->Leaf_An_pot[1],cs->Leaf_An_pot[2],cs->Leaf_An_pot[3],cs->Leaf_An_pot[4],cs->Leaf_An_pot[5],cs->Leaf_An_pot[6],
+            cs->Leaf_An_shut[0],cs->Leaf_An_shut[1],cs->Leaf_An_shut[2],cs->Leaf_An_shut[3],cs->Leaf_An_shut[4],cs->Leaf_An_shut[5],cs->Leaf_An_shut[6],
+            cs->Leaf_E_pot[0],cs->Leaf_E_pot[1],cs->Leaf_E_pot[2],cs->Leaf_E_pot[3],cs->Leaf_E_pot[4],cs->Leaf_E_pot[5],cs->Leaf_E_pot[6],
+            cs->Leaf_E_shut[0],cs->Leaf_E_shut[1],cs->Leaf_E_shut[2],cs->Leaf_E_shut[3],cs->Leaf_E_shut[4],cs->Leaf_E_shut[5],cs->Leaf_E_shut[6]);
+#endif
+    
+
 #elif defined MIAMI_LU
    fprintf(outfile,
            "%s time %f npp %8.6f rh %8.6f nep %8.6f dndt %f\n",
