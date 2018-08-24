@@ -17,7 +17,7 @@
 /// Lei - All changes from original ED model are flaged as "CHANGE-ML". Search this keyword to locate them
 
 /// CHANGE-ML
-#define LOCAL_MACHINE 0  ///change it to 0 when copy to cluster.
+#define LOCAL_MACHINE 1  ///change it to 0 when copy to cluster.
 // THREADING: CHOOSE ONE OR NEITHER OF THE FOLLOWING TWO
 // Buggy with landuse
 #if 1-LOCAL_MACHINE
@@ -31,7 +31,7 @@
 /// Turn off above 1, then type the below command in local terminal
 //// scp -r /Users/lei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_local/
 #define MODEL_CONFIG_FILE "models_local.cfg"
-#define TBB 0 ///< Intel Thread Building Blocks
+#define TBB 1 ///< Intel Thread Building Blocks
 #define GCD 0 ///< Grand Central Dispatch. Works on Mac only
 #define ED 1
 #define MAIN 1
@@ -51,7 +51,7 @@
 #define COUPLE_MERRA2_LUT 0
 #define COUPLE_TemAccm 0
 #define CPOUPLE_VcmaxDownreg 0
-#define INI_Year 1500  //In LANDUSE, it should be 1500; For spin-up. it is 791
+#define INI_Year 1501  //In LANDUSE, it should be 1501; For spin-up. it is 791
 #define N_LAI 6
 #define WT_Abg_PROFILE 0
 #define MERRA2_START 1981

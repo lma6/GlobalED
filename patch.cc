@@ -979,17 +979,27 @@ void terminate_patches (patch** patchptr, UserData* data) {
        scale_Rh = Rh_all_patches/(Rh_all_patches-Rh_terminated_patches)/scale_area;
        scale_soil_C = soil_C_all_patches/(soil_C_all_patches-soil_C_terminated_patches)/scale_area;
        scale_fire_emission = fire_emission_all_patches/(fire_emission_all_patches-fire_emission_terminated_patches)/scale_area;
-       if (scale_fire_emission!=scale_fire_emission)
+       
+       /// Check NaN value
+       if ((scale_GPP != scale_GPP) or (isinf(scale_GPP)))
+           scale_GPP = 1.0;
+       if ((scale_NPP != scale_NPP) or (isinf(scale_NPP)))
+           scale_NPP = 1.0;
+       if ((scale_Rh != scale_Rh) or (isinf(scale_Rh)))
+           scale_Rh = 1.0;
+       if ((scale_soil_C != scale_soil_C) or (isinf(scale_soil_C)))
+           scale_soil_C = 1.0;
+       if ((scale_fire_emission!=scale_fire_emission) or (isinf(scale_fire_emission)))
            scale_fire_emission = 1.0;
 #if LANDUSE
        scale_fst_harv = fst_harv_all_patches/(fst_harv_all_patches-fst_harv_terminated_patches)/scale_area;
        scale_past_harv = past_harv_all_patches/(past_harv_all_patches-past_harv_terminated_patches)/scale_area;
        scale_crop_harv = crop_harv_all_patches/(crop_harv_all_patches-crop_harv_terminated_patches)/scale_area;
-       if (scale_fst_harv!=scale_fst_harv)
+       if ((scale_fst_harv!=scale_fst_harv) or (isinf(scale_fst_harv)))
            scale_fst_harv = 1.0;
-       if (scale_past_harv!=scale_past_harv)
+       if ((scale_past_harv!=scale_past_harv) or (isinf(scale_past_harv)))
            scale_past_harv = 1.0;
-       if (scale_crop_harv!=scale_crop_harv)
+       if ((scale_crop_harv!=scale_crop_harv) or (isinf(scale_crop_harv)))
            scale_crop_harv = 1.0;
 #endif
       cp = currents->youngest_patch[landuse];

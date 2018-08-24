@@ -434,7 +434,10 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
          lu_year = data->year;
       } else {
          /* TODO: probably not the right assumption for all transitions. -justin */
-         lu_year = N_LANDUSE_YEARS-1;
+          ///Carbon Conserve
+          /// There is something wrong with LUH transition data as all transition is zero at year 506
+          /// So I change the lu_year to the last second year than last year to avoid zero LU transtion. -- Lei
+         lu_year = N_LANDUSE_YEARS-2;
       }
        
       /************************************************/
