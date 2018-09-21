@@ -51,9 +51,10 @@
 #define COUPLE_MERRA2_LUT 0
 #define COUPLE_TemAccm 0
 #define CPOUPLE_VcmaxDownreg 0
-#define INI_Year 1501  //In LANDUSE, it should be 1501; For spin-up. it is 791
+#define INI_Year 851  //In LANDUSE, it should be 1501; For spin-up. it is 791;  With LUH2, it should be 851, and running years should be 1155
 #define N_LAI 6
 #define WT_Abg_PROFILE 0
+#define MERRA2_YEAR_START_USE 1945   // When ED starts using MERRA2 yearly data, previously using 1980
 #define MERRA2_START 1981
 #define MERRA2_END 2015
 const float LAI_INTERVAL[]={0,1.5,5, 10, 20, 30}; //The elements number should be same as N_LAI
@@ -122,7 +123,9 @@ const float CO2_VALUE[]={280}; //co2 concentration in nittial LUT, the number of
 
 // Landuse
 #if LANDUSE
-#define N_LANDUSE_YEARS 506    ///< Number of years of land use history data
+#define N_LANDUSE_YEARS 1166    ///< Number of years of land use history data
+#define LANDUSE_START 850
+#define LANDUSE_END 2015
 #define N_LANDUSE_TYPES 4
 #define N_VBH_TYPES 2
 #define N_SBH_TYPES 3

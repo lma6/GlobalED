@@ -258,37 +258,37 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("biomass_spp5", &getSPP5Biomass, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("biomass_spp6", &getSPP6Biomass, "kg/m2", -9999.0F, ncFloat);
     
-   o->registerVar("Leaf_An_pot_spp1", &getLeafAnPot_spp1, "kg/m2", -9999.0F, ncFloat);
-     o->registerVar("Leaf_An_pot_spp2", &getLeafAnPot_spp2, "kg/m2", -9999.0F, ncFloat);
-     o->registerVar("Leaf_An_pot_spp3", &getLeafAnPot_spp3, "kg/m2", -9999.0F, ncFloat);
-     o->registerVar("Leaf_An_pot_spp4", &getLeafAnPot_spp4, "kg/m2", -9999.0F, ncFloat);
-     o->registerVar("Leaf_An_pot_spp5", &getLeafAnPot_spp5, "kg/m2", -9999.0F, ncFloat);
-     o->registerVar("Leaf_An_pot_spp6", &getLeafAnPot_spp6, "kg/m2", -9999.0F, ncFloat);
-     o->registerVar("Leaf_An_pot_spp7", &getLeafAnPot_spp7, "kg/m2", -9999.0F, ncFloat);
-    
-     o->registerVar("Leaf_An_shut_spp1", &getLeafAnShut_spp1, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_An_shut_spp2", &getLeafAnShut_spp2, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_An_shut_spp3", &getLeafAnShut_spp3, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_An_shut_spp4", &getLeafAnShut_spp4, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_An_shut_spp5", &getLeafAnShut_spp5, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_An_shut_spp6", &getLeafAnShut_spp6, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_An_shut_spp7", &getLeafAnShut_spp7, "kg/m2", -9999.0F, ncFloat);
-    
-    o->registerVar("Leaf_E_pot_spp1", &getLeafEpot_spp1, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_E_pot_spp2", &getLeafEpot_spp2, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_E_pot_spp3", &getLeafEpot_spp3, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_E_pot_spp4", &getLeafEpot_spp4, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_E_pot_spp5", &getLeafEpot_spp5, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_E_pot_spp6", &getLeafEpot_spp6, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_E_pot_spp7", &getLeafEpot_spp7, "kg/m2", -9999.0F, ncFloat);
-    
-    o->registerVar("Leaf_E_shut_spp1", &getLeafEShut_spp1, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_E_shut_spp2", &getLeafEShut_spp2, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_E_shut_spp3", &getLeafEShut_spp3, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_E_shut_spp4", &getLeafEShut_spp4, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_E_shut_spp5", &getLeafEShut_spp5, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_E_shut_spp6", &getLeafEShut_spp6, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("Leaf_E_shut_spp7", &getLeafEShut_spp7, "kg/m2", -9999.0F, ncFloat);
+//   o->registerVar("Leaf_An_pot_spp1", &getLeafAnPot_spp1, "kg/m2", -9999.0F, ncFloat);
+//     o->registerVar("Leaf_An_pot_spp2", &getLeafAnPot_spp2, "kg/m2", -9999.0F, ncFloat);
+//     o->registerVar("Leaf_An_pot_spp3", &getLeafAnPot_spp3, "kg/m2", -9999.0F, ncFloat);
+//     o->registerVar("Leaf_An_pot_spp4", &getLeafAnPot_spp4, "kg/m2", -9999.0F, ncFloat);
+//     o->registerVar("Leaf_An_pot_spp5", &getLeafAnPot_spp5, "kg/m2", -9999.0F, ncFloat);
+//     o->registerVar("Leaf_An_pot_spp6", &getLeafAnPot_spp6, "kg/m2", -9999.0F, ncFloat);
+//     o->registerVar("Leaf_An_pot_spp7", &getLeafAnPot_spp7, "kg/m2", -9999.0F, ncFloat);
+//
+//     o->registerVar("Leaf_An_shut_spp1", &getLeafAnShut_spp1, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_An_shut_spp2", &getLeafAnShut_spp2, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_An_shut_spp3", &getLeafAnShut_spp3, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_An_shut_spp4", &getLeafAnShut_spp4, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_An_shut_spp5", &getLeafAnShut_spp5, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_An_shut_spp6", &getLeafAnShut_spp6, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_An_shut_spp7", &getLeafAnShut_spp7, "kg/m2", -9999.0F, ncFloat);
+//
+//    o->registerVar("Leaf_E_pot_spp1", &getLeafEpot_spp1, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_E_pot_spp2", &getLeafEpot_spp2, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_E_pot_spp3", &getLeafEpot_spp3, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_E_pot_spp4", &getLeafEpot_spp4, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_E_pot_spp5", &getLeafEpot_spp5, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_E_pot_spp6", &getLeafEpot_spp6, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_E_pot_spp7", &getLeafEpot_spp7, "kg/m2", -9999.0F, ncFloat);
+//
+//    o->registerVar("Leaf_E_shut_spp1", &getLeafEShut_spp1, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_E_shut_spp2", &getLeafEShut_spp2, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_E_shut_spp3", &getLeafEShut_spp3, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_E_shut_spp4", &getLeafEShut_spp4, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_E_shut_spp5", &getLeafEShut_spp5, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_E_shut_spp6", &getLeafEShut_spp6, "kg/m2", -9999.0F, ncFloat);
+//    o->registerVar("Leaf_E_shut_spp7", &getLeafEShut_spp7, "kg/m2", -9999.0F, ncFloat);
     
    o->registerVar("perc_spp0", &getPercSPP0, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("perc_spp1", &getPercSPP1, "kg/m2", -9999.0F, ncFloat);
@@ -299,12 +299,12 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("perc_spp6", &getPercSPP6, "kg/m2", -9999.0F, ncFloat);   
 #endif   
    o->registerVar("aa_LAI", &getLAIAA, "kg/m2/yr", -9999.0F, ncFloat);
-    o->registerVar("aa_LAI0", &getLAIAA0, "", -9999.0F, ncFloat);
-    o->registerVar("aa_LAI1", &getLAIAA1, "", -9999.0F, ncFloat);
-    o->registerVar("aa_LAI2", &getLAIAA2, "", -9999.0F, ncFloat);
-    o->registerVar("aa_LAI3", &getLAIAA3, "", -9999.0F, ncFloat);
-    o->registerVar("aa_LAI4", &getLAIAA4, "", -9999.0F, ncFloat);
-    o->registerVar("aa_LAI5", &getLAIAA5, "", -9999.0F, ncFloat);
+//    o->registerVar("aa_LAI0", &getLAIAA0, "", -9999.0F, ncFloat);
+//    o->registerVar("aa_LAI1", &getLAIAA1, "", -9999.0F, ncFloat);
+//    o->registerVar("aa_LAI2", &getLAIAA2, "", -9999.0F, ncFloat);
+//    o->registerVar("aa_LAI3", &getLAIAA3, "", -9999.0F, ncFloat);
+//    o->registerVar("aa_LAI4", &getLAIAA4, "", -9999.0F, ncFloat);
+//    o->registerVar("aa_LAI5", &getLAIAA5, "", -9999.0F, ncFloat);
    o->registerVar("area_burned", &getAreaBurned, "km2", -9999.0F, ncFloat);
    o->registerVar("dryness_index", &getDrynessIndex, "", -9999.0F, ncFloat);
    o->registerVar("soil_C", &getSiteSoilC, "kg/m2", -9999.0F, ncFloat);
@@ -326,7 +326,7 @@ void registerOutputVars(Outputter *o) {
 #ifdef ED
    o->registerVar("GPP", &getGPP, "kg/m2", -9999.0F, ncFloat);
     o->registerVar("GPP_AVG", &getGPP_AVG, "kg/m2", -9999.0F, ncFloat);
-    o->registerVar("fs_open", &getFS_OPEN, "", -9999.0F, ncFloat);
+//    o->registerVar("fs_open", &getFS_OPEN, "", -9999.0F, ncFloat);
    o->registerVar("aa_GPP", &getGPPAA, "kg/m2/yr", -9999.0F, ncFloat);
    o->registerVar("NPP2", &getNPP2, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("NEP2", &getNEP2, "kg/m2", -9999.0F, ncFloat);
@@ -334,12 +334,12 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("soil_N", &getSiteSoilN, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("mineralized_soil_N", &getSiteMineralizedN, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("LAI", &getLAI, "", -9999.0F, ncFloat);
-    o->registerVar("LAI0", &getLAI0, "", -9999.0F, ncFloat);
-    o->registerVar("LAI1", &getLAI1, "", -9999.0F, ncFloat);
-    o->registerVar("LAI2", &getLAI2, "", -9999.0F, ncFloat);
-    o->registerVar("LAI3", &getLAI3, "", -9999.0F, ncFloat);
-    o->registerVar("LAI4", &getLAI4, "", -9999.0F, ncFloat);
-    o->registerVar("LAI5", &getLAI5, "", -9999.0F, ncFloat);
+//    o->registerVar("LAI0", &getLAI0, "", -9999.0F, ncFloat);
+//    o->registerVar("LAI1", &getLAI1, "", -9999.0F, ncFloat);
+//    o->registerVar("LAI2", &getLAI2, "", -9999.0F, ncFloat);
+//    o->registerVar("LAI3", &getLAI3, "", -9999.0F, ncFloat);
+//    o->registerVar("LAI4", &getLAI4, "", -9999.0F, ncFloat);
+//    o->registerVar("LAI5", &getLAI5, "", -9999.0F, ncFloat);
    o->registerVar("max_height", &getMaxHeight, "m", -9999.0F, ncFloat);
    o->registerVar("basal_area", &getBasalArea, "", -9999.0F, ncFloat);
    o->registerVar("water", &getWater, "", -9999.0F, ncFloat);
@@ -384,7 +384,7 @@ void registerOutputVars(Outputter *o) {
    o->registerLUVar("aa_NPP", &getSiteLU_NPP_AA, "kg/m2", -9999.0F, ncFloat);
 #ifdef ED
    o->registerLUVar("GPP", &getSiteLU_GPP, "kg/m2", -9999.0F, ncFloat);
-    o->registerLUVar("fs_open",&getSiteLU_FS_OPEN,"",-9999.0F, ncFloat);
+//    o->registerLUVar("fs_open",&getSiteLU_FS_OPEN,"",-9999.0F, ncFloat);
    o->registerLUVar("aa_GPP", &getSiteLU_GPP_AA, "kg/m2", -9999.0F, ncFloat);
 #endif
    o->registerLUVar("frac", &getLUFrac, "", -9999.0F, ncFloat);
@@ -716,22 +716,14 @@ void print_cfluxes (unsigned int time, site** siteptr, UserData* data) {
     
 #ifdef LANDUSE
     fprintf(outfile,
-            "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %f npp_avg %.20f rh_avg %.20f fire_emission %.15f forest_harvest %.15f pasture_harvest %.15f crop_harvest %.15f fs_open %f An_pot_spp1 %f An_pot_spp2 %f An_pot_spp3 %f An_pot_spp4 %f An_pot_spp5 %f An_pot_spp6 %f An_pot_spp7 %f An_shut_spp1 %f An_shut_spp2 %f An_shut_spp3 %f An_shut_spp4 %f An_shut_spp5 %f An_shut_spp6 %f An_shut_spp7 %f E_pot_spp1 %f E_pot_spp2 %f E_pot_spp3 %f E_pot_spp4 %f E_pot_spp5 %f E_pot_spp6 %f E_pot_spp7 %f E_shut_spp1 %f E_shut_spp2 %f E_shut_spp3 %f E_shut_spp4 %f E_shut_spp5 %f E_shut_spp6 %f E_shut_spp7 %f\n",
+            "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %f npp_avg %.20f rh_avg %.20f fire_emission %.15f forest_harvest %.15f pasture_harvest %.15f crop_harvest %.15f\n",
             cs->sdata->name_, time*TIMESTEP, cs->site_npp, cs->site_rh, cs->site_nep,
-            cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_gpp_avg,cs->site_npp_avg,cs->site_rh_avg,cs->site_fire_emission,cs->site_forest_harvest,cs->site_pasture_harvest,cs->site_crop_harvest,cs->site_fs_open,
-            cs->Leaf_An_pot[0],cs->Leaf_An_pot[1],cs->Leaf_An_pot[2],cs->Leaf_An_pot[3],cs->Leaf_An_pot[4],cs->Leaf_An_pot[5],cs->Leaf_An_pot[6],
-            cs->Leaf_An_shut[0],cs->Leaf_An_shut[1],cs->Leaf_An_shut[2],cs->Leaf_An_shut[3],cs->Leaf_An_shut[4],cs->Leaf_An_shut[5],cs->Leaf_An_shut[6],
-            cs->Leaf_E_pot[0],cs->Leaf_E_pot[1],cs->Leaf_E_pot[2],cs->Leaf_E_pot[3],cs->Leaf_E_pot[4],cs->Leaf_E_pot[5],cs->Leaf_E_pot[6],
-            cs->Leaf_E_shut[0],cs->Leaf_E_shut[1],cs->Leaf_E_shut[2],cs->Leaf_E_shut[3],cs->Leaf_E_shut[4],cs->Leaf_E_shut[5],cs->Leaf_E_shut[6]);
+            cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_gpp_avg,cs->site_npp_avg,cs->site_rh_avg,cs->site_fire_emission,cs->site_forest_harvest,cs->site_pasture_harvest,cs->site_crop_harvest);
 #else
     fprintf(outfile,
-            "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %f npp_avg %.20f rh_avg %.20f fire_emission %.15f fs_open %f An_pot_spp1 %f An_pot_spp2 %f An_pot_spp3 %f An_pot_spp4 %f An_pot_spp5 %f An_pot_spp6 %f An_pot_spp7 %f An_shut_spp1 %f An_shut_spp2 %f An_shut_spp3 %f An_shut_spp4 %f An_shut_spp5 %f An_shut_spp6 %f An_shut_spp7 %f E_pot_spp1 %f E_pot_spp2 %f E_pot_spp3 %f E_pot_spp4 %f E_pot_spp5 %f E_pot_spp6 %f E_pot_spp7 %f E_shut_spp1 %f E_shut_spp2 %f E_shut_spp3 %f E_shut_spp4 %f E_shut_spp5 %f E_shut_spp6 %f E_shut_spp7 %f\n",
+            "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %f npp_avg %.20f rh_avg %.20f fire_emission %.15f\n",
             cs->sdata->name_, time*TIMESTEP, cs->site_npp, cs->site_rh, cs->site_nep,
-            cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_gpp_avg,cs->site_npp_avg,cs->site_rh_avg,cs->site_fire_emission,cs->site_fs_open,
-            cs->Leaf_An_pot[0],cs->Leaf_An_pot[1],cs->Leaf_An_pot[2],cs->Leaf_An_pot[3],cs->Leaf_An_pot[4],cs->Leaf_An_pot[5],cs->Leaf_An_pot[6],
-            cs->Leaf_An_shut[0],cs->Leaf_An_shut[1],cs->Leaf_An_shut[2],cs->Leaf_An_shut[3],cs->Leaf_An_shut[4],cs->Leaf_An_shut[5],cs->Leaf_An_shut[6],
-            cs->Leaf_E_pot[0],cs->Leaf_E_pot[1],cs->Leaf_E_pot[2],cs->Leaf_E_pot[3],cs->Leaf_E_pot[4],cs->Leaf_E_pot[5],cs->Leaf_E_pot[6],
-            cs->Leaf_E_shut[0],cs->Leaf_E_shut[1],cs->Leaf_E_shut[2],cs->Leaf_E_shut[3],cs->Leaf_E_shut[4],cs->Leaf_E_shut[5],cs->Leaf_E_shut[6]);
+            cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_gpp_avg,cs->site_npp_avg,cs->site_rh_avg,cs->site_fire_emission);
 #endif
     
 
@@ -749,10 +741,10 @@ void print_cfluxes (unsigned int time, site** siteptr, UserData* data) {
 
       /* print to files */
 #if defined ED
-      fprintf(outfile, "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f fs_open %f\n",
+      fprintf(outfile, "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f\n",
               cs->sdata->name_, time * TIMESTEP,
               cs->npp[lu], cs->rh[lu] ,cs->nep[lu],
-              cs->npp2[lu], cs->gpp[lu], cs->dndt[lu],cs->nep3[lu],cs->fs_open[lu]);
+              cs->npp2[lu], cs->gpp[lu], cs->dndt[lu],cs->nep3[lu]);
 #elif defined MIAMI_LU
       fprintf(outfile, "%s time %f npp %8.6f rh %8.6f nep %8.6f dndt %f\n",
           cs->sdata->name_, time * TIMESTEP,

@@ -729,7 +729,7 @@ bool loadGlobalEnvironmentData(UserData* data)
             //may start from a certain point (i.e. MERRA2_timestamp_mod) to make sure that when run to MERRA2_START year, the actual
             //annual MERRA2 forcing will be used
             
-            if (data->mechanism_year>1980)
+            if (data->mechanism_year>MERRA2_YEAR_START_USE)
             {
                 if (data->mechanism_year<MERRA2_START) //If simulation just start, using MERRA2_timestamp is MERRA2_timestamp_mod
                 {
@@ -1049,7 +1049,7 @@ bool loadPREMECH (UserData* data)
         //may start from a certain point (i.e. MERRA2_timestamp_mod) to make sure that when run to MERRA2_START year, the actual
         //annual MERRA2 forcing will be used
         
-        if (data->mechanism_year>1980)
+        if (data->mechanism_year>MERRA2_YEAR_START_USE)
         {
             if (data->mechanism_year<MERRA2_START) //If simulation just start, using MERRA2_timestamp is MERRA2_timestamp_mod
             {

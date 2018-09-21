@@ -317,35 +317,49 @@ if (0)
 }
 else
 {
-    //Compute Td for each layer and then take the average
-    double Tmax=45.0,Topt = 35.0,tshr = 0.2,tshl = 2.63,t1=0,t2=0;
-
-    //Layer 1 on MERRA2 & Catchment-CN, 0.0988m
-    t1 = (Tmax - currents->sdata->soil_temp1[time_period]) / (Tmax - Topt);
-    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
-    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
+//    //Compute Td for each layer and then take the average
+//    double Tmax=45.0,Topt = 35.0,tshr = 0.2,tshl = 2.63,t1=0,t2=0;
+//
+//    //Layer 1 on MERRA2 & Catchment-CN, 0.0988m
+//    t1 = (Tmax - currents->sdata->soil_temp1[time_period]) / (Tmax - Topt);
+//    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
+//    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
+//
+//    //Layer 2 on MERRA2 & Catchment-CN, 0.1952m
+//    t1 = (Tmax - currents->sdata->soil_temp2[time_period]) / (Tmax - Topt);
+//    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
+//    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
+//
+//    //Layer 3 on MERRA2 & Catchment-CN, 0.3859m
+//    t1 = (Tmax - currents->sdata->soil_temp3[time_period]) / (Tmax - Topt);
+//    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
+//    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
     
-    //Layer 2 on MERRA2 & Catchment-CN, 0.1952m
-    t1 = (Tmax - currents->sdata->soil_temp2[time_period]) / (Tmax - Topt);
-    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
-    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
+//    //Layer 4 on MERRA2 & Catchment-CN, 0.7626m
+//    t1 = (Tmax - currents->sdata->soil_temp4[time_period]) / (Tmax - Topt);
+//    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
+//    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
     
-    //Layer 3 on MERRA2 & Catchment-CN, 0.3859m
-    t1 = (Tmax - currents->sdata->soil_temp3[time_period]) / (Tmax - Topt);
-    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
-    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
+//    //Layer 5 on MERRA2 & Catchment-CN, 1.5071m
+//    t1 = (Tmax - currents->sdata->soil_temp5[time_period]) / (Tmax - Topt);
+//    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
+//    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
+//
+//    Td/=5.0;
+    double q10 = 2.0;
+    double R0 = 0.5;
+    // Layer 1
+    Td += R0*pow(q10, (currents->sdata->soil_temp1[time_period]-25.0)/10.0);
+    // Layer 2
+    Td += R0*pow(q10, (currents->sdata->soil_temp2[time_period]-25.0)/10.0);
+    // Layer 3
+    Td += R0*pow(q10, (currents->sdata->soil_temp3[time_period]-25.0)/10.0);
+//    // Layer 4
+//    Td += pow(q10, (currents->sdata->soil_temp4[time_period]-25.0)/10.0);
+//    // Layer 5
+//    Td += pow(q10, (currents->sdata->soil_temp5[time_period]-25.0)/10.0);
     
-    //Layer 4 on MERRA2 & Catchment-CN, 0.7626m
-    t1 = (Tmax - currents->sdata->soil_temp4[time_period]) / (Tmax - Topt);
-    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
-    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
-    
-    //Layer 5 on MERRA2 & Catchment-CN, 1.5071m
-    t1 = (Tmax - currents->sdata->soil_temp5[time_period]) / (Tmax - Topt);
-    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
-    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
-    
-    Td/=5.0;
+    Td/=3.0;
 }
    
 
@@ -362,7 +376,6 @@ else
    } else {
       Wd = 0.6 / (1.2 * theta);
    }
-
    return (Td * Wd);
 
 #elif defined MIAMI_LU

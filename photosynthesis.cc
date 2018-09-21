@@ -297,7 +297,7 @@ void SiteData::GasEx(void)
     double Tleaf_old;  //previous leaf temperture (for iteration)
     int iter=1;
     iter_total=0;
-    Tleaf = Tair; Tleaf_old = 0;
+    Tleaf = Tair; Tleaf_old = -1000;
     Ci = 0.7*CO2;
     BoundaryLayerConductance = CalcTurbulentVaporConductance();
     StomatalConductance = CalcStomatalConductance();

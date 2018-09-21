@@ -430,14 +430,14 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
 
 #ifndef COUPLED
       size_t lu_year;
-      if (data->year < N_LANDUSE_YEARS) {
-         lu_year = data->year;
+      if (data->mechanism_year <= LANDUSE_END) {
+         lu_year = data->mechanism_year-LANDUSE_START-1;
       } else {
          /* TODO: probably not the right assumption for all transitions. -justin */
           ///Carbon Conserve
           /// There is something wrong with LUH transition data as all transition is zero at year 506
           /// So I change the lu_year to the last second year than last year to avoid zero LU transtion. -- Lei
-         lu_year = N_LANDUSE_YEARS-2;
+         lu_year = LANDUSE_END-LANDUSE_START-1;
       }
        
       /************************************************/
@@ -449,12 +449,12 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
                /* v2s will be dealt with in harvesting. skip */
                if ( !((dlu == LU_NTRL) && (tlu == LU_SCND)) ) {
                   double beta = currents->sdata->beta[dlu][tlu-1][lu_year];
-#if 1
-                   if (data->year > N_LANDUSE_YEARS) {
-                       //printf("LU year exceeds 2005 %d %d, using 2005 LU transition instead\n",data->year,N_LANDUSE_YEARS);
-                       beta=currents->sdata->beta[dlu][tlu-1][N_LANDUSE_YEARS-1];
-                   }
-#endif
+//#if 1
+//                   if (data->year > N_LANDUSE_YEARS) {
+//                       //printf("LU year exceeds 2005 %d %d, using 2005 LU transition instead\n",data->year,N_LANDUSE_YEARS);
+//                       beta=currents->sdata->beta[dlu][tlu-1][lu_year];
+//                   }
+//#endif
                    
 #if CHECK_C_CONSERVE
                    double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0;

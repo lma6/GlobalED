@@ -1,6 +1,7 @@
-NUM_SOIS	25
+NUM_SOIS    26
 
-Fire_Rh	8.25	-2.25
+Fire_Rh    8.25    -2.25
+Test_Rh    62.50    91.50
 Boreal  68.25   108.25
 Temp1   48.75   120.75
 GRS_FIRE    5.75    33.25

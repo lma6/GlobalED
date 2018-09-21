@@ -308,7 +308,7 @@ void model (UserData& data) {
    unsigned int tsteps = ((int)(data.tmax * N_SUB)) + 1;
    for (unsigned int t=data.start_time; t<tsteps; t++) { /* absolute time offset */
       if(data.print_output_files) {
-          if (tsteps-t<35*N_SUB+1)
+          if (tsteps-t<36*N_SUB+1)
           {
               print_region_files(t,&data.first_site,&data);
           }
@@ -380,7 +380,7 @@ void model (UserData& data) {
                  }
                  printf("Mechanism_year_to use: %d\n" , data.mechanism_year);
             
-                 if (data.mechanism_year>1980) //loading data for everyear if COUPLE_MERRA2
+                 if (data.mechanism_year>MERRA2_YEAR_START_USE) //loading data for everyear if COUPLE_MERRA2
                  {
                      for (; i< data.num_Vm0;i++)
                      {
