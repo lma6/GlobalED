@@ -1,6 +1,4 @@
-NUM_SOIS    4
+NUM_SOIS    1
 
-Test_Rh    62.50    91.50
-US-Cop    38.09    -109.39
-Amazon1    -0.50    -58.5
-Amazon2    -2.50    -63.5
+
+Amazon2    -4.25    -62.75

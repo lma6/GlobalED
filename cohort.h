@@ -46,6 +46,10 @@ struct cohort{
     double npp_avg;
     double gpp_avg;
     double md_avg;
+    
+    //test_crop
+    int plantint_time;
+    int harvesting_time;
    
    // For rk2 integrator UNITS - see above
    double old_nindivs;                

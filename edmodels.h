@@ -17,7 +17,7 @@
 /// Lei - All changes from original ED model are flaged as "CHANGE-ML". Search this keyword to locate them
 
 /// CHANGE-ML
-#define LOCAL_MACHINE 1  ///change it to 0 when copy to cluster.
+#define LOCAL_MACHINE 0  ///change it to 0 when copy to cluster.
 // THREADING: CHOOSE ONE OR NEITHER OF THE FOLLOWING TWO
 // Buggy with landuse
 #if 1-LOCAL_MACHINE
@@ -29,7 +29,7 @@
 
 #if LOCAL_MACHINE
 /// Turn off above 1, then type the below command in local terminal
-//// scp -r /Users/lei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_local/
+//// scp -r /Users/malei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_local/
 #define MODEL_CONFIG_FILE "models_local.cfg"
 #define TBB 1 ///< Intel Thread Building Blocks
 #define GCD 0 ///< Grand Central Dispatch. Works on Mac only
@@ -43,7 +43,7 @@
 ////////////////////////////////////////
 //    LAND USE
 ////////////////////////////////////////
-#define LANDUSE 1 ///< Flag to turn on land use dynamics
+#define LANDUSE 0 ///< Flag to turn on land use dynamics
 #define FASTLOAD 2
 #define COUPLE_FAR 1
 #define COUPLE_PFTspecific 1
@@ -51,7 +51,7 @@
 #define COUPLE_MERRA2_LUT 0
 #define COUPLE_TemAccm 0
 #define CPOUPLE_VcmaxDownreg 0
-#define INI_Year 851  //In LANDUSE, it should be 1501; For spin-up. it is 791;  With LUH2, it should be 851, and running years should be 1155
+#define INI_Year 851  //In LANDUSE, it should be 1501; For spin-up. it is 791;  With LUH2, it should be 851, and running years should be 1165
 #define N_LAI 6
 #define WT_Abg_PROFILE 0
 #define MERRA2_YEAR_START_USE 1945   // When ED starts using MERRA2 yearly data, previously using 1980
@@ -523,6 +523,19 @@ struct UserData {
    double c2n_structural;        ///< (gC/gN)
    double c2n_slow;              ///< (gC/gN)
    double c2n_passive;           ///< (gC/gN)
+    
+    
+    // Landuse emission
+    double  fraction_harvest_left_on_prim_site[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on primary land
+    double  fraction_harvest_left_on_secd_site[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on secondary land
+    double  fraction_harvest_to_1yr_pool[NSPECIES];                ///< Fraction of vegetation biomass assigned to 1-year decay product pool at havesting
+    double  fraction_harvest_to_10yr_pool[NSPECIES];                ///< Fraction of vegetation biomass assigned to 10-year decay product pool at havesting
+    double  fraction_harvest_to_100yr_pool[NSPECIES];                ///< Fraction of vegetation biomass assigned to 100-year decay product pool at havesting
+    
+    double  fraction_clearing_left_on_site[NSPECIES];         ///< Fraction of vegetation biomass left to soil at clearing for crop, pasture and others
+    double  fraction_clearing_to_1yr_pool[NSPECIES];          ///< Fraction of vegetation biomass assigned to 1-year decay product pool at clearing
+    double  fraction_clearing_to_10yr_pool[NSPECIES];          ///< Fraction of vegetation biomass assigned to 10-year decay product pool at clearing
+    double  fraction_clearing_to_100yr_pool[NSPECIES];          ///< Fraction of vegetation biomass assigned to 100-year decay product pool at clearing
 
 #endif // ED
 
@@ -593,6 +606,9 @@ struct UserData {
     
     
 #if LANDUSE
+    double yr1_decay_rate;         ///< yr-1, Decay rate of 1-year wood product pool
+    double yr10_decay_rate;         ///< yr-1, Decay rate of 10-year wood product pool
+    double yr100_decay_rate;         ///< yr-1, Decay rate of 100-year wood product pool
     float gfl[N_LANDUSE_TYPES][N_LANDUSE_TYPES-1][N_LANDUSE_YEARS][360][720];
     float gfvh[N_VBH_TYPES][N_LANDUSE_YEARS][360][720];
     float gfsh[N_SBH_TYPES][N_LANDUSE_YEARS][360][720];

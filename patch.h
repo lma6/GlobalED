@@ -56,10 +56,13 @@ struct patch {
     double fire_c_loss;   /// Save c loss in Litter() due to fire
     double fire_emission;
 #if LANDUSE
-    double LU_emission;
+    double product_emission;
     double crop_harvested_c;
     double past_harvested_c;
     double forest_harvested_c;
+    double yr1_decay_product_pool;      ///< product pool of harvested wood with 1-year decay rate;
+    double yr10_decay_product_pool;      ///< product pool of harvested wood with 10-year decay rate;
+    double yr100_decay_product_pool;      ///< product pool of harvested wood with 100-year decay rate;
 #endif
    
    // disturbance values

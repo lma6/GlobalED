@@ -129,34 +129,79 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
    double struct_litter = 0.0;
 #if defined ED
    double fast_litter_n = 0.0;
+    
+    double fraction_harvest_left_on_site = 0.0;
+    double fraction_clearing_left_on_site = 0.0;
 
    cohort* cc = dp->shortest;
    while (cc != NULL) {
       size_t spp = cc->species;
-      /* clear cut harvest */
+      /* clear for wood harvesting */
       if ( q == 9 ) { 
          if ( dp->area > 0.000001 ) {
+             if (dp->landuse == LU_NTRL)
+                 fraction_harvest_left_on_site = data->fraction_harvest_left_on_prim_site[spp];
+             else if (dp->landuse == LU_SCND)
+                 fraction_harvest_left_on_site = data->fraction_harvest_left_on_secd_site[spp];
+             else
+             {
+                 fraction_harvest_left_on_site = 1.0;
+             }
+             
             fast_litter +=  data->fraction_balive_2_fast * 
-               data->fraction_harvest_left_on_site * 
+               fraction_harvest_left_on_site *
                cc->balive * ( cc->nindivs / dp->area );
             fast_litter_n +=  data->fraction_balive_2_fast * 
-               data->fraction_harvest_left_on_site * 
+               fraction_harvest_left_on_site *
                ( 1.0 / data->c2n_leaf[spp] ) * 
                cc->balive * ( cc->nindivs / dp->area );
-            struct_litter += data->fraction_harvest_left_on_site * 
+            struct_litter += fraction_harvest_left_on_site *
                cc->bdead * ( cc->nindivs / dp->area ) + 
                ( 1.0 - data->fraction_balive_2_fast ) * 
-               data->fraction_harvest_left_on_site * cc->balive * 
+               fraction_harvest_left_on_site * cc->balive *
                ( cc->nindivs / dp->area );
              
 #if LANDUSE
              ///CarbonConserve
-             ///Currently, harvest in primay & secondary and LU change will call this function with flag 9.
-             ///I will put all harvested c into forest_harvested_c pool no matter which kind of activity occur.
-             ///In next update, the c loss due to LU change may be out into LU_emission instead of forest_harvested_c
-             tp->forest_harvested_c += (1-data->fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*12.0;
+             tp->forest_harvested_c += (1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
+             tp->yr1_decay_product_pool += data->fraction_harvest_to_1yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
+             tp->yr10_decay_product_pool += data->fraction_harvest_to_10yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
+             tp->yr100_decay_product_pool += data->fraction_harvest_to_100yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
 #endif
          }
+      }
+       /* clearing for cropland and pasture, not wood harvesting  */
+      else if (q==8)
+      {
+          if ( dp->area > 0.000001 )
+          {
+              fraction_clearing_left_on_site = data->fraction_clearing_left_on_site[spp];
+              
+              fast_litter +=  data->fraction_balive_2_fast *
+              fraction_clearing_left_on_site *
+              cc->balive * ( cc->nindivs / dp->area );
+              fast_litter_n +=  data->fraction_balive_2_fast *
+              fraction_clearing_left_on_site *
+              ( 1.0 / data->c2n_leaf[spp] ) *
+              cc->balive * ( cc->nindivs / dp->area );
+              struct_litter += fraction_clearing_left_on_site *
+              cc->bdead * ( cc->nindivs / dp->area ) +
+              ( 1.0 - data->fraction_balive_2_fast ) *
+              fraction_clearing_left_on_site * cc->balive *
+              ( cc->nindivs / dp->area );
+              
+#if LANDUSE
+              ///CarbonConserve
+              ///Currently, harvest in primay & secondary and LU change will call this function with flag 9.
+              ///I will put all harvested c into forest_harvested_c pool no matter which kind of activity occur.
+              ///In next update, the c loss due to LU change may be out into LU_emission instead of forest_harvested_c
+              tp->forest_harvested_c += (1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
+              
+              tp->yr1_decay_product_pool += data->fraction_clearing_to_1yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
+              tp->yr10_decay_product_pool += data->fraction_clearing_to_10yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
+              tp->yr100_decay_product_pool += data->fraction_clearing_to_100yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
+#endif
+          }
       }
 #if 0
       /* selective logged forests */
@@ -216,8 +261,8 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
              if (q==1)
              {
                  /// Here the biomass loss from fire is multipled by 12 as fire_emission is considered as flux and all fluxes variables in ED is yearly-based
-                 tp->fire_emission += cs->sdata->loss_fraction[q]*cc->balive*(1.0 -cc->survivorship_from_disturbance(q, data))*cc->nindivs*change_in_area/dp->area*12.0;
-                 tp->fire_emission += cs->sdata->loss_fraction[q]*cc->bdead*(1.0 -cc->survivorship_from_disturbance(q, data))*cc->nindivs*change_in_area/dp->area*12.0;
+                 tp->fire_emission += cs->sdata->loss_fraction[q]*cc->balive*(1.0 -cc->survivorship_from_disturbance(q, data))*cc->nindivs*change_in_area/dp->area*N_CLIMATE;
+                 tp->fire_emission += cs->sdata->loss_fraction[q]*cc->bdead*(1.0 -cc->survivorship_from_disturbance(q, data))*cc->nindivs*change_in_area/dp->area*N_CLIMATE;
              }
              
             }
@@ -295,6 +340,10 @@ void aggregate_in_soil_state_from_disturbance ( patch** target_patch,
     tp->fire_emission   += dp->fire_emission * change_in_area;
 #if LANDUSE
     tp->forest_harvested_c += dp->forest_harvested_c * change_in_area;
+    tp->product_emission += dp->product_emission * change_in_area;
+    tp->yr1_decay_product_pool += dp->yr1_decay_product_pool * change_in_area;
+    tp->yr10_decay_product_pool += dp->yr10_decay_product_pool * change_in_area;
+    tp->yr100_decay_product_pool += dp->yr100_decay_product_pool * change_in_area;
     tp->crop_harvested_c += dp->crop_harvested_c * change_in_area;
     tp->past_harvested_c += dp->past_harvested_c * change_in_area;
 #endif

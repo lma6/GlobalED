@@ -84,6 +84,11 @@ float getNPP_AVG (site* cs)          { return cs->site_npp_avg; }
 float getRH_AVG (site* cs)           { return cs->site_rh_avg; }
 float getFIRE_EMISSION (site* cs)    { return cs->site_fire_emission;}
 #if LANDUSE
+float getNEP3_PRODUCT (site* cs)       { return cs->site_nep3_product; }
+float getPRODUCT_EMISSION (site* cs)   { return cs->site_product_emission;}
+float getYR1_PRODUCT_POOL (site* cs)   { return cs->site_yr1_decay_product_pool;}
+float getYR10_PRODUCT_POOL (site* cs)   { return cs->site_yr10_decay_product_pool;}
+float getYR100_PRODUCT_POOL (site* cs)   { return cs->site_yr100_decay_product_pool;}
 float getFOREST_HARVEST (site* cs)   { return cs->site_forest_harvest;}
 float getPASTURE_HARVEST (site* cs)  {return cs->site_pasture_harvest;};
 float getCROP_HARVEST (site* cs)     {return cs->site_crop_harvest;};
@@ -318,6 +323,11 @@ void registerOutputVars(Outputter *o) {
     ///CarbonConserve
     o->registerVar("fire_emission", &getFIRE_EMISSION, "kg/m2/yr", -9999.0F, ncFloat);
 #if LANDUSE
+    o->registerVar("NEP3_product", &getNEP3_PRODUCT, "kg/m2/yr", -9999.0F, ncFloat);
+    o->registerVar("product_emission", &getPRODUCT_EMISSION, "kg/m2/yr", -9999.0F, ncFloat);
+    o->registerVar("year1_product_pool", &getYR1_PRODUCT_POOL, "kg/m2/yr", -9999.0F, ncFloat);
+    o->registerVar("year10_product_pool", &getYR10_PRODUCT_POOL, "kg/m2/yr", -9999.0F, ncFloat);
+    o->registerVar("year100_product_pool", &getYR100_PRODUCT_POOL, "kg/m2/yr", -9999.0F, ncFloat);
     o->registerVar("forest_harvest", &getFOREST_HARVEST, "kg/m2/yr", -9999.0F, ncFloat);
     o->registerVar("pasture_harvest", &getPASTURE_HARVEST, "kg/m2/yr", -9999.0F, ncFloat);
     o->registerVar("crop_harvest", &getCROP_HARVEST, "kg/m2/yr", -9999.0F, ncFloat);
@@ -716,9 +726,9 @@ void print_cfluxes (unsigned int time, site** siteptr, UserData* data) {
     
 #ifdef LANDUSE
     fprintf(outfile,
-            "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %f npp_avg %.20f rh_avg %.20f fire_emission %.15f forest_harvest %.15f pasture_harvest %.15f crop_harvest %.15f\n",
+            "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f nep3_product %f gpp_avg %f npp_avg %.20f rh_avg %.20f fire_emission %.15f forest_harvest %.15f pasture_harvest %.15f crop_harvest %.15f 1yr_pool %.15f 10_yr_pool %.15f 100_yr_pool %.15f product_emission %.15f\n",
             cs->sdata->name_, time*TIMESTEP, cs->site_npp, cs->site_rh, cs->site_nep,
-            cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_gpp_avg,cs->site_npp_avg,cs->site_rh_avg,cs->site_fire_emission,cs->site_forest_harvest,cs->site_pasture_harvest,cs->site_crop_harvest);
+            cs->site_npp2, cs->site_gpp, cs->site_dndt,cs->site_nep3,cs->site_nep3_product,cs->site_gpp_avg,cs->site_npp_avg,cs->site_rh_avg,cs->site_fire_emission,cs->site_forest_harvest,cs->site_pasture_harvest,cs->site_crop_harvest,cs->site_yr1_decay_product_pool,cs->site_yr10_decay_product_pool,cs->site_yr100_decay_product_pool,cs->site_product_emission);
 #else
     fprintf(outfile,
             "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %f npp_avg %.20f rh_avg %.20f fire_emission %.15f\n",
@@ -1001,7 +1011,7 @@ void print_biomass (unsigned int time, site** siteptr, UserData* data) {
    /* print to files */
    cp = *cs->oldest_patch;
 #if defined ED
-   fprintf(outfile, "%s t= %5.5f total_c %.20f tb %8.5f tagb %8.5f ba %8.5f lai %8.5f havg %8.5f ",
+   fprintf(outfile, "%s t= %5.5f total_c %.20f tb %8.5f tagb %8.5f ba %8.5f lai %8.5f havg %8.5f 1yr_pool %.15f 10_yr_pool %.15f 100_yr_pool %.15f ",
            cs->sdata->name_,
            time * TIMESTEP,
            cs->site_total_c,
@@ -1009,7 +1019,10 @@ void print_biomass (unsigned int time, site** siteptr, UserData* data) {
            cs->site_total_ag_biomass,
            cs->site_basal_area,
            cs->site_lai,
-           cs->site_avg_height);
+           cs->site_avg_height,
+           cs->yr1_decay_product_pool,
+           cs->yr10_decay_product_pool,
+           cs->yr100_decay_product_pool);
   
    for (i=0; i<NSPECIES; i++) {
       fprintf(outfile, "spp %d b %8.6f agb %8.6f ba %8.6f ",

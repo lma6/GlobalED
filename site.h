@@ -81,6 +81,7 @@ struct site {
    double aa_nep[N_LANDUSE_TYPES]; ///< annual average nep
    double site_nep2;               ///< nep2 = total_c(t) - total_c(t-1)
    double site_nep3;              ///same as site_nep2 but update monthly
+   double site_nep3_product;     ///include production emission
    double nep2[N_LANDUSE_TYPES];
    double nep3[N_LANDUSE_TYPES];
    double site_rh;                 ///< carbon loss to atmosphere
@@ -111,12 +112,23 @@ struct site {
     double site_fire_emission;          ///(kgC/m2/yr)
     double fire_emission[N_LANDUSE_TYPES];   /// (kgC/m2/yr), Carbon loss to atmosphere from fire
 #ifdef LANDUSE
-    double site_forest_harvest;
+    double site_forest_harvest;   /// (kgC/m2/yr), carbon from wood harvest and clearing forest for cropland, pasture and others
+    double site_product_emission;  /// (kgC/m2/yr), carbon emitted from 1-year, 10-year, 100-year wood product pools
+    double site_yr1_decay_product_pool;
+    double site_yr10_decay_product_pool;
+    double site_yr100_decay_product_pool;
+    double last_site_yr1_decay_product_pool;
+    double last_site_yr10_decay_product_pool;
+    double last_site_yr100_decay_product_pool;
     double site_pasture_harvest;
     double site_crop_harvest;
     double forest_harvest[N_LANDUSE_TYPES];  /// (kgC/m2/yr), harvested carbon from forest
     double pasture_harvest[N_LANDUSE_TYPES]; /// (kgC/m2/yr), harvested carbon from pasture
     double crop_harvest[N_LANDUSE_TYPES];  /// (kgC/m2/yr), harvested carbon from cropland
+    double product_emission[N_LANDUSE_TYPES];   //// (kgC/m2/yr), emission from 1-year, 10-year, 100-year wood product pool
+    double yr1_decay_product_pool[N_LANDUSE_TYPES];  /// (kgC/m2/yr), product pool of harvested wood with 1-year decay rate
+    double yr10_decay_product_pool[N_LANDUSE_TYPES];  /// (kgC/m2/yr), product pool of harvested wood with 10-year decay rate
+    double yr100_decay_product_pool[N_LANDUSE_TYPES];  /// (kgC/m2/yr), product pool of harvested wood with 100-year decay rate
 #endif
 
 

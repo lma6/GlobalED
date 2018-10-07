@@ -146,7 +146,11 @@ void create_patch (site** siteptr, patch** pnewp, int landuse,
     newpatch->fire_emission     = 0.0;
     newpatch->fire_c_loss       = 0.0;
 #if LANDUSE
+    newpatch->product_emission = 0.0;
     newpatch->forest_harvested_c = 0.0;
+    newpatch->yr1_decay_product_pool = 0.0;
+    newpatch->yr10_decay_product_pool = 0.0;
+    newpatch->yr100_decay_product_pool = 0.0;
     newpatch->past_harvested_c = 0.0;
     newpatch->crop_harvested_c = 0.0;
 #endif
@@ -582,6 +586,13 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
             newp->npp_avg /= newp->area;
             newp->rh_avg /= newp->area;
             newp->fire_emission /= newp->area;
+                ///
+#if LANDUSE
+            newp->forest_harvested_c /= newp->area;
+            newp->yr1_decay_product_pool /= newp->area;
+            newp->yr10_decay_product_pool /= newp->area;
+            newp->yr100_decay_product_pool /= newp->area;
+#endif
                /**************************/
                /***  INSERT NEW PATCH   **/    
                /**************************/  
@@ -639,13 +650,16 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
                fprintf(outfile, "terminating patches \n");  
 
             /* TODO: should this also be done for secondary? - justin */
-//            if (youngest_patch->landuse == LU_NTRL)
+             ////CarbonConserve
+             /// Respond to Justin, I think this should be done only for natural patches.
+             /// Here is the reason, other landuse types always has patches with very tiny area and all patches in this landuse tile will
+             /// be terminated, this results in no patches could be adjusted for compensating the carbon, area loss from terminated patches in function terminate_patches
+             /// Therefore, the safeways is to only terminate small patch in natural landuse types which always has enough patches -- Lei
+             terminate_patches(&youngest_patch, data);
+//            if (youngest_patch->landuse == LU_NTRL or youngest_patch->landuse == LU_SCND or youngest_patch->landuse == LU_PAST or youngest_patch->landuse == LU_CROP)
 //            {
 //                terminate_patches(&youngest_patch, data);
 //            }
-             ////CarbonConserve
-             /// Respond to Justin, I think this should be done for all types of patches as long as they are too small -- Lei
-             terminate_patches(&youngest_patch, data);
          }
 
       }  /* end t%PATCH_FREQ */
@@ -812,7 +826,11 @@ void fuse_2_patches (patch** patchptr1, patch** patchptr2,
     rp->rh_avg = (dp->rh_avg*dp->area+rp->rh_avg*rp->area)/new_area;
     rp->fire_emission = (dp->fire_emission*dp->area+rp->fire_emission*rp->area)/new_area;
 #if LANDUSE
+    rp->product_emission = (dp->product_emission*dp->area+rp->product_emission*rp->area)/new_area;
     rp->forest_harvested_c = (dp->forest_harvested_c*dp->area+rp->forest_harvested_c*rp->area)/new_area;
+    rp->yr1_decay_product_pool = (dp->yr1_decay_product_pool*dp->area+rp->yr1_decay_product_pool*rp->area)/new_area;
+    rp->yr10_decay_product_pool = (dp->yr10_decay_product_pool*dp->area+rp->yr10_decay_product_pool*rp->area)/new_area;
+    rp->yr100_decay_product_pool = (dp->yr100_decay_product_pool*dp->area+rp->yr100_decay_product_pool*rp->area)/new_area;
     rp->past_harvested_c = (dp->past_harvested_c*dp->area+rp->past_harvested_c*rp->area)/new_area;
     rp->crop_harvested_c = (dp->crop_harvested_c*dp->area+rp->crop_harvested_c*rp->area)/new_area;
 #endif
@@ -916,11 +934,16 @@ void terminate_patches (patch** patchptr, UserData* data) {
    double epsilon = 0.0;
     ///CarbonConserve
     double scale_area= 1.0, scale_nIndiv=1.0, scale_soil_C=1.0, scale_GPP=1.0, scale_NPP=1.0, scale_Rh=1.0, scale_fire_emission = 1.0;
-    double scale_fst_harv = 1.0, scale_past_harv = 1.0, scale_crop_harv = 1.0;
+    double scale_fst_harv = 1.0, scale_past_harv = 1.0, scale_crop_harv = 1.0, scale_product_emission = 1.0;
+    double scale_yr1_pool = 1.0, scale_yr10_pool = 1.0, scale_yr100_pool = 1.0;
+    
     double area_terminated_patches = 0.0, Biomass_terminated_patches = 0.0, soil_C_terminated_patches = 0.0, GPP_terminated_patches = 0.0, NPP_terminated_patches = 0.0, Rh_terminated_patches = 0.0, fire_emission_terminated_patches = 0.0;
-    double crop_harv_terminated_patches = 0.0, fst_harv_terminated_patches = 0.0, past_harv_terminated_patches = 0.0;
+    double crop_harv_terminated_patches = 0.0, fst_harv_terminated_patches = 0.0, past_harv_terminated_patches = 0.0, product_emission_terminated_patches = 0.0;
+    double yr1_product_pool_terminated_patches = 0.0, yr10_product_pool_terminated_patches = 0.0, yr100_product_pool_terminated_patches = 0.0;
+    
     double area_all_patches = 0.0, Biomass_all_patches = 0.0, soil_C_all_patches = 0.0, GPP_all_patches = 0.0, NPP_all_patches = 0.0, Rh_all_patches = 0.0, fire_emission_all_patches = 0.0;
-    double crop_harv_all_patches = 0.0, fst_harv_all_patches = 0.0, past_harv_all_patches = 0.0;
+    double crop_harv_all_patches = 0.0, fst_harv_all_patches = 0.0, past_harv_all_patches = 0.0, product_emission_all_patches = 0.0;
+    double yr1_product_pool_all_patches = 0.0, yr10_product_pool_all_patches = 0.0, yr100_product_pool_all_patches = 0.0;
     double fast_litter = 0.0, fast_litter_n = 0.0, struct_litter = 0.0;
     
     cohort* cc = NULL;
@@ -946,26 +969,44 @@ void terminate_patches (patch** patchptr, UserData* data) {
        Rh_all_patches += cp->rh_avg*cp->area;
        fire_emission_all_patches += cp->fire_emission*cp->area;
 #if LANDUSE
+       product_emission_all_patches += cp->product_emission*cp->area;
        fst_harv_all_patches += cp->forest_harvested_c*cp->area;
+       yr1_product_pool_all_patches += cp->yr1_decay_product_pool*cp->area;
+       yr10_product_pool_all_patches += cp->yr10_decay_product_pool*cp->area;
+       yr100_product_pool_all_patches += cp->yr100_decay_product_pool*cp->area;
        past_harv_all_patches += cp->past_harvested_c*cp->area;
        crop_harv_all_patches += cp->crop_harvested_c*cp->area;
 #endif
        area_all_patches += cp->area;
       if (cp->area < data->f_area * data->area) {
-         epsilon += cp->area / data->area;
-          Biomass_terminated_patches += tmp_biomass;
-          soil_C_terminated_patches += (cp->fast_soil_C+cp->slow_soil_C+cp->structural_soil_C+cp->passive_soil_C)*cp->area;
-          GPP_terminated_patches += cp->gpp_avg*cp->area;
-          NPP_terminated_patches += cp->npp_avg*cp->area;
-          Rh_terminated_patches += cp->rh_avg*cp->area;
-          fire_emission_terminated_patches += cp->fire_emission*cp->area;
+//          if (np!=NULL)
+//          {
+              epsilon += cp->area / data->area;
+              Biomass_terminated_patches += tmp_biomass;
+              soil_C_terminated_patches += (cp->fast_soil_C+cp->slow_soil_C+cp->structural_soil_C+cp->passive_soil_C)*cp->area;
+              GPP_terminated_patches += cp->gpp_avg*cp->area;
+              NPP_terminated_patches += cp->npp_avg*cp->area;
+              Rh_terminated_patches += cp->rh_avg*cp->area;
+              fire_emission_terminated_patches += cp->fire_emission*cp->area;
 #if LANDUSE
-          fst_harv_terminated_patches += cp->forest_harvested_c*cp->area;
-          past_harv_terminated_patches += cp->past_harvested_c*cp->area;
-          crop_harv_terminated_patches += cp->crop_harvested_c*cp->area;
+              product_emission_terminated_patches += cp->product_emission*cp->area;
+              fst_harv_terminated_patches += cp->forest_harvested_c*cp->area;
+              yr1_product_pool_terminated_patches += cp->yr1_decay_product_pool*cp->area;
+              yr10_product_pool_terminated_patches += cp->yr10_decay_product_pool*cp->area;
+              yr100_product_pool_terminated_patches += cp->yr100_decay_product_pool*cp->area;
+              past_harv_terminated_patches += cp->past_harvested_c*cp->area;
+              crop_harv_terminated_patches += cp->crop_harvested_c*cp->area;
 #endif
-          area_terminated_patches += cp->area;
-         terminate_patch(&cp,data);
+              area_terminated_patches += cp->area;
+              terminate_patch(&cp,data);
+//          }
+//          else
+//          {
+              //printf("Stop terminating this patch, otherwise, no patches will be in this landuse tile which will result in failure in next compensation procedure\n");
+              // if np is null, we should stop terminating patches  -- Lei Ma
+//          }
+          
+
       }
       cp = np;
    }
@@ -979,7 +1020,7 @@ void terminate_patches (patch** patchptr, UserData* data) {
        scale_Rh = Rh_all_patches/(Rh_all_patches-Rh_terminated_patches)/scale_area;
        scale_soil_C = soil_C_all_patches/(soil_C_all_patches-soil_C_terminated_patches)/scale_area;
        scale_fire_emission = fire_emission_all_patches/(fire_emission_all_patches-fire_emission_terminated_patches)/scale_area;
-       
+
        /// Check NaN value
        if ((scale_GPP != scale_GPP) or (isinf(scale_GPP)))
            scale_GPP = 1.0;
@@ -992,18 +1033,36 @@ void terminate_patches (patch** patchptr, UserData* data) {
        if ((scale_fire_emission!=scale_fire_emission) or (isinf(scale_fire_emission)))
            scale_fire_emission = 1.0;
 #if LANDUSE
+       scale_product_emission = product_emission_all_patches / (product_emission_all_patches-product_emission_terminated_patches)/scale_area;
        scale_fst_harv = fst_harv_all_patches/(fst_harv_all_patches-fst_harv_terminated_patches)/scale_area;
+       scale_yr1_pool = yr1_product_pool_all_patches/(yr1_product_pool_all_patches-yr1_product_pool_terminated_patches)/scale_area;
+       scale_yr10_pool = yr10_product_pool_all_patches/(yr10_product_pool_all_patches-yr10_product_pool_terminated_patches)/scale_area;
+       scale_yr100_pool = yr100_product_pool_all_patches/(yr100_product_pool_all_patches-yr100_product_pool_terminated_patches)/scale_area;
        scale_past_harv = past_harv_all_patches/(past_harv_all_patches-past_harv_terminated_patches)/scale_area;
        scale_crop_harv = crop_harv_all_patches/(crop_harv_all_patches-crop_harv_terminated_patches)/scale_area;
+       
+       if ((scale_product_emission!=scale_fst_harv) or (isinf(scale_product_emission)))
+           scale_product_emission = 1.0;
        if ((scale_fst_harv!=scale_fst_harv) or (isinf(scale_fst_harv)))
            scale_fst_harv = 1.0;
+       if ((scale_yr1_pool!=scale_yr1_pool) or (isinf(scale_yr1_pool)))
+           scale_yr1_pool = 1.0;
+       if ((scale_yr10_pool!=scale_yr10_pool) or (isinf(scale_yr10_pool)))
+           scale_yr10_pool = 1.0;
+       if ((scale_yr100_pool!=scale_yr100_pool) or (isinf(scale_yr100_pool)))
+           scale_yr100_pool = 1.0;
        if ((scale_past_harv!=scale_past_harv) or (isinf(scale_past_harv)))
            scale_past_harv = 1.0;
        if ((scale_crop_harv!=scale_crop_harv) or (isinf(scale_crop_harv)))
            scale_crop_harv = 1.0;
 #endif
       cp = currents->youngest_patch[landuse];
-      while (cp != NULL) {
+//       if (cp==NULL)
+//       {
+//           printf("Error occurs as not patches exist in lu %d\n",landuse);
+//       }
+      while (cp != NULL)
+      {
          //cp->area *= (1.0 + epsilon);
           cp->area *= scale_area;
 #ifdef ED
@@ -1016,7 +1075,11 @@ void terminate_patches (patch** patchptr, UserData* data) {
           cp->rh_avg *= scale_Rh;
           cp->fire_emission *=scale_fire_emission;
 #if LANDUSE
+          cp->product_emission *= scale_product_emission;
           cp->forest_harvested_c *=scale_fst_harv;
+          cp->yr1_decay_product_pool *=scale_yr1_pool;
+          cp->yr10_decay_product_pool *=scale_yr10_pool;
+          cp->yr100_decay_product_pool *=scale_yr100_pool;
           cp->past_harvested_c *= scale_past_harv;
           cp->crop_harvested_c *= scale_crop_harv;
 #endif

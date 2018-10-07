@@ -96,7 +96,14 @@ void init_data (const char* cfgFile, UserData* data) {
    data->m3                = get_val<double>(data, PARAMS, "", "m3"); /* 10, carbon balance mortality parameter */
    data->L_extinct         = get_val<double>(data, PARAMS, "", "L_extinct");  /* light extinction  coefficient as func of LAI  */
    data->Rn_extinct        = get_val<double>(data, PARAMS, "", "Rn_extinct"); /* Net Rad. flux extinction coeff as func of LAI */
-   data->cohort_shading    = get_val<double>(data, PARAMS, "", "cohort_shading");     /* degree of within cohort shading */ 
+   data->cohort_shading    = get_val<double>(data, PARAMS, "", "cohort_shading");     /* degree of within cohort shading */
+    
+#if LANDUSE
+    // From Hansis et al., BLUE model. Supplemental document Page 8. decay_rate = -1.0/(0.534*lamda), lamda is 1, 10, 100 respectively.
+    data->yr1_decay_rate                = get_val<double>(data, PARAMS, "", "yr1_decay_rate");
+    data->yr10_decay_rate                = get_val<double>(data, PARAMS, "", "yr10_decay_rate");
+    data->yr100_decay_rate                = get_val<double>(data, PARAMS, "", "yr100_decay_rate");
+#endif
        
    for(size_t i=0; i<NSPECIES; i++) {
        // Name of PFT which we are initializing
@@ -229,7 +236,18 @@ void init_data (const char* cfgFile, UserData* data) {
        * QSW = sapwood area /leaf area ratio          */ 
       data->qsw[i]                            = (1.0 / QSW) * data->specific_leaf_area[i]; 
       /* data->qsw[i]= 0.05; */
-      //printf("spp %d  qsw = %f \n", i, data->qsw[i]);     
+      //printf("spp %d  qsw = %f \n", i, data->qsw[i]);
+       
+       data->fraction_harvest_left_on_prim_site[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_prim_site");
+       data->fraction_harvest_left_on_secd_site[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_secd_site");
+       data->fraction_harvest_to_1yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_1yr_pool");
+       data->fraction_harvest_to_10yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_10yr_pool");
+       data->fraction_harvest_to_100yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_100yr_pool");
+       
+       data->fraction_clearing_left_on_site[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_left_on_site");
+       data->fraction_clearing_to_1yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_1yr_pool");
+       data->fraction_clearing_to_10yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_10yr_pool");
+       data->fraction_clearing_to_100yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_100yr_pool");
    } /* end loop over species */ 
      
    /* ratio of above gnd stem to total stem (stem plus structural roots) */

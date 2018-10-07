@@ -45,6 +45,7 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
     
 #if LANDUSE
     currentp->forest_harvested_c = 0.0;
+    currentp->product_emission = 0.0;
     currentp->past_harvested_c = 0.0;
     currentp->crop_harvested_c = 0.0;
 #endif

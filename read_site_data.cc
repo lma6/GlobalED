@@ -2,6 +2,8 @@
 #include <cmath>
 #include <cstring>
 #include "netcdf.h"
+#include <stddef.h>
+#include <stdarg.h>
 
 #include "edmodels.h"
 #include "site.h"
@@ -382,7 +384,7 @@ float** malloc_2d_float (size_t dim1, size_t dim2)
     float **array_2d = (float **)malloc(dim1 * sizeof(float *));
     if (array_2d==NULL)
         printf("malloc_2d-2: out of memory\n");
-    
+
     for(size_t i = 0; i < dim1; i++)
     {
         array_2d[i] =allElements + (i*dim2);
@@ -395,17 +397,17 @@ float*** malloc_3d_float (size_t dim1, size_t dim2,size_t dim3)
     float *allElements = (float *)malloc(dim1*dim2*dim3*sizeof(float));
     if (allElements==NULL)
         printf("malloc_3d-1: out of memory\n");
-    
+
     float ***array_3d = (float ***)malloc(dim1 * sizeof(float **));
     if (array_3d==NULL)
         printf("malloc_3d-2: out of memory\n");
-    
+
     for(size_t i = 0; i < dim1; i++)
     {
         array_3d[i] = (float **)malloc(dim2 * sizeof(float *));
         if (array_3d[i]==NULL)
             printf("malloc_3d-3: out of memory\n");
-        
+
         for(size_t j = 0; j < dim2; j++)
         {
             array_3d[i][j] = allElements + (i * dim2 * dim3) + (j * dim3);

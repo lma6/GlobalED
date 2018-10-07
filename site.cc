@@ -606,7 +606,6 @@ void init_sites (site** firsts, UserData* data) {
             // check to see if site of interest
             new_site->finished = 0;
             new_site->skip_site = 0;
-            
              
             if ( ! new_site->sdata->readSiteData(*data) ) {
                // missing inputs... free memory and move on 
@@ -984,6 +983,7 @@ void community_dynamics (unsigned int t, double t1, double t2,
     }
     all_tc_before = all_tb_before + all_sc_before + all_fire_emission_before*data->deltat;
 #endif
+    
    landuse_dynamics(t, &currents, data);
     
 #if CHECK_C_CONSERVE
@@ -1194,7 +1194,11 @@ void update_site (site** current_site, UserData* data) {
     ///CarbonConserve
     cs->site_fire_emission          = 0.0;
 #ifdef LANDUSE
+    cs->site_product_emission       = 0.0;
     cs->site_forest_harvest         = 0.0;
+    cs->site_yr1_decay_product_pool = 0.0;
+    cs->site_yr10_decay_product_pool = 0.0;
+    cs->site_yr100_decay_product_pool = 0.0;
     cs->site_pasture_harvest        = 0.0;
     cs->site_crop_harvest           = 0.0;
 #endif
@@ -1301,7 +1305,11 @@ void update_site (site** current_site, UserData* data) {
        ///CarbonConserve
        cs->site_fire_emission       += cs->fire_emission[lu]*cs->area_fraction[lu];
 #ifdef LANDUSE
+       cs->site_product_emission    += cs->product_emission[lu]*cs->area_fraction[lu];
        cs->site_forest_harvest      += cs->forest_harvest[lu]*cs->area_fraction[lu];
+       cs->site_yr1_decay_product_pool += cs->yr1_decay_product_pool[lu]*cs->area_fraction[lu];
+       cs->site_yr10_decay_product_pool += cs->yr10_decay_product_pool[lu]*cs->area_fraction[lu];
+       cs->site_yr100_decay_product_pool += cs->yr100_decay_product_pool[lu]*cs->area_fraction[lu];
        cs->site_pasture_harvest     += cs->pasture_harvest[lu]*cs->area_fraction[lu];
        cs->site_crop_harvest        += cs->crop_harvest[lu]*cs->area_fraction[lu];
 #endif
@@ -1337,6 +1345,15 @@ void update_site (site** current_site, UserData* data) {
    }
     cs->site_nep3 = (cs->site_total_c- cs->last_site_total_c_last_month)*N_CLIMATE;   /// Here multiply by N_CLIMATE as in npp_function, all fluxes is yearly based than monthly
     cs->last_site_total_c_last_month=cs->site_total_c;
+    
+#if LANDUSE
+    cs->site_nep3_product = cs->site_total_c + cs->site_yr1_decay_product_pool+cs->site_yr10_decay_product_pool+cs->site_yr100_decay_product_pool;
+    cs->site_nep3_product -= cs->last_site_total_c_last_month + cs->last_site_yr1_decay_product_pool + cs->last_site_yr10_decay_product_pool + cs->last_site_yr100_decay_product_pool;
+    cs->site_nep3_product *= N_CLIMATE;
+    cs->last_site_yr1_decay_product_pool = cs->site_yr1_decay_product_pool;
+    cs->last_site_yr10_decay_product_pool = cs->site_yr10_decay_product_pool;
+    cs->last_site_yr100_decay_product_pool = cs->site_yr100_decay_product_pool;
+#endif
 #ifdef ED
    cs->site_total_soil_N = cs->site_mineralized_soil_N + cs->site_fast_soil_N
       + cs->site_structural_soil_C * 1.0 / data->c2n_structural 
@@ -1404,7 +1421,11 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
     ///CarbonConserve
     cs->fire_emission[lu]           = 0.0;
 #ifdef LANDUSE
+    cs->product_emission[lu]        = 0.0;
     cs->forest_harvest[lu]          = 0.0;
+    cs->yr1_decay_product_pool[lu]  = 0.0;
+    cs->yr10_decay_product_pool[lu] = 0.0;
+    cs->yr100_decay_product_pool[lu] = 0.0;
     cs->crop_harvest[lu]            = 0.0;
     cs->pasture_harvest[lu]         = 0.0;
 #endif
@@ -1490,6 +1511,10 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
           cs->fire_emission[lu]         += cp->fire_emission*frac;
 #if LANDUSE
           cs->forest_harvest[lu]        += cp->forest_harvested_c*frac;
+          cs->product_emission[lu]      += cp->product_emission*frac;
+          cs->yr1_decay_product_pool[lu]    += cp->yr1_decay_product_pool*frac;
+          cs->yr10_decay_product_pool[lu]    += cp->yr10_decay_product_pool*frac;
+          cs->yr100_decay_product_pool[lu]    += cp->yr100_decay_product_pool*frac;
           cs->pasture_harvest[lu]       += cp->past_harvested_c*frac;
           cs->crop_harvest[lu]          += cp->crop_harvested_c*frac;
 #endif

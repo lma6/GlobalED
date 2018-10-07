@@ -222,6 +222,10 @@ void cohort_dynamics(unsigned int t, double t1, double t2,
           currentp->fire_emission = 0.0;
 #if LANDUSE
           currentp->forest_harvested_c = 0.0;
+          currentp->product_emission = 0.0;
+//          currentp->yr1_decay_product_pool = 0.0;
+//          currentp->yr10_decay_product_pool = 0.0;
+//          currentp->yr100_decay_product_pool = 0.0;
           currentp->crop_harvested_c = 0.0;
           currentp->past_harvested_c = 0.0;
 #endif
@@ -653,7 +657,7 @@ void create_cohort (unsigned int spp, double nindivs, double hite, double dbh,
    newcohort->E_shut       = 0.0;
    newcohort->water_uptake = 0.0;
 
-   newcohort->nindivs = nindivs; 
+   newcohort->nindivs = nindivs;
   
    newcohort->lai = (newcohort->nindivs) 
       * (newcohort->bl * data->specific_leaf_area[newcohort->species])

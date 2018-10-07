@@ -21,6 +21,8 @@ void cut_forest (site** siteptr, UserData* data,
 void harvest_croplands (site** siteptr, UserData* data);
 void plant_croplands (site** siteptr, UserData* data);
 void graze_pastures (site** siteptr, UserData* data);
+void wood_pool_decay(site** siteptr, UserData* data);   /// Function to compute emission from wood product pools, wrote by Lei Ma
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //! read_initial_landuse_c
@@ -409,8 +411,12 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
            while (currentp != NULL)
            {
                currentp->forest_harvested_c = 0.0;
+//               currentp->yr1_decay_product_pool = 0.0;
+//               currentp->yr10_decay_product_pool = 0.0;
+//               currentp->yr100_decay_product_pool = 0.0;
                currentp->past_harvested_c = 0.0;
                currentp->crop_harvested_c = 0.0;
+               currentp->product_emission = 0.0;
                currentp = currentp->older;
            }
        }
@@ -767,11 +773,13 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
           }
 #endif
       }
+       wood_pool_decay(&currents, data);
    }
     if (data->planting_probability[data->time_period][currents->sdata->globY_][currents->sdata->globX_]>0.8)
     {
         plant_croplands(&currents, data);
     }
+
     if (data->harvest_probability[data->time_period][currents->sdata->globY_][currents->sdata->globX_]>0.8)
     {
         harvest_croplands(&currents, data);
@@ -879,7 +887,11 @@ void landuse_transition (site** siteptr, UserData* data,
        double old_npp_avg = (currents->new_patch[target_lu])->npp_avg;
        double old_rh_avg = (currents->new_patch[target_lu])->rh_avg;
        double old_fire_emission = (currents->new_patch[target_lu])->fire_emission;
+       double old_product_emission = (currents->new_patch[target_lu])->product_emission;
        double old_forest_harvested_c = (currents->new_patch[target_lu])->forest_harvested_c;
+       double old_yr1_decay_product_pool = (currents->new_patch[target_lu])->yr1_decay_product_pool;
+       double old_yr10_decay_product_pool = (currents->new_patch[target_lu])->yr10_decay_product_pool;
+       double old_yr100_decay_product_pool = (currents->new_patch[target_lu])->yr100_decay_product_pool;
        double old_past_harvested_c = (currents->new_patch[target_lu])->past_harvested_c;
        double old_crop_harvested_c = (currents->new_patch[target_lu])->crop_harvested_c;
       currentp = currents->youngest_patch[donor_lu];
@@ -901,10 +913,10 @@ void landuse_transition (site** siteptr, UserData* data,
              * (to secondary) have complete survivorship. no litter to        *
              * accumulate. skip for any transition from crop, or any          *
              * transition from pasture except to crop                         */
-            if ( (donor_lu != LU_CROP) && 
+             if ( (donor_lu != LU_CROP) &&
                  ( (donor_lu != LU_PAST) || (target_lu == LU_CROP) ) )
             {
-               accumulate_litter_from_disturbance(&(currents->new_patch[target_lu]),
+                accumulate_litter_from_disturbance(&(currents->new_patch[target_lu]),
                                                   &currentp, change_in_area, 9, data);
             }
              else
@@ -1003,7 +1015,13 @@ void landuse_transition (site** siteptr, UserData* data,
        (currents->new_patch[target_lu])->npp_avg = (old_npp_avg*old_area+(currents->new_patch[target_lu]->npp_avg-old_npp_avg))/new_area;
        (currents->new_patch[target_lu])->rh_avg = (old_rh_avg*old_area+(currents->new_patch[target_lu]->rh_avg-old_rh_avg))/new_area;
        (currents->new_patch[target_lu])->fire_emission = (old_fire_emission*old_area+(currents->new_patch[target_lu]->fire_emission-old_fire_emission))/new_area;
+       (currents->new_patch[target_lu])->product_emission = (old_product_emission*old_area+(currents->new_patch[target_lu]->product_emission-old_product_emission))/new_area;
        (currents->new_patch[target_lu])->forest_harvested_c = (old_forest_harvested_c*old_area+(currents->new_patch[target_lu]->forest_harvested_c-old_forest_harvested_c))/new_area;
+       
+       (currents->new_patch[target_lu])->yr1_decay_product_pool = (old_yr1_decay_product_pool*old_area+(currents->new_patch[target_lu]->yr1_decay_product_pool-old_yr1_decay_product_pool))/new_area;
+       (currents->new_patch[target_lu])->yr10_decay_product_pool = (old_yr10_decay_product_pool*old_area+(currents->new_patch[target_lu]->yr10_decay_product_pool-old_yr10_decay_product_pool))/new_area;
+       (currents->new_patch[target_lu])->yr100_decay_product_pool = (old_yr100_decay_product_pool*old_area+(currents->new_patch[target_lu]->yr100_decay_product_pool-old_yr100_decay_product_pool))/new_area;
+       
        (currents->new_patch[target_lu])->past_harvested_c = (old_past_harvested_c*old_area+(currents->new_patch[target_lu]->past_harvested_c-old_past_harvested_c))/new_area;
        (currents->new_patch[target_lu])->crop_harvested_c = (old_crop_harvested_c*old_area+(currents->new_patch[target_lu]->crop_harvested_c-old_crop_harvested_c))/new_area;
        
@@ -1150,7 +1168,11 @@ void cut_forest (site** siteptr, UserData* data,
        double old_npp_avg = (currents->new_patch[target_lu])->npp_avg;
        double old_rh_avg = (currents->new_patch[target_lu])->rh_avg;
        double old_fire_emission = (currents->new_patch[target_lu])->fire_emission;
+       double old_product_emission = (currents->new_patch[target_lu])->product_emission;
        double old_forest_harvested_c = (currents->new_patch[target_lu])->forest_harvested_c;
+       double old_yr1_decay_product_pool = (currents->new_patch[target_lu])->yr1_decay_product_pool;
+       double old_yr10_decay_product_pool = (currents->new_patch[target_lu])->yr10_decay_product_pool;
+       double old_yr100_decay_product_pool = (currents->new_patch[target_lu])->yr100_decay_product_pool;
        double old_past_harvested_c = (currents->new_patch[target_lu])->past_harvested_c;
        double old_crop_harvested_c = (currents->new_patch[target_lu])->crop_harvested_c;
        
@@ -1237,7 +1259,11 @@ void cut_forest (site** siteptr, UserData* data,
        (currents->new_patch[target_lu])->npp_avg = (old_npp_avg*old_area+(currents->new_patch[target_lu]->npp_avg-old_npp_avg))/new_area;
        (currents->new_patch[target_lu])->rh_avg = (old_rh_avg*old_area+(currents->new_patch[target_lu]->rh_avg-old_rh_avg))/new_area;
        (currents->new_patch[target_lu])->fire_emission = (old_fire_emission*old_area+(currents->new_patch[target_lu]->fire_emission-old_fire_emission))/new_area;
+       (currents->new_patch[target_lu])->product_emission = (old_product_emission*old_area+(currents->new_patch[target_lu]->product_emission-old_product_emission))/new_area;
        (currents->new_patch[target_lu])->forest_harvested_c = (old_forest_harvested_c*old_area+(currents->new_patch[target_lu]->forest_harvested_c-old_forest_harvested_c))/new_area;
+       (currents->new_patch[target_lu])->yr1_decay_product_pool = (old_yr1_decay_product_pool*old_area+(currents->new_patch[target_lu]->yr1_decay_product_pool-old_yr1_decay_product_pool))/new_area;
+       (currents->new_patch[target_lu])->yr10_decay_product_pool = (old_yr10_decay_product_pool*old_area+(currents->new_patch[target_lu]->yr10_decay_product_pool-old_yr10_decay_product_pool))/new_area;
+       (currents->new_patch[target_lu])->yr100_decay_product_pool = (old_yr100_decay_product_pool*old_area+(currents->new_patch[target_lu]->yr100_decay_product_pool-old_yr100_decay_product_pool))/new_area;
        (currents->new_patch[target_lu])->past_harvested_c = (old_past_harvested_c*old_area+(currents->new_patch[target_lu]->past_harvested_c-old_past_harvested_c))/new_area;
        (currents->new_patch[target_lu])->crop_harvested_c = (old_crop_harvested_c*old_area+(currents->new_patch[target_lu]->crop_harvested_c-old_crop_harvested_c))/new_area;
        
@@ -1389,7 +1415,7 @@ void harvest_croplands (site** siteptr, UserData* data) {
        
        ///CarbonConserve
        ///Collect additional carbon loss to crop_harvested_c
-       currentp->crop_harvested_c += 12.0*(1-data->crop_residue)*(harvested_structural_C+harvested_fast_C)/currentp->area;
+       currentp->crop_harvested_c += N_CLIMATE*(1-data->crop_residue)*(harvested_structural_C+harvested_fast_C)/currentp->area;
        
       /*plant new crop*/
       //init_cohorts(&currentp, data);
@@ -1471,7 +1497,7 @@ void plant_croplands(site** siteptr, UserData* data)
             total_tb_afterPlanted += (currentc->balive+currentc->bdead)*currentc->nindivs/currentp->area;
             currentc = currentc->taller;
         }
-        currentp->crop_harvested_c -= (total_tb_afterPlanted-total_tb_beforePlanted)*12.0;
+        currentp->crop_harvested_c -= (total_tb_afterPlanted-total_tb_beforePlanted)*LANDUSE_FREQ;
         
         currentp = currentp->older;
     }
@@ -1571,7 +1597,7 @@ void graze_pastures (site** siteptr, UserData* data) {
        
        ///CarbonConserve
        ///Collect carbon loss back to past_harvested_c
-       currentp->past_harvested_c += 12.0*(1.0-data->grazing_residue) * (grazed_fast_C+grazed_structural_C)/currentp->area;
+       currentp->past_harvested_c += N_CLIMATE*(1.0-data->grazing_residue) * (grazed_fast_C+grazed_structural_C)/currentp->area;
        
 #if CHECK_C_CONSERVE
        ///CarbonConserve
@@ -1691,7 +1717,42 @@ void update_mean_age_secondary_lands (site** siteptr, UserData* data) {
    }
 #endif
 }
-
+       
+////////////////////////////////////////////////////////////////////////////////
+//! wood_pool_decay
+//!
+//!
+//! @param
+//! @return
+////////////////////////////////////////////////////////////////////////////////
+void wood_pool_decay(site** siteptr, UserData* data)
+{
+    // This function decay wood product pool and added this to prodcut emission
+    site* currents = *siteptr;
+    double decay = 0.0;
+    for (int lu=0; lu<N_LANDUSE_TYPES; lu++)
+    {
+        patch* currentp = currents->youngest_patch[lu];
+        while(currentp!=NULL)
+        {
+            currentp->product_emission = 0.0;
+            
+            decay = currentp->yr1_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr1_decay_rate));
+            currentp->product_emission += decay;
+            currentp->yr1_decay_product_pool -= decay;
+            
+            decay = currentp->yr10_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr10_decay_rate));
+            currentp->product_emission += decay;
+            currentp->yr10_decay_product_pool -= decay;
+            
+            decay = currentp->yr100_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr100_decay_rate));
+            currentp->product_emission += decay;
+            currentp->yr100_decay_product_pool -= decay;
+            
+            currentp = currentp->older;
+        }
+    }
+}
 
 /**********************************************************************/
 #endif /* LANDUSE */

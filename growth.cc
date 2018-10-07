@@ -85,6 +85,8 @@ void cohort::Growth_Derivatives (double time, UserData* data ) {
    } else {
       cbr_bar = 0.0;
    }
+    //cbr_bar is not saved in cbr vector, seems a bug here --Lei, fixed as follow
+    cbr[data->time_period] = cbr_bar;
    
       /* on allometry */
    if ( (balive >= ba_star) && (carbon_balance > 0.0) ) { 

@@ -346,7 +346,7 @@ else
 //    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
 //
 //    Td/=5.0;
-    double q10 = 2.0;
+    double q10 = 1.5;
     double R0 = 0.5;
     // Layer 1
     Td += R0*pow(q10, (currents->sdata->soil_temp1[time_period]-25.0)/10.0);

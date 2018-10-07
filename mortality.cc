@@ -73,7 +73,7 @@ void cohort_modifications_from_disturbance ( int q, cohort** pcurrentc, patch** 
          cc->b = cc->balive + cc->bdead;
           
           ///CarbonConserve
-          np->fire_emission += (old_balive+old_bdead-cc->balive-cc->bdead)*cc->nindivs*12.0;
+          np->fire_emission += (old_balive+old_bdead-cc->balive-cc->bdead)*cc->nindivs*LANDUSE_FREQ;
       }
    }
 
