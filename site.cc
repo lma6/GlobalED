@@ -294,8 +294,27 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
             
             ////Currently, ambient CO2 concentration is 350 umol
             //farquhar(Vcmax25,CO2,tmp,Ts,hum,swd,shade,pt,farquhar_results);
+            
+            //test_larch
+//            for (tmp=-20;tmp<60;tmp+=1)
+//            {
+//                swd = 600;
+//                spp = 5;
+//                pt = 0;
+//                Vcmax25 = 50;
+//                shade = 1.0;
+//                tmp = 25.0;
+//                Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
+//                printf("tmp %f Anb %.6f\n",tmp,farquhar_results[1]*3600);
+//                shade = 0.2;
+//                Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
+//                printf("tmp %f Anb %.6f\n",tmp,farquhar_results[1]*3600);
+//            }
+        
+
             Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
             
+
             tf_air[spp][time_period]+=farquhar_results[0];
             tf_soil[spp][time_period]+=farquhar_results[5];
             An[spp][time_period][light_index]+=farquhar_results[1];
@@ -311,8 +330,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
         Anb[spp][time_period][light_index]*=3600.0*360.0;
         Eb[spp][time_period][light_index]*=3600.0*540.0;
     }
-
-            
+    
     return 1;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -1247,7 +1265,69 @@ void update_site (site** current_site, UserData* data) {
         cs->Leaf_An_shut[spp] = 0.001*cs->sdata->Anb[spp][data->time_period][0]*12.0;
         cs->Leaf_E_pot[spp] = 0.001*cs->sdata->E[spp][data->time_period][0]*12.0;   /// Unit is kg water /m2/yr
         cs->Leaf_E_shut[spp] = 0.001*cs->sdata->Eb[spp][data->time_period][0]*12.0;
+        
     }
+    
+    
+    //test_larch
+    cs->is_frozen_cold_decid = 0;
+    cs->is_frozen_evergreen_short = 0;
+    cs->is_frozen_early_succ = 0;
+    cs->is_frozen_mid_succ = 0;
+    cs->is_frozen_late_succ = 0;
+    for (size_t mon=data->time_period*24;mon<data->time_period*24+24;mon++)
+    {
+        if(data->global_tmp[mon][cs->sdata->globY_][cs->sdata->globX_]<-20.0)
+        {
+            cs->is_frozen_cold_decid = 1;
+            break;
+            //printf("triget f for cold-deci spp-%d, site-%s temp-%f\n",spp,currents->sdata->name_,data->global_tmp[mon][currents->sdata->globY_][currents->sdata->globX_]);
+        }
+    }
+    for (size_t mon=data->time_period*24;mon<data->time_period*24+24;mon++)
+    {
+        if(data->global_tmp[mon][cs->sdata->globY_][cs->sdata->globX_]<-2.0)
+        {
+            cs->is_frozen_evergreen_short = 1;
+            break;
+        }
+    }
+    
+    for (size_t mon=data->time_period*24;mon<data->time_period*24+24;mon++)
+    {
+        if(data->global_tmp[mon][cs->sdata->globY_][cs->sdata->globX_]<-25.0)
+        {
+            cs->is_frozen_early_succ = 1;
+            cs->is_frozen_mid_succ = 1;
+            cs->is_frozen_late_succ = 1;
+            break;
+        }
+    }
+    
+    //test_larch
+    //use climate to define tropical zone. where twelve months have mean temperature of at least 18 degree
+    cs->is_tropical_site = 1;
+    double annual_minimum_temperature = 100000.0;
+    for (size_t mon=0;mon<N_CLIMATE;mon++)
+    {
+        if (cs->sdata->temp[mon] < 10.0)
+        {
+            cs->is_tropical_site = 0;
+        }
+        if(cs->sdata->temp[mon] < annual_minimum_temperature)
+            annual_minimum_temperature = cs->sdata->temp[mon];
+    }
+    
+    //test_larch
+    cs->climate_zone = 0;
+    //classify site climate zone based on Köppen climate classification scheme
+    if(annual_minimum_temperature>18.0)  // tropical climate
+        cs->climate_zone = 1;
+    else if((annual_minimum_temperature>-3) && (annual_minimum_temperature<18.0))  // temperate climate
+        cs->climate_zone = 2;
+    else // boreal climate
+        cs->climate_zone = 3;
+    
 
    for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++) {
       update_site_landuse(&cs, lu, data);
@@ -1344,9 +1424,9 @@ void update_site (site** current_site, UserData* data) {
       cs->last_site_total_c = cs->site_total_c;
    }
     cs->site_nep3 = (cs->site_total_c- cs->last_site_total_c_last_month)*N_CLIMATE;   /// Here multiply by N_CLIMATE as in npp_function, all fluxes is yearly based than monthly
-    cs->last_site_total_c_last_month=cs->site_total_c;
     
 #if LANDUSE
+    // move this block to where is before refershing last_site_total_c_last_month
     cs->site_nep3_product = cs->site_total_c + cs->site_yr1_decay_product_pool+cs->site_yr10_decay_product_pool+cs->site_yr100_decay_product_pool;
     cs->site_nep3_product -= cs->last_site_total_c_last_month + cs->last_site_yr1_decay_product_pool + cs->last_site_yr10_decay_product_pool + cs->last_site_yr100_decay_product_pool;
     cs->site_nep3_product *= N_CLIMATE;
@@ -1354,10 +1434,14 @@ void update_site (site** current_site, UserData* data) {
     cs->last_site_yr10_decay_product_pool = cs->site_yr10_decay_product_pool;
     cs->last_site_yr100_decay_product_pool = cs->site_yr100_decay_product_pool;
 #endif
+    
+    cs->last_site_total_c_last_month=cs->site_total_c;
+    
+    
 #ifdef ED
    cs->site_total_soil_N = cs->site_mineralized_soil_N + cs->site_fast_soil_N
       + cs->site_structural_soil_C * 1.0 / data->c2n_structural 
-      + cs->site_slow_soil_C * 1.0 / data->c2n_slow 
+      + cs->site_slow_soil_C * 1.0 / data->c2n_slow                                                                                  
       + cs->site_passive_soil_C * 1.0 / data->c2n_passive; 
 
    /* update patch profiles */

@@ -47,6 +47,7 @@ struct cohort{
     double gpp_avg;
     double md_avg;
     
+    
     //test_crop
     int plantint_time;
     int harvesting_time;
@@ -102,6 +103,7 @@ struct cohort{
    double nitrogen_uptake;     ///< kgN/(yr*m^2) per indiv averaged over whole patch
    double N_uptake_pot;        ///< kgN/(yr*m^2) per indiv averaged over whole patch
    double N_uptake_shut;       ///< kgN/(yr*m^2) per indiv averaged over whole patch
+    
   
    // linked list fields 
    cohort *taller;             ///< pointer to next tallest cohort     

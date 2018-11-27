@@ -5,6 +5,7 @@
 #include "fire.h"
 #include "read_site_data.h"
 #include "cohort.h"
+#include <cstring>
 
 #define THETA_CRIT 0.5      /* theta threshold for leaf drop (mm)*/
 #define L_FRACT 0.5 /* 0.5 fraction of leaves retained after leaf fall */
@@ -38,29 +39,114 @@ void phenology (int t, patch** patchptr, UserData* data) {
          currentc->status = 0; /* set status to indicate no leaf drop */  
          /* if drought-deciduous or cold-deciduous species    */
          /* temp=10 degrees gives good growing season pattern */
-         if( ((data->phenology[spp] == 1) && (currentp->theta < THETA_CRIT))
-            || ((data->phenology[spp] == 2)
-                && (currents->sdata->temp[data->time_period] < 10.0)))  // 10.0
+     
+          //test_larch
+          int if_trigger = 0;
+          if((data->phenology[spp] == 1) && (currentp->theta < THETA_CRIT))
+              if_trigger = 1;
+          if((data->phenology[spp] == 2) && (currents->sdata->temp[data->time_period] < 10.0))
+              if_trigger = 1;
+          if((data->phenology[spp] == 4) && ((currentp->theta < 0.50) || (currents->sdata->temp[data->time_period] < 10.0)))
+              if_trigger = 1;
+          if((data->phenology[spp] == 3) && ((currentp->theta < THETA_CRIT) || (currents->sdata->temp[data->time_period] < 10.0)))
+              if_trigger = 1;
+          
+          //test_larch
+          if(!strcmp(data->title[spp],"early_succ") and currents->is_frozen_early_succ)
+          {
+              if_trigger = 2;
+          }
+          if(!strcmp(data->title[spp],"mid_succ") and currents->is_frozen_mid_succ)
+          {
+              if_trigger = 2;
+          }
+          if(!strcmp(data->title[spp],"late_succ") and currents->is_frozen_late_succ)
+          {
+              if_trigger = 2;
+          }
+          if(!strcmp(data->title[spp],"cold_decid") and currents->is_frozen_cold_decid)
+          {
+              if_trigger = 2;
+          }
+          else if (!strcmp(data->title[spp],"evergreen_short") and currents->is_frozen_evergreen_short)
+          {
+              if_trigger = 2;
+          }
+          
+          
+          //test_larch
+//         if( ((data->phenology[spp] == 1) && (currentp->theta < THETA_CRIT))
+//            || ((data->phenology[spp] == 2)
+//                && (currents->sdata->temp[data->time_period] < 10.0)))  // 10.0
+        if(if_trigger)
          {
             currentc->status = 5; /* set status to indicate leaf drop */
-            double leaf_litter = (1.0 - L_FRACT) * currentc->bl * (currentc->nindivs / currentp->area);
-            /* add to patch litter flux terms */
-            currentp->litter += leaf_litter;
-            
-            /* add litter to soil pools */
-            currentp->fast_soil_N += data->fraction_balive_2_fast * leaf_litter
-                                   / data->c2n_leaf[currentc->species];
-            currentp->fast_soil_C += data->fraction_balive_2_fast * leaf_litter;
-            currentp->structural_soil_C += (1.0 - data->fraction_balive_2_fast) * leaf_litter;
-            currentp->structural_soil_L += (1.0 - data->fraction_balive_2_fast)
-                                         * (data->l2n_stem / data->c2n_stem) * leaf_litter;
-               
-            /* decrement balive for leaf litterfall */
-            currentc->balive -= (1.0 - L_FRACT) * currentc->bl;
-            /* move retained leaf matter to virtual leaf pool */
-            currentc->blv = L_FRACT * currentc->bl;
-            /* reset leaf pool to zero */
-            currentc->bl = 0.0;
+             
+             //test_larch
+             double leaf_litter = 0.0;
+             
+//            double leaf_litter = (1.0 - L_FRACT) * currentc->bl * (currentc->nindivs / currentp->area);
+//            /* add to patch litter flux terms */
+//            currentp->litter += leaf_litter;
+//
+//            /* add litter to soil pools */
+//            currentp->fast_soil_N += data->fraction_balive_2_fast * leaf_litter
+//                                   / data->c2n_leaf[currentc->species];
+//            currentp->fast_soil_C += data->fraction_balive_2_fast * leaf_litter;
+//            currentp->structural_soil_C += (1.0 - data->fraction_balive_2_fast) * leaf_litter;
+//            currentp->structural_soil_L += (1.0 - data->fraction_balive_2_fast)
+//                                         * (data->l2n_stem / data->c2n_stem) * leaf_litter;
+//
+//            /* decrement balive for leaf litterfall */
+//            currentc->balive -= (1.0 - L_FRACT) * currentc->bl;
+//            /* move retained leaf matter to virtual leaf pool */
+//            currentc->blv = L_FRACT * currentc->bl;
+//            /* reset leaf pool to zero */
+//            currentc->bl = 0.0;
+             
+             //test_larch
+             //further reduce balive from blv when bl is zero. This is particular for cold-deciduout in leaf-droped month,if frost happen, balive should continue decreasing even if has no leaves.
+             //Here I assume blv acts same function as bud, so winter frose/freezing will cause bud injury even no leaves exist
+             if((if_trigger==2) and (currentc->bl<1e-10))
+             {
+                 leaf_litter = (1.0 - L_FRACT) * currentc->blv * (currentc->nindivs / currentp->area);
+                 currentp->litter += leaf_litter;
+                 currentc->balive -= (1.0 - L_FRACT) * currentc->blv;
+                 currentc->blv = L_FRACT * currentc->blv;
+                 currentc->bl = 0.0;
+
+                 /* add litter to soil pools */
+                 currentp->fast_soil_N += data->fraction_balive_2_fast * leaf_litter
+                 / data->c2n_leaf[currentc->species];
+                 currentp->fast_soil_C += data->fraction_balive_2_fast * leaf_litter;
+                 currentp->structural_soil_C += (1.0 - data->fraction_balive_2_fast) * leaf_litter;
+                 currentp->structural_soil_L += (1.0 - data->fraction_balive_2_fast)
+                 * (data->l2n_stem / data->c2n_stem) * leaf_litter;
+             }
+             else
+             {
+                leaf_litter = (1.0 - L_FRACT) * currentc->bl * (currentc->nindivs / currentp->area);
+                 /* add to patch litter flux terms */
+                 currentp->litter += leaf_litter;
+
+                 /* add litter to soil pools */
+                 currentp->fast_soil_N += data->fraction_balive_2_fast * leaf_litter
+                 / data->c2n_leaf[currentc->species];
+                 currentp->fast_soil_C += data->fraction_balive_2_fast * leaf_litter;
+                 currentp->structural_soil_C += (1.0 - data->fraction_balive_2_fast) * leaf_litter;
+                 currentp->structural_soil_L += (1.0 - data->fraction_balive_2_fast)
+                 * (data->l2n_stem / data->c2n_stem) * leaf_litter;
+
+                 /* decrement balive for leaf litterfall */
+                 currentc->balive -= (1.0 - L_FRACT) * currentc->bl;
+                 /* move retained leaf matter to virtual leaf pool */
+                 currentc->blv = L_FRACT * currentc->bl;
+                 /* reset leaf pool to zero */
+                 currentc->bl = 0.0;
+             }
+             
+             
+             
          } /* end if */
          currentc = currentc->shorter;
       } /* end while cohort */

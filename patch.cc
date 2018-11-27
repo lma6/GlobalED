@@ -47,7 +47,7 @@ void init_patches (site** siteptr, UserData* data) {
       double stsl = 0.001; 
       double ssc  = 0.0; 
       double psc  = 0.0; 
-      double msn  = 1.0; 
+      double msn  = 1.0;
       double fsn  = 1.0;
       /* initialize patch water to eqm value in abs of vegetation */
       double water = (currents->sdata->soil_depth * currents->sdata->theta_max) 
@@ -1174,7 +1174,7 @@ void light_levels (patch** patchptr, UserData* data) {
       /* lower cohorts */
       while(cc != NULL){      
          cc->lai =  cc->nindivs*(1.0/cp->area)*(cc->bl*data->specific_leaf_area[cc->species]);
-         cc->lite = (cc->taller)->lite*exp(-data->cohort_shading*(data->L_extinct)*(cc->taller->lai)); 
+         cc->lite = (cc->taller)->lite*exp(-data->cohort_shading*(data->L_extinct)*(cc->taller->lai));
          /* within cohort shading*/
          cc->lite *= exp(-data->cohort_shading*(data->L_extinct)*(cc->lai));
          cc=cc->shorter;

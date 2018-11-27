@@ -17,7 +17,7 @@
 /// Lei - All changes from original ED model are flaged as "CHANGE-ML". Search this keyword to locate them
 
 /// CHANGE-ML
-#define LOCAL_MACHINE 0  ///change it to 0 when copy to cluster.
+#define LOCAL_MACHINE 1  ///change it to 0 when copy to cluster.
 // THREADING: CHOOSE ONE OR NEITHER OF THE FOLLOWING TWO
 // Buggy with landuse
 #if 1-LOCAL_MACHINE
@@ -29,7 +29,7 @@
 
 #if LOCAL_MACHINE
 /// Turn off above 1, then type the below command in local terminal
-//// scp -r /Users/malei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_local/
+//// scp -r /Users/lei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_v1test/
 #define MODEL_CONFIG_FILE "models_local.cfg"
 #define TBB 1 ///< Intel Thread Building Blocks
 #define GCD 0 ///< Grand Central Dispatch. Works on Mac only
@@ -54,7 +54,7 @@
 #define INI_Year 851  //In LANDUSE, it should be 1501; For spin-up. it is 791;  With LUH2, it should be 851, and running years should be 1165
 #define N_LAI 6
 #define WT_Abg_PROFILE 0
-#define MERRA2_YEAR_START_USE 1945   // When ED starts using MERRA2 yearly data, previously using 1980
+#define MERRA2_YEAR_START_USE 1945   // When ED starts using MERRA2 yearly data, previously using 1980, using 1945 may cause high NBP in 1980s due to legency effect from 1970 when use 2000s climate -- test_larch
 #define MERRA2_START 1981
 #define MERRA2_END 2015
 const float LAI_INTERVAL[]={0,1.5,5, 10, 20, 30}; //The elements number should be same as N_LAI

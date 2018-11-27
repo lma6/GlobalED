@@ -1738,15 +1738,15 @@ void wood_pool_decay(site** siteptr, UserData* data)
             currentp->product_emission = 0.0;
             
             decay = currentp->yr1_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr1_decay_rate));
-            currentp->product_emission += decay;
+            currentp->product_emission += decay*LANDUSE_FREQ;
             currentp->yr1_decay_product_pool -= decay;
             
             decay = currentp->yr10_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr10_decay_rate));
-            currentp->product_emission += decay;
+            currentp->product_emission += decay*LANDUSE_FREQ;
             currentp->yr10_decay_product_pool -= decay;
             
             decay = currentp->yr100_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr100_decay_rate));
-            currentp->product_emission += decay;
+            currentp->product_emission += decay*LANDUSE_FREQ;
             currentp->yr100_decay_product_pool -= decay;
             
             currentp = currentp->older;

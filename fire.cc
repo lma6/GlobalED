@@ -84,7 +84,7 @@ double fire (int t, patch** patchptr, UserData* data) {
    double fireterm = 0.0;
    /* Yannick: returns gfed burned fraction if option activated (gfed_bf) */
     // Lei: add time dimension to gfed_bf for loading monthly GFED data
-   if(data->gfed_bf) {
+   if(data->fire_gfed) {
        if (PATCH_FREQ==12)
        {
            for (size_t mon=0;mon<12.0;mon++)
@@ -95,7 +95,7 @@ double fire (int t, patch** patchptr, UserData* data) {
        }
        else
            fireterm = data->gfed_bf[data->time_period][cp->siteptr->sdata->globY_][cp->siteptr->sdata->globX_];  // Lei- the unit of data->gfed_bf after loading from load_GFED should be yearly based.
-      
+
       return(fireterm);
    }
 
@@ -224,6 +224,12 @@ void update_fuel (int t, patch** patchptr, UserData* data) {
    cs->fuel[landuse] /= (cs->area_fraction[landuse] * data->area);
    cs->ignition_rate[landuse] = cs->fuel[landuse] * data->fp1 
       * pow(cs->sdata->dryness_index_avg / 30000.0, 10.0);
+    
+    //test_larch
+    //Without the below cap, ignition_rate is overestimated in Amazon forest due to hight dryness and average temperature, howoever, this region
+    // has much lower burned area than the sme latitude in Africa.
+    if(cs->sdata->precip[data->time_period]>100.0)
+        cs->ignition_rate[landuse] = 0.0;
 
    /* calculate fire dist rate and add into array of within yr values */
    cs->lambda1[t%N_SUB][landuse] = 0.0;

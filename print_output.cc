@@ -28,6 +28,8 @@ float getSPP3Biomass (site* cs)      { return cs->site_total_spp_biomass[3]; }
 float getSPP4Biomass (site* cs)      { return cs->site_total_spp_biomass[4]; }
 float getSPP5Biomass (site* cs)      { return cs->site_total_spp_biomass[5]; }
 float getSPP6Biomass (site* cs)      { return cs->site_total_spp_biomass[6]; }
+float getSPP7Biomass (site* cs)      { return cs->site_total_spp_biomass[7]; }
+
 float getLeafAnPot_spp1 (site* cs)      { return cs->Leaf_An_pot[0]; }
 float getLeafAnPot_spp2 (site* cs)      { return cs->Leaf_An_pot[1]; }
 float getLeafAnPot_spp3 (site* cs)      { return cs->Leaf_An_pot[2]; }
@@ -261,7 +263,9 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("biomass_spp3", &getSPP3Biomass, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("biomass_spp4", &getSPP4Biomass, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("biomass_spp5", &getSPP5Biomass, "kg/m2", -9999.0F, ncFloat);
+    //test_larch
    o->registerVar("biomass_spp6", &getSPP6Biomass, "kg/m2", -9999.0F, ncFloat);
+   o->registerVar("biomass_spp7", &getSPP7Biomass, "kg/m2", -9999.0F, ncFloat);
     
 //   o->registerVar("Leaf_An_pot_spp1", &getLeafAnPot_spp1, "kg/m2", -9999.0F, ncFloat);
 //     o->registerVar("Leaf_An_pot_spp2", &getLeafAnPot_spp2, "kg/m2", -9999.0F, ncFloat);
@@ -323,7 +327,7 @@ void registerOutputVars(Outputter *o) {
     ///CarbonConserve
     o->registerVar("fire_emission", &getFIRE_EMISSION, "kg/m2/yr", -9999.0F, ncFloat);
 #if LANDUSE
-    o->registerVar("NEP3_product", &getNEP3_PRODUCT, "kg/m2/yr", -9999.0F, ncFloat);
+    o->registerVar("NBP_product", &getNEP3_PRODUCT, "kg/m2/yr", -9999.0F, ncFloat);
     o->registerVar("product_emission", &getPRODUCT_EMISSION, "kg/m2/yr", -9999.0F, ncFloat);
     o->registerVar("year1_product_pool", &getYR1_PRODUCT_POOL, "kg/m2/yr", -9999.0F, ncFloat);
     o->registerVar("year10_product_pool", &getYR10_PRODUCT_POOL, "kg/m2/yr", -9999.0F, ncFloat);

@@ -26,6 +26,15 @@ struct site {
    unsigned int finished;  ///< if=1, then site is equilibrated
    unsigned int forest_harvest_flag;
    unsigned int maintain_pasture_flag;
+    
+    //test_larch
+    int is_tropical_site;
+    int climate_zone;
+    int is_frozen_cold_decid;
+    int is_frozen_evergreen_short;
+    int is_frozen_early_succ;
+    int is_frozen_mid_succ;
+    int is_frozen_late_succ;
 
    // above ground properties
    double site_total_ag_biomass;             ///< total above gnd biomass (kgC/m2)

@@ -323,12 +323,46 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
 
       /*nitrogen uptake with stomates shut*/
       currentc->N_uptake_shut = 0.0;
+       
 
       if(data->water_competition) {
         double water_supply;
         double wilt_factor;
-        water_supply=data->water1*currentc->br*water*data->mass_of_water;        
+          //test_larch
+          if(currentc->species==6)
+              data->water1 = 20.0;
+          else if (currentc->species==5)
+              data->water1 = 12.0;
+          else if (currentc->species==2)
+              data->water1 = 80.0;
+          else if (currentc->species==3)
+              data->water1 = 80.0;
+          else if (currentc->species==4)
+              data->water1 = 80.0;
+          else
+              data->water1 = 80.0;
+          
+          if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==1))
+             data->water1 = 30.0;
+          if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==2))
+              data->water1 = 80.0;
+          
+
+        water_supply=data->water1*currentc->br*water*data->mass_of_water;
         currentc->fsw = (water_supply-currentc->E_shut)/(currentc->E_pot + water_supply-currentc->E_shut);
+          
+          //test_larch
+//          if(currentc->species==7 and currentc->hite>0.5 and theta<0.5 and currentc->bl>1e-7)
+//          {
+//              double an = currents->sdata->An[currentc->species][data->time_period][0];
+//              double e = currents->sdata->E[currentc->species][data->time_period][0];
+//              if(currents->sdata->lat_<5.0)
+//                  printf("site=%s time=%d An=%f E=%f E/An=%f supply=%f Epot=%f Eshut=%f water=%f theta=%f fsw=%f bl=%f br=%f\n",currents->sdata->name_,data->time_period,e,an,e/an,water_supply,currentc->E_pot,currentc->E_shut,water,theta,currentc->fsw,currentc->bl,currentc->br);
+//              else
+//                   printf("site=%s time=%d An=%f E=%f E/An=%f supply=%f Epot=%f Eshut=%f water=%f theta=%f fsw=%f bl=%f br=%f\n",currents->sdata->name_,data->time_period,e,an,e/an,water_supply,currentc->E_pot,currentc->E_shut,water,theta,currentc->fsw,currentc->bl,currentc->br);
+//          }
+          
+          
         if (currentc->fsw<0) {
            //If demand>supply, stomates shut and leaves wilt to the extent that supply := demand
            //printf("1: %f, %f\n", water_supply, currentc->E_shut);
@@ -356,6 +390,7 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
       }
       else
         currentc->fsw = 1.0;
+       
 
       if(data->n_competition) {
         double nitrogen_supply;
@@ -370,6 +405,7 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
          currentc->fsn = 1.0;
 
       currentc->fs_open = currentc->fsw*currentc->fsn;
+       
      
       /*printf("wnu1: fs_open %f\n",currentc->fs_open);*/
 
@@ -377,7 +413,8 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
       /*recompute n uptake with reduced npp, not simple function like evap
         because allocation in npp dependent*/
       currentc->nitrogen_uptake = currentc->nitrogen_demand_function(time,data);
-      currentc->nitrogen_uptake/=currentc->patchptr->area;      
+      currentc->nitrogen_uptake/=currentc->patchptr->area;
+       
      
       /*printf("wnu2: fs_open %f\n",currentc->fs_open);*/
      

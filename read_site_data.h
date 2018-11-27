@@ -80,6 +80,7 @@ struct SiteData {
     width, //!< Leaf width (m)
     Press;  //!<  Air pressure (kPa)
     
+    
     double errTolerance; /*!< Error tolerance for iterations */
     double eqlTolerance; /*!< Equality tolerance */
     

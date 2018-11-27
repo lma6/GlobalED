@@ -112,11 +112,12 @@ void cohort::npp_function(UserData* data){
     An_shut_max = 0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1];
    
    /*convert from KgC/m2/mon to kgC/yr*/
-   An_pot *= data->specific_leaf_area[species]*bl*12; 
-   An_max *= data->specific_leaf_area[species]*bl*12; 
+   An_pot *= data->specific_leaf_area[species]*bl*12;
+   An_max *= data->specific_leaf_area[species]*bl*12;
    /*convert from KgC/m2/mon to kgC/yr*/
    An_shut *= data->specific_leaf_area[species]*bl*12;
    An_shut_max *= data->specific_leaf_area[species]*bl*12;
+    
 
    /* nitrogen fixation */
    if(data->Nfixer[species] == 1) payment_to_Nfixers = data->fraction_of_GPP_to_Nfixers*fs_open*An_pot;
@@ -132,6 +133,11 @@ void cohort::npp_function(UserData* data){
    /*must also elim leaf resp from below*/
    gpp =  fs_open*(An_pot) + (1-fs_open)*(An_shut);       
    gpp_max =  fs_open*(An_max) + (1-fs_open)*(An_shut_max);
+    
+//    //test_larch
+//    if(data->time_period>5 and data->time_period<7)
+//        printf("test_larch t=%d spp=%d lite=%d hite=%f gpp=%f bl=%f lai=%f An_pot=%f An_shut=%f fs_open=%f\n",data->time_period,species,light_index,hite,gpp,bl,data->specific_leaf_area[species]*bl,0.001*cs->sdata->An[species][time_index][light_index],0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1],fs_open);
+    
 
    npp_max =  gpp_max - resp;
    npp =  gpp - resp; /*where resp includes leaf resp*/

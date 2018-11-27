@@ -22,12 +22,13 @@ double cohort::Dbh (UserData *data) {
    double m= 0.64;
    double c= 0.37;
 
-
-   if ( (!strcmp(data->title[species],"evergreen"))  and data->allometry_type == 0) { /* spruce allometry */    
+    //test_larch
+   //if ( (!strcmp(data->title[species],"evergreen"))  and data->allometry_type == 0) { /* spruce allometry */
+    if ( ((strstr(data->title[species],"evergreen")) or (!strcmp(data->title[species],"larch"))) and data->allometry_type == 0) { /* spruce allometry */
       dbh = exp( ( log(hite) - 0.04 ) / 0.94 );
    }
-   else if(data->is_tropical[species] or data->is_grass[species] or 
-           (!strcmp(data->title[species],"cold_decid") and 
+   else if(data->is_tropical[species] or data->is_grass[species] or
+           (!strcmp(data->title[species],"cold_decid") and
            data->allometry_type == 0)) { /* all other species allometry */
       dbh = pow( 10.0, ( ( log10(hite) - c ) / m ) );
    }
@@ -50,16 +51,19 @@ double cohort::Hite (UserData *data ) {
    double m= 0.64;
    double c= 0.37;
 
-   if ((!strcmp(data->title[species],"evergreen")) and data->allometry_type == 0) { /* spruce allometry */
+    //test_larch
+   //if ((!strcmp(data->title[species],"evergreen")) and data->allometry_type == 0) { /* spruce allometry */
+    if ( ((strstr(data->title[species],"evergreen")) or (!strcmp(data->title[species],"larch"))) and data->allometry_type == 0) { /* spruce allometry */
       if (dbh <= data->max_dbh[species] )
          /* canadian forest service report */
-         h = exp( 0.94 * log(dbh) + 0.04); 
+         h = exp( 0.94 * log(dbh) + 0.04);
       else
          h = exp( 0.94 * log(data->max_dbh[species]) + 0.04 );
-   } else if(data->is_tropical[species] or data->is_grass[species] or 
-           (!strcmp(data->title[species],"cold_decid") 
+   }
+    else if(data->is_tropical[species] or data->is_grass[species] or
+           (!strcmp(data->title[species],"cold_decid")
            and data->allometry_type == 0)) { /* all other species allometry */
-      if (dbh <= data->max_dbh[species]) 
+      if (dbh <= data->max_dbh[species])
          h = pow( 10.0, (log10(dbh) * m + c) );
       else 
          h = pow( 10.0, (log10(data->max_dbh[species]) * m + c) );
@@ -92,16 +96,18 @@ double cohort::Bleaf (UserData *data ) {
  
    spp = species;
 
-   if ((!strcmp(data->title[spp],"evergreen")) and data->allometry_type == 0) { /*spruce allometry*/
+   //test_larch
+    //if ((!strcmp(data->title[spp],"evergreen")) and data->allometry_type == 0) { /*spruce allometry*/
+    if ( ((strstr(data->title[species],"evergreen")) or (!strcmp(data->title[species],"larch"))) and data->allometry_type == 0) { /* spruce allometry */
       if (dbh <= data->max_dbh[spp] )
          bleaf = (1.0 / data->c2b) * (1.0 / 2.2) * 
             exp(-0.7980554 + 2.138061 * log(dbh / 2.54 )) + 0.005;
       else 
          bleaf = (1.0 / data->c2b) * (1.0 / 2.2) * 
             exp(-0.7980554 + 2.138061 * log(data->max_dbh[spp] / 2.54)) + 0.005;
-    
-   } else if(data->is_tropical[species] or data->is_grass[species] or 
-           (!strcmp(data->title[spp],"cold_decid") and 
+   }
+    else if(data->is_tropical[species] or data->is_grass[species] or
+           (!strcmp(data->title[spp],"cold_decid") and
            data->allometry_type == 0)){ /* all other species allometry */
       a1 = -1.981;
       c1 = -0.584;
@@ -127,7 +133,8 @@ double cohort::Bleaf (UserData *data ) {
          bleaf = (1.0 / data->c2b) * 
             ( exp(p) * pow(data->max_dbh[spp], q) + data->bl_min[spp] );
       }
-   else {
+   else
+   {
       dbh   = (dbh < data->max_dbh[species])? dbh : data->max_dbh[species];
       bleaf = (1.0/data->c2b)*data->b1Bl[species] * pow(dbh,data->b2Bl[species]);
    }
@@ -153,11 +160,14 @@ double cohort::Bdead (UserData *data ) {
 
    spp = species;
    
-   if ((!strcmp(data->title[spp],"evergreen")) and data->allometry_type == 0) { /* spruce allometry */
+    //test_larch
+   //if ((!strcmp(data->title[spp],"evergreen")) and data->allometry_type == 0) { /* spruce allometry */
+    if ( ((strstr(data->title[species],"evergreen")) or (!strcmp(data->title[species],"larch"))) and data->allometry_type == 0) { /* spruce allometry */
       bdead = ( 1.0 / 2.2 ) * ( 1.0 / data->c2b ) * 
-         exp( 1.10651 + 2.298388 * log( dbh / 2.54 ) ); 
-   } else if(data->is_tropical[species] or data->is_grass[species] or 
-           (!strcmp(data->title[spp],"cold_decid") and 
+         exp( 1.10651 + 2.298388 * log( dbh / 2.54 ) );
+   }
+    else if(data->is_tropical[species] or data->is_grass[species] or
+           (!strcmp(data->title[spp],"cold_decid") and
            data->allometry_type == 0)){ /* all other species allometr */
       a1 = -1.981;
       c1 = 0.572;
@@ -213,12 +223,14 @@ double cohort::dHdBd (UserData *data ) {
 
    spp = species;
    
-   if ((!strcmp(data->title[spp],"evergreen")) and data->allometry_type == 0) { /* spruce allometry */
+   //test_larch
+   // if ((!strcmp(data->title[spp],"evergreen")) and data->allometry_type == 0) { /* spruce allometry */
+    if ( ((strstr(data->title[species],"evergreen")) or (!strcmp(data->title[species],"larch"))) and data->allometry_type == 0) { /* spruce allometry */
       dhdbs = exp( 0.40898 * log(bdead *2.2 * data->c2b) + 0.4639) * 
          0.40898 / bdead;
    }
-   else if(data->is_tropical[species] or data->is_grass[species] or 
-           (!strcmp(data->title[spp],"cold_decid") and 
+   else if(data->is_tropical[species] or data->is_grass[species] or
+           (!strcmp(data->title[spp],"cold_decid") and
            data->allometry_type == 0)) { /* all other species allometry */
     
       a1 = -1.981;
@@ -276,12 +288,14 @@ double cohort::dDbhdBd (UserData *data ) {
 
    spp = species;
    
-   if ((!strcmp(data->title[spp],"evergreen")) and data->allometry_type == 0) { /* spruce allometry */
+    //test_larch
+   //if ((!strcmp(data->title[spp],"evergreen")) and data->allometry_type == 0) { /* spruce allometry */
+    if ( ((strstr(data->title[species],"evergreen")) or (!strcmp(data->title[species],"larch"))) and data->allometry_type == 0) { /* spruce allometry */
       ddbhdbs = 2.54 * exp( (log(bdead * 2.2 * data->c2b) - 1.10651 ) / 
                             2.298388 ) / (2.298388 * bdead);
    }
-   else if(data->is_tropical[species] or data->is_grass[species] or 
-           (!strcmp(data->title[spp],"cold_decid") and 
+   else if(data->is_tropical[species] or data->is_grass[species] or
+           (!strcmp(data->title[spp],"cold_decid") and
            data->allometry_type == 0)) { /* all other species allometry */
 
       a1 = -1.981;
@@ -307,7 +321,7 @@ double cohort::dDbhdBd (UserData *data ) {
          q = 2.0 * b2 + c2 * f + r;      
       }
   
-      ddbhdbs = ( dbh / (bdead) ) * ( 1.0 / q );        
+      ddbhdbs = ( dbh / (bdead) ) * ( 1.0 / q );
    }
    else {
         ddbhdbs = pow(data->c2b/data->b1Bs[species],(1.0/data->b2Bs[species]))*pow(bdead, (1.0/data->b2Bs[species] - 1))*(1/data->b2Bs[species]);       
@@ -333,11 +347,13 @@ double cohort::dDbhdBl ( UserData *data ) {
 
    spp = species;
  
-   if ((!strcmp(data->title[spp],"evergreen")) and data->allometry_type == 0) { /* spruce allometry */
+    //test_larch
+    //if ((!strcmp(data->title[spp],"evergreen")) and data->allometry_type == 0) { /* spruce allometry */
+    if ( ((strstr(data->title[species],"evergreen")) or (!strcmp(data->title[species],"larch"))) and data->allometry_type == 0) { /* spruce allometry */
       ddbhdbl = 3.3763239 * pow(bl, -0.5322767);
    }
-   else if(data->is_tropical[species] or data->is_grass[species] or 
-           (!strcmp(data->title[spp],"cold_decid") and 
+   else if(data->is_tropical[species] or data->is_grass[species] or
+           (!strcmp(data->title[spp],"cold_decid") and
            data->allometry_type == 0)) { /* all other species allometry */
     
       a1 = -1.981;
@@ -357,7 +373,7 @@ double cohort::dDbhdBl ( UserData *data ) {
       q = 2 * b2 + c2 * f + r;
     
       ddbhdbl = ( dbh / (bl) ) * ( 1.0 / (q) );
-      
+
    }
    else {
        ddbhdbl = pow(data->c2b/data->b1Bl[species],1.0/data->b2Bl[species])*pow(bl, 1.0/data->b2Bl[species] - 1)*(1/data->b2Bl[species]);

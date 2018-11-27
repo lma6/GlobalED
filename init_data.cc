@@ -180,10 +180,19 @@ void init_data (const char* cfgFile, UserData* data) {
        
        /* assign leaf life spans in months */
        /* This is the reference biodiversity axis parameter */
-       data->title[i]                         = get_val<const char*>(data, PFTS, pft, "title");       
-       if(data->is_cold_deciduous[i])
-          data->leaf_life_span[i]             = 9.0;
-      else
+       data->title[i]                         = get_val<const char*>(data, PFTS, pft, "title");
+//       if(data->is_cold_deciduous[i])
+//          data->leaf_life_span[i]             = 9.0;
+//      else
+//          data->leaf_life_span[i]             = 12.0/data->alpha[i][2];
+       
+       //test_larch
+       //data->leaf_life_span[i]             = 12.0/data->alpha[i][2];
+       if (!strcmp(data->title[i],"cold_decid"))
+           data->leaf_life_span[i]             = 6.0;
+       else if (!strcmp(data->title[i],"c3_grass"))
+           data->leaf_life_span[i]             = 6.0;
+       else
           data->leaf_life_span[i]             = 12.0/data->alpha[i][2];
 
       data->treefall_s_gtht[i]                = get_val<double>(data, PFTS, pft, "treefall_s_gtht");
@@ -236,8 +245,9 @@ void init_data (const char* cfgFile, UserData* data) {
        * QSW = sapwood area /leaf area ratio          */ 
       data->qsw[i]                            = (1.0 / QSW) * data->specific_leaf_area[i]; 
       /* data->qsw[i]= 0.05; */
-      //printf("spp %d  qsw = %f \n", i, data->qsw[i]);
+      printf("spp %d  qsw = %f \n", i, data->qsw[i]);
        
+#if LANDUSE
        data->fraction_harvest_left_on_prim_site[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_prim_site");
        data->fraction_harvest_left_on_secd_site[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_secd_site");
        data->fraction_harvest_to_1yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_1yr_pool");
@@ -248,6 +258,7 @@ void init_data (const char* cfgFile, UserData* data) {
        data->fraction_clearing_to_1yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_1yr_pool");
        data->fraction_clearing_to_10yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_10yr_pool");
        data->fraction_clearing_to_100yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_100yr_pool");
+#endif
    } /* end loop over species */ 
      
    /* ratio of above gnd stem to total stem (stem plus structural roots) */

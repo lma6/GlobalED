@@ -131,6 +131,30 @@ void cohort::Growth_Derivatives (double time, UserData* data ) {
    /* calculate change in diameter and height */
    ddbhdt = dbdeaddt*dDbhdBd(data);
    dhdt = dbdeaddt*dHdBd(data);
+    
+    //test_larch
+//    for(size_t spp=0;spp<NSPECIES;spp++)
+//    {
+//        species = spp;
+////        dbh = 2.0;
+//        hite = 1.5;
+//        dbh = Dbh(data);
+//        hite = Hite(data);
+//        balive = Bleaf(data)*(1.0 + data->q[species] + data->qsw[species]*hite);
+//        bl = Bleaf(data);
+//        bdead = Bdead(data);
+//        b = balive + bdead;
+//
+//        double salloc = (1.0 + data->qsw[species] * hite + data->q[species]);
+//        bsw = data->qsw[species] * hite * (balive) / salloc; /*TODO bsw is area, not weight. Convert OLCR. Change hite to a parameter = mass of 1m^2 of bsw*/
+//        bs = bsw + bdead;
+//        bstem = data->agf_bs * bs;
+//        babove = bstem + bl;
+//        br =data->q[species]*bl;
+//
+//        printf("spp %d dbh %f hite %f b %f ba %f bl %f bd %f br %f dDbhdBd %f dHdBd %f dDbhdBl %f LAI %f\n",species,dbh,Hite(data),b,babove,bl,bdead,br,dDbhdBd(data),dHdBd(data),dDbhdBl(data),bl*data->specific_leaf_area[species]);
+//    }
+    
   
    /* measured above ground npp = leaf litter + repro/stem litter +      *
     *                             above ground wood production +         *

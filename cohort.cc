@@ -497,21 +497,30 @@ void init_cohorts(patch** patchptr, UserData* data){
 
    patch* cp = *patchptr;
    site* cs = cp->siteptr;
+    
 
    /* add new cohorts to linked list of cohorts */
    for (int spp=0; spp<NSPECIES; spp++) {
       /*initial number of seedlings of each spp in patch */    
       double nindivs = data->initial_density[spp] * (*patchptr)->area; 
 
-      double lat = cs->sdata->lat_;
-      /* rule out tropical spp out of tropics */
-      if ( ((lat > data->tropic_n_limit) || (lat < data->tropic_s_limit))   && (data->is_tropical[spp])) {
-         nindivs = 0.000001;
-      }
-      /* rule out temp spp in tropics */
-      else if ( ((lat <= data->tropic_n_limit) && (lat >= data->tropic_s_limit)) && (!data->is_tropical[spp] and !data->is_grass[spp]) ) {
-         nindivs = 0.000001;
-      }
+       //test_larch
+//      double lat = cs->sdata->lat_;
+//      /* rule out tropical spp out of tropics */
+//      if ( ((lat > data->tropic_n_limit) || (lat < data->tropic_s_limit))   && (data->is_tropical[spp])) {
+//         nindivs = 0.000001;
+//      }
+//      /* rule out temp spp in tropics */
+//      else if ( ((lat <= data->tropic_n_limit) && (lat >= data->tropic_s_limit)) && (!data->is_tropical[spp] and !data->is_grass[spp]) ) {
+//         nindivs = 0.000001;
+//      }
+
+       //test_larch
+//       if ((!is_tropical_climate) && (data->is_tropical[spp]))
+//           nindivs = 0.000001;
+//       if ((is_tropical_climate) && (!data->is_tropical[spp]) &&(!data->is_grass[spp]))
+//           nindivs = 0.000001;
+       
     
 #if LANDUSE
       /* plant gasses only cropland, and at much higher density */
@@ -636,7 +645,8 @@ void create_cohort (unsigned int spp, double nindivs, double hite, double dbh,
    newcohort->bstem = data->agf_bs*newcohort->bs;
 
    newcohort->babove = newcohort->bl + data->agf_bs * newcohort->bs; 
-   newcohort->bbelow = newcohort->br + (1.0 - data->agf_bs) * newcohort->bs; 
+   newcohort->bbelow = newcohort->br + (1.0 - data->agf_bs) * newcohort->bs;
+    
 
    /***********************/
    /* Nitrogen in recruit */
@@ -659,9 +669,11 @@ void create_cohort (unsigned int spp, double nindivs, double hite, double dbh,
 
    newcohort->nindivs = nindivs;
   
-   newcohort->lai = (newcohort->nindivs) 
+   newcohort->lai = (newcohort->nindivs)
       * (newcohort->bl * data->specific_leaf_area[newcohort->species])
       * (1.0 / ((*patchptr)->area));
+    
+    
    insert_cohort(&newcohort, &(*patchptr)->tallest, &(*patchptr)->shortest,data);
    if(data->num_Vm0  > 1) {
       // Multiple mechanism file case
@@ -702,14 +714,54 @@ void terminate_cohorts(cohort** ptallest, cohort** pshortest, UserData* data){
     ///CarbonConserve
     patch* currentp = NULL;
     double fast_litter = 0.0,fast_litter_n=0.0,struct_litter=0.0;
+    
+    //test_larch
+    data->btol = 0.0001;  // 0.0001
+    
     if(currentc!=NULL)
     {
         currentp= currentc->patchptr;
+
+        //test_larch
+//        if(!currentp->siteptr->is_tropical_site)
+//        {
+//            //data->btol = 0.000001;   //0.00000001
+//            data->btol = currentp->siteptr->site_total_biomass * 1e-5;
+//            data->btol   = (data->btol > 0.00000001)? data->btol : 0.00000001;
+//        }
+//        else
+//            data->btol = 0.0001;  // 0.0001
+        
+        if(currentp->siteptr->climate_zone==1)
+            data->btol = 0.0001;
+        else if (currentp->siteptr->climate_zone==2)
+        {
+//            data->btol = 0.000001; //0.000001
+            data->btol = currentp->siteptr->site_total_biomass * 1e-5;
+            data->btol   = (data->btol > 0.00000001)? data->btol : 0.00000001;
+        }
+        else
+        {
+            data->btol = currentp->siteptr->site_total_biomass * 1e-5;
+            data->btol   = (data->btol > 0.00000001)? data->btol : 0.00000001;
+//            data->btol = 1e-8;
+        }
+            
+
+//        data->btol = currentp->siteptr->site_total_biomass * 1e-5;
+//        data->btol   = (data->btol > 0.00000001)? data->btol : 0.00000001;
     }
+//    double btol_backup = data->btol;
    while (currentc != NULL){
       cohort* nextc = currentc->shorter;
       /***  cohort size is below threshold   ***/
       /***  remove & adjust size relations among remaining cohorts  ***/
+       //test_larch
+//       if(currentc->species==1)
+//           data->btol = 1e-9;
+//       else
+//           data->btol = btol_backup;
+       
       if(((currentc->nindivs/currentc->patchptr->area)*currentc->b) < data->btol){
           /// Collect carbon back to soil when cohort is terminating
           fast_litter += data->fraction_balive_2_fast*currentc->balive*currentc->nindivs/currentp->area;

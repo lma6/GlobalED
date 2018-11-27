@@ -1,4 +1,7 @@
-NUM_SOIS    1
+NUM_SOIS   3
 
 
-Amazon2    -4.25    -62.75
+
+TRO3    0    -60
+TRO3    0    -70
+TRO3    -5    -60

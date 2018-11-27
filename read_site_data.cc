@@ -1253,7 +1253,8 @@ SiteData::SiteData (size_t y, size_t x, UserData& data) {
       /* assume a basin wide avg of 1000 mm/yr and a basin wide avg *
        * deposisiton of N of 0.001 kg N /m2 / y, the latter is      *
        * reported in a ref in Vitousek et al 1986                   */
-      N_conc_in_rain = 0.0000001; // kg N / m2 * mm
+       //test_larch, seem incorrect here, the right value should be 0.000001, 10 times larger  -- Lei
+      N_conc_in_rain = 0.0000001; // kg N / m2 * mm  /// old incorrect value 0.0000001
    }
    L_top  = 1.0;  // Light at the top of the canopy
    Rn_top = 1.0;  // Net Radn flx at the top of the canopy

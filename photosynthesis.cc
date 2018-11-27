@@ -19,9 +19,13 @@
 #define O 205.0     //!<  Oxygen partial pressure gas units are mbar
 #define Q10 2.0        //!< Q10 factor
 
+//test_larch
 #define parameterizationCase 4 //1-Bonan 2011; 2-Kattge 2007 without thermal accmlimation; 3-Kattge 2007 with acclimation;
                                //4-Kattge 2007 with acclimation but Tg is 40
+                               //5-Kattge 2007 with PFT dependent
 
+//Reference of this rountine is from Bonan et al 2011 including temperature dependency of Vcmax, Jcmax and Rd.
+//Parameterization from Kattge 2007
 void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
 {
     C4=pt;
@@ -100,6 +104,7 @@ void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
         if (Tg>35)  Tg=35;
         if (Tg<11)  Tg=11;
         
+        
         EaVc=71513;  //Kattge 2007 Table.3
         Eaj=49884;   //Kattge 2007 Table.3
         Ear=66400;   //Need to check. from photo...master paramater.xls
@@ -117,14 +122,16 @@ void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
         
         rJ2V=2.59-0.035*Tg; //Kattge 2007 Table.3
         
-        Q10R=pow(10,-0.00794*(Tg-25.0)); //from Atkin et al 2008
+        Q10R=pow(10,-0.00794*(Tg-25.0)); //from Atkin et al 2008, Eq 8, C value from log-log Rmt-N plots
         
-        if (!strcmp(data->title[spp],"evergreen"))
-            rJ2V=1.07;
+//        if (!strcmp(data->title[spp],"evergreen"))
+//            rJ2V=1.07;
 #endif
         
 #if parameterizationCase==4
-        Tg=40;
+        //test_larch
+        //Tg = 40.0;
+        Tg = 30;
         
         EaVc=71513;  //Kattge 2007 Table.3
         Eaj=49884;   //Kattge 2007 Table.3
@@ -144,9 +151,54 @@ void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
         rJ2V=2.59-0.035*Tg; //Kattge 2007 Table.3
         
         Q10R=pow(10,-0.00794*(Tg-25.0)); //from Atkin et al 2008
-        if (!strcmp(data->title[spp],"evergreen"))
-            rJ2V=1.07;
+        
+        //test_larch
+        //if (!strcmp(data->title[spp],"evergreen"))
+//         if (!strcmp(data->title[spp],"evergreen") || !strcmp(data->title[spp],"larch"))
+//            rJ2V=1.07;
 #endif
+        
+//test_larch
+#if parameterizationCase==5
+        if(!strcmp(data->title[spp],"evergreen_short"))
+           Tg = 30.0;
+        if(!strcmp(data->title[spp],"evergreen_long"))
+            Tg = 10.0;
+        if(!strcmp(data->title[spp],"evergreen"))
+            Tg = 10.0;
+        if(!strcmp(data->title[spp],"cold_decid"))
+            Tg = 30.0;
+        if(!strcmp(data->title[spp],"c3_grass"))
+            Tg = 30.0;
+        if(!strcmp(data->title[spp],"c4_grass"))
+            Tg = 30.0;
+        if(!strcmp(data->title[spp],"early_succ"))
+            Tg = 30.0;
+        if(!strcmp(data->title[spp],"mid_succ"))
+            Tg = 30.0;
+        if(!strcmp(data->title[spp],"late_succ"))
+            Tg = 30.0;
+           
+        EaVc=71513;  //Kattge 2007 Table.3
+        Eaj=49884;   //Kattge 2007 Table.3
+        Ear=66400;   //Need to check. from photo...master paramater.xls
+        Eap=53100;   //As no acclimation in Kattge 2007, same as Bonan 2011
+           
+        Sv=668.39-1.07*Tg;
+        Sj=659.70-0.75*Tg;
+        Sr=490;     //As no acclimation in Kattge 2007, same as Bonan 2011, acclimation is achieved using Q10R factor
+        Sp=490;     //As no acclimation in Kattge 2007, same as Bonan 2011
+           
+        Hv=200000;  //Kattge 2007 Table.3
+        Hj=200000;  //Kattge 2007 Table.3
+        Hr=150650;  //As no acclimation in Kattge 2007, same as Bonan 2011
+        Hp=150650;  //As no acclimation in Kattge 2007, same as Bonan 2011
+           
+        rJ2V=2.59-0.035*Tg; //Kattge 2007 Table.3
+           
+        Q10R=pow(10,-0.00794*(Tg-25.0)); //from Atkin et al 2008
+#endif
+        
     }
     else
     {
@@ -187,6 +239,12 @@ void SiteData::Farquhar_couple(int pt, int spp,UserData* data,double Ta, double 
         Jm25=Vcm25*rJ2V;      //Medlyn 2002 Fig.3
         TPU25=Jm25*0.06;
         Rd25=Vcm25*0.015;
+        
+        //test_larch
+        //Atkin et al 2005 suggests PFTs in cold site has high dark respiration than those in warm sites -- Lei
+//        if(spp==5)
+//            Rd25=Vcm25*0.045;
+        
     }else
     {
 //        Vcm25=Vm25;
@@ -613,6 +671,7 @@ double SiteData::CalcStomatalConductance()
     
     
     Ds=(Es(Tleaf)-RH*Es(Tair))/Press;
+    
     StomatalConductance=(0.01+8*AssimilationNet/((Cs-Gamma)*(1+Ds/0.01)));
     if (StomatalConductance < g0) StomatalConductance=g0; //Limit StomatalConductance to mesophyll conductance
     

@@ -164,9 +164,14 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
 #if LANDUSE
              ///CarbonConserve
              tp->forest_harvested_c += (1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
-             tp->yr1_decay_product_pool += data->fraction_harvest_to_1yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
-             tp->yr10_decay_product_pool += data->fraction_harvest_to_10yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
-             tp->yr100_decay_product_pool += data->fraction_harvest_to_100yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
+//             tp->yr1_decay_product_pool += data->fraction_harvest_to_1yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
+//             tp->yr10_decay_product_pool += data->fraction_harvest_to_10yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
+//             tp->yr100_decay_product_pool += data->fraction_harvest_to_100yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
+             
+             // *LANDUSE_FREQ seems a bug, here delete them for testing
+             tp->yr1_decay_product_pool += data->fraction_harvest_to_1yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+             tp->yr10_decay_product_pool += data->fraction_harvest_to_10yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+             tp->yr100_decay_product_pool += data->fraction_harvest_to_100yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
 #endif
          }
       }
@@ -197,9 +202,9 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
               ///In next update, the c loss due to LU change may be out into LU_emission instead of forest_harvested_c
               tp->forest_harvested_c += (1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
               
-              tp->yr1_decay_product_pool += data->fraction_clearing_to_1yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
-              tp->yr10_decay_product_pool += data->fraction_clearing_to_10yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
-              tp->yr100_decay_product_pool += data->fraction_clearing_to_100yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
+              tp->yr1_decay_product_pool += data->fraction_clearing_to_1yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+              tp->yr10_decay_product_pool += data->fraction_clearing_to_10yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+              tp->yr100_decay_product_pool += data->fraction_clearing_to_100yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
 #endif
           }
       }

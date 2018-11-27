@@ -74,8 +74,6 @@ double patch::Dwdt (double time, UserData* data){
    /* calculate water evaporation from the soil, scale by plant cover */
    soil_evap = (currents->sdata->soil_evap_conductivity)
       * (radiative_flux(data)) * water;
-    
-    
   
    /* calculate water loss per unit area from patch */
    theta = water / (currents->sdata->soil_depth * currents->sdata->theta_max);
@@ -87,6 +85,8 @@ double patch::Dwdt (double time, UserData* data){
    dwdt = (currents->sdata->precip[(int) data->time_period] 
            - perc - total_water_uptake
            / area) - soil_evap;
+    
+    
     //if (dwdt<-100000) printf("water %f dwdt %f precip %f perc %f twu %f soev %f ksat %f theta %f tau %f\n",water,dwdt,currents->sdata->precip[(int) data->time_period],perc,total_water_uptake,soil_evap,currents->sdata->k_sat,theta,currents->sdata->tau);
 #if 1
     if (dwdt*data->deltat+water<0)
@@ -140,6 +140,7 @@ void patch::Dsdt (unsigned int time_period, double time, UserData* data) {
                                                * Century pools          */
    /* K3 is high bc we wanted to added back the n immobilization story 
       without tracking the slow pool */
+    
 
    /* std values= 1, .3, 1, 0 */
    double r_fsc=1.0, r_stsc=0.3, r_ssc=1.0, r_psc=0.0;
@@ -198,7 +199,7 @@ void patch::Dsdt (unsigned int time_period, double time, UserData* data) {
       /* NOTE: CENTURY only has leaching losses from fast C&N and Min N! */ 
       /* leaching losses of N */
       fast_N_loss += data->NC_perc_coeff * perc*fast_soil_N;
-      mineralized_N_loss += data->NC_perc_coeff * perc * mineralized_soil_N; 
+      mineralized_N_loss += data->NC_perc_coeff * perc * mineralized_soil_N;
    }
 
 
@@ -358,8 +359,26 @@ else
 //    Td += pow(q10, (currents->sdata->soil_temp4[time_period]-25.0)/10.0);
 //    // Layer 5
 //    Td += pow(q10, (currents->sdata->soil_temp5[time_period]-25.0)/10.0);
-    
+
     Td/=3.0;
+    
+    //test_larch
+//    if(currents->sdata->soil_temp1[time_period]>-1)
+//        Td += R0*pow(q10, (currents->sdata->soil_temp1[time_period]-25.0)/10.0);
+//    else
+//        Td += 0.0;
+//
+//    if(currents->sdata->soil_temp2[time_period]>-1)
+//        Td += R0*pow(q10, (currents->sdata->soil_temp2[time_period]-25.0)/10.0);
+//    else
+//        Td += 0.0;
+//
+//    if(currents->sdata->soil_temp3[time_period]>-1)
+//        Td += R0*pow(q10, (currents->sdata->soil_temp3[time_period]-25.0)/10.0);
+//    else
+//        Td += 0.0;
+//
+//    Td/=3.0;
 }
    
 

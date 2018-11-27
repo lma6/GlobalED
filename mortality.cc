@@ -1,5 +1,5 @@
 #include <cmath>
-
+#include <cstring>
 #include "edmodels.h"
 #include "site.h"
 #include "read_site_data.h"
@@ -37,6 +37,22 @@ double cohort::survivorship_from_disturbance ( int q, UserData* data ) {
           csurv = 1.00;
       } else {
           csurv = 0.0;
+          //test_larch
+          //topkill rate from Hoffmann et al ., 2009
+//          double base_csurv = 0.0;
+          csurv = 0.3;
+//          if (species==6)
+//              csurv = 0.7;
+//          else
+//          {
+//              base_csurv = 0.5;
+//              if(dbh>20.0)
+//                  csurv = base_csurv;
+//              else
+//                  csurv = base_csurv * dbh/20.0;
+//          }
+//
+          
       }
 
    } /* end if on fires */
@@ -92,12 +108,38 @@ void cohort_modifications_from_disturbance ( int q, cohort** pcurrentc, patch** 
 double cohort::den_dep_death (UserData* data ) {
    double dmort = 0.0;
 
-   // Mortality is computed differently for temperate vs tropical species
-   if (data->is_tropical[species] or data->is_grass[species]) {
-      dmort = data->m1 * ( data->rho_max1 - data->rho[species] );
-   } else if (!data->is_tropical[species]){
-      dmort = data->m1 * ( data->rho_max2 - data->rho[species] );
-   }
+//   // Mortality is computed differently for temperate vs tropical species
+//   if (data->is_tropical[species] or data->is_grass[species]) {
+//      dmort = data->m1 * ( data->rho_max1 - data->rho[species] );
+//   } else if (!data->is_tropical[species]){
+//      dmort = data->m1 * ( data->rho_max2 - data->rho[species] );
+//   }
+    
+    //test_larch
+//    if(siteptr->is_tropical_site==1)
+//    {
+//        dmort = data->m1 * ( data->rho_max1 - data->rho[species] );
+//    }
+//    else
+//    {
+//        if (!strcmp(data->title[species],"early_succ"))
+//            dmort += 0.067;
+//        else if (!strcmp(data->title[species],"mid_succ"))
+//            dmort += 0.059;
+//        else if (!strcmp(data->title[species],"late_succ"))
+//            dmort += 0.011;
+//
+//    }
+    
+    //test_larch
+    data->m1 = 0.15;
+    dmort = data->m1 * ( data->rho_max1 - data->rho[species] );
+    dmort += 0.011;
+//    if(siteptr->is_tropical_site)
+//        dmort += 0.02;
+    if(siteptr->climate_zone==1)
+        dmort += 0.02;
+    
 
    double lat = siteptr->sdata->lat_;
    if ( hite < data->treefall_hite_threshold ) {  
@@ -108,7 +150,7 @@ double cohort::den_dep_death (UserData* data ) {
       }
    } 
    
-   dmort += data->m2 * 1.0 / ( 1.0 + exp( data->m3 * cbr_bar ) );
+   dmort += data->m2 * 1.0 / ( 1.0 + exp( data->m3 * cbr_bar ));
    /*dmort += data->m2 / ( 1.0 + exp( data->m3 * cbr_bar[data->time_period] ) );*/
 
    /* do mean field treefall disturbance when fire *
