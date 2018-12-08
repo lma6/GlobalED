@@ -131,7 +131,7 @@ void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
 #if parameterizationCase==4
         //test_larch
         //Tg = 40.0;
-        Tg = 30;
+        Tg = 30.0;
         
         EaVc=71513;  //Kattge 2007 Table.3
         Eaj=49884;   //Kattge 2007 Table.3

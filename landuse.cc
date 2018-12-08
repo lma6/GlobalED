@@ -208,7 +208,10 @@ int read_transition_rates (site** current_site, UserData* data) {
     for (dlu=0; dlu<N_VBH_TYPES; dlu++) {
         for (ylu=0;ylu<N_LANDUSE_YEARS;ylu++)
         {
-            cs->sdata->vbh[dlu][0]=data->gfvh[dlu][ylu][cs->sdata->globY_][cs->sdata->globX_];
+//            cs->sdata->vbh[dlu][0]=data->gfvh[dlu][ylu][cs->sdata->globY_][cs->sdata->globX_];
+            
+            //test_larch
+            cs->sdata->vbh[dlu][ylu]=data->gfvh[dlu][ylu][cs->sdata->globY_][cs->sdata->globX_];
         }
     }
     for (dlu=0; dlu<N_SBH_TYPES; dlu++) {

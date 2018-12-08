@@ -612,6 +612,69 @@ void reset_6d_float(float****** array_6d, size_t dim1, size_t dim2, size_t dim3,
 
 
 #if LANDUSE
+//test_larch
+bool setCropCalendar (site** sitrptr,UserData* data)
+{
+    site* cs = *sitrptr;
+    double temp_crit = 10.0;
+    double precip_crit = 100.0; // mm/month
+    while (cs != NULL)
+    {
+        int ilat = cs->sdata->globY_;
+        int ilon = cs->sdata->globX_;
+        int climate_zone = 9999;
+        double annual_minimum_temperature = 100000.0;
+        
+        //Find temperature of coldest month of the year
+        for (size_t mon=0;mon<N_CLIMATE;mon++)
+        {
+            if(cs->sdata->temp[mon] < annual_minimum_temperature)
+                annual_minimum_temperature = cs->sdata->temp[mon];
+        }
+        // Find if this site is temperature or preciptation limited
+        if (annual_minimum_temperature < temp_crit)  // temp_crit value used here is different to what is used to define climate_zone of sites init_site
+            climate_zone = 1;
+        else
+            climate_zone = 0;
+        
+        //if temperature limited
+        if(climate_zone==1)
+        {
+            for (size_t mon=0;mon<N_CLIMATE-1;mon++)
+            {
+                if((cs->sdata->temp[mon] < temp_crit) && (cs->sdata->temp[mon+1] >= temp_crit))
+                    data->planting_probability[mon][ilat][ilon] = 1.0;
+                else
+                    data->planting_probability[mon][ilat][ilon] = 0.0;
+                
+                if((cs->sdata->temp[mon] > temp_crit) && (cs->sdata->temp[mon+1] <= temp_crit))
+                    data->harvest_probability[mon][ilat][ilon] = 1.0;
+                else
+                    data->harvest_probability[mon][ilat][ilon] = 0.0;
+            }
+        }
+        else
+        {
+            for (size_t mon=0;mon<N_CLIMATE-1;mon++)
+            {
+                if((cs->sdata->precip[mon] < precip_crit) && (cs->sdata->precip[mon] >= precip_crit))
+                    data->planting_probability[mon][ilat][ilon] = 1.0;
+                else
+                    data->planting_probability[mon][ilat][ilon] = 0.0;
+                
+                if((cs->sdata->precip[mon] > precip_crit) && (cs->sdata->precip[mon] <= precip_crit))
+                    data->harvest_probability[mon][ilat][ilon] = 1.0;
+                else
+                    data->harvest_probability[mon][ilat][ilon] = 0.0;
+            }
+        }
+        cs = cs->next_site;
+    }
+    
+    return 1;
+}
+
+
 bool loadCropCalendar (UserData* data)
 {
     int rv, ncid, varid, dlu, tlu, i;

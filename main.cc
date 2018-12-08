@@ -111,8 +111,7 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
     }
     
 #if LANDUSE
-   loabGlobalLUData(data);
-    loadCropCalendar(data);
+    loabGlobalLUData(data);
 #endif
 
 
@@ -140,6 +139,19 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
       // TODO: if an mpi processor ends up here, bad things happen
       exit(0);
    }
+    
+#if LANDUSE
+    //    loadCropCalendar(data);
+    //test_larch
+    if(data->is_external_crop_calendar==1)
+        // This function load external crop calendar from SAGE grouo, and it is reprocessed by integrating 10+ crop data
+        // This version may be problematic for some region, as this data does not tell which crop is dominant
+        // Clear or plant crop non dominant may lead to bias in GPP seasonality -- Lei
+        loadCropCalendar(data);
+    else
+        // This function determine planting and harvesting time based on climate condition, suggested by Sacks et al 2010
+        setCropCalendar(&data->first_site, data);
+#endif
 
    if(data->print_output_files) {
       print_initial(first_site, data);

@@ -43,7 +43,7 @@
 ////////////////////////////////////////
 //    LAND USE
 ////////////////////////////////////////
-#define LANDUSE 0 ///< Flag to turn on land use dynamics
+#define LANDUSE 1 ///< Flag to turn on land use dynamics
 #define FASTLOAD 2
 #define COUPLE_FAR 1
 #define COUPLE_PFTspecific 1
@@ -245,6 +245,9 @@ struct UserData {
    int fire_suppression;
    int fire_off;    /// CHANGE-ML
    int fire_gfed;   /// CHANGE-ML
+    
+    //test_larch
+    int is_external_crop_calendar;
  
    const char *which_mech_to_use;
    const char *climate_file;
@@ -526,16 +529,38 @@ struct UserData {
     
     
     // Landuse emission
-    double  fraction_harvest_left_on_prim_site[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on primary land
-    double  fraction_harvest_left_on_secd_site[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on secondary land
-    double  fraction_harvest_to_1yr_pool[NSPECIES];                ///< Fraction of vegetation biomass assigned to 1-year decay product pool at havesting
-    double  fraction_harvest_to_10yr_pool[NSPECIES];                ///< Fraction of vegetation biomass assigned to 10-year decay product pool at havesting
-    double  fraction_harvest_to_100yr_pool[NSPECIES];                ///< Fraction of vegetation biomass assigned to 100-year decay product pool at havesting
+//    double  fraction_harvest_left_on_prim_site[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on primary land
+//    double  fraction_harvest_left_on_secd_site[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on secondary land
+//    double  fraction_harvest_to_1yr_pool[NSPECIES];                ///< Fraction of vegetation biomass assigned to 1-year decay product pool at havesting
+//    double  fraction_harvest_to_10yr_pool[NSPECIES];                ///< Fraction of vegetation biomass assigned to 10-year decay product pool at havesting
+//    double  fraction_harvest_to_100yr_pool[NSPECIES];                ///< Fraction of vegetation biomass assigned to 100-year decay product pool at havesting
+//
+//    double  fraction_clearing_left_on_site[NSPECIES];         ///< Fraction of vegetation biomass left to soil at clearing for crop, pasture and others
+//    double  fraction_clearing_to_1yr_pool[NSPECIES];          ///< Fraction of vegetation biomass assigned to 1-year decay product pool at clearing
+//    double  fraction_clearing_to_10yr_pool[NSPECIES];          ///< Fraction of vegetation biomass assigned to 10-year decay product pool at clearing
+//    double  fraction_clearing_to_100yr_pool[NSPECIES];          ///< Fraction of vegetation biomass assigned to 100-year decay product pool at clearing
     
-    double  fraction_clearing_left_on_site[NSPECIES];         ///< Fraction of vegetation biomass left to soil at clearing for crop, pasture and others
-    double  fraction_clearing_to_1yr_pool[NSPECIES];          ///< Fraction of vegetation biomass assigned to 1-year decay product pool at clearing
-    double  fraction_clearing_to_10yr_pool[NSPECIES];          ///< Fraction of vegetation biomass assigned to 10-year decay product pool at clearing
-    double  fraction_clearing_to_100yr_pool[NSPECIES];          ///< Fraction of vegetation biomass assigned to 100-year decay product pool at clearing
+    //test_larch
+    double  fraction_harvest_left_on_prim_site_tro[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on primary land
+    double  fraction_harvest_left_on_secd_site_tro[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on secondary land
+    double  fraction_harvest_to_1yr_pool_tro[NSPECIES];                ///< Fraction of vegetation biomass assigned to 1-year decay product pool at havesting
+    double  fraction_harvest_to_10yr_pool_tro[NSPECIES];                ///< Fraction of vegetation biomass assigned to 10-year decay product pool at havesting
+    double  fraction_harvest_to_100yr_pool_tro[NSPECIES];                ///< Fraction of vegetation biomass assigned to 100-year decay product pool at havesting
+    double  fraction_clearing_left_on_site_tro[NSPECIES];         ///< Fraction of vegetation biomass left to soil at clearing for crop, pasture and others
+    double  fraction_clearing_to_1yr_pool_tro[NSPECIES];          ///< Fraction of vegetation biomass assigned to 1-year decay product pool at clearing
+    double  fraction_clearing_to_10yr_pool_tro[NSPECIES];          ///< Fraction of vegetation biomass assigned to 10-year decay product pool at clearing
+    double  fraction_clearing_to_100yr_pool_tro[NSPECIES];          ///< Fraction of vegetation biomass assigned to 100-year decay product pool at clearing
+    
+    //test_larch
+    double  fraction_harvest_left_on_prim_site_temp[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on primary land
+    double  fraction_harvest_left_on_secd_site_temp[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on secondary land
+    double  fraction_harvest_to_1yr_pool_temp[NSPECIES];                ///< Fraction of vegetation biomass assigned to 1-year decay product pool at havesting
+    double  fraction_harvest_to_10yr_pool_temp[NSPECIES];                ///< Fraction of vegetation biomass assigned to 10-year decay product pool at havesting
+    double  fraction_harvest_to_100yr_pool_temp[NSPECIES];                ///< Fraction of vegetation biomass assigned to 100-year decay product pool at havesting
+    double  fraction_clearing_left_on_site_temp[NSPECIES];         ///< Fraction of vegetation biomass left to soil at clearing for crop, pasture and others
+    double  fraction_clearing_to_1yr_pool_temp[NSPECIES];          ///< Fraction of vegetation biomass assigned to 1-year decay product pool at clearing
+    double  fraction_clearing_to_10yr_pool_temp[NSPECIES];          ///< Fraction of vegetation biomass assigned to 10-year decay product pool at clearing
+    double  fraction_clearing_to_100yr_pool_temp[NSPECIES];          ///< Fraction of vegetation biomass assigned to 100-year decay product pool at clearing
 
 #endif // ED
 

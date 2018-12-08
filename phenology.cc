@@ -7,7 +7,7 @@
 #include "cohort.h"
 #include <cstring>
 
-#define THETA_CRIT 0.5      /* theta threshold for leaf drop (mm)*/
+#define THETA_CRIT 0.2      /* theta threshold for leaf drop (mm)*/
 #define L_FRACT 0.5 /* 0.5 fraction of leaves retained after leaf fall */
 
 using namespace std;
@@ -46,7 +46,7 @@ void phenology (int t, patch** patchptr, UserData* data) {
               if_trigger = 1;
           if((data->phenology[spp] == 2) && (currents->sdata->temp[data->time_period] < 10.0))
               if_trigger = 1;
-          if((data->phenology[spp] == 4) && ((currentp->theta < 0.50) || (currents->sdata->temp[data->time_period] < 10.0)))
+          if((data->phenology[spp] == 4) && ((currentp->theta < THETA_CRIT) || (currents->sdata->temp[data->time_period] < 10.0)))
               if_trigger = 1;
           if((data->phenology[spp] == 3) && ((currentp->theta < THETA_CRIT) || (currents->sdata->temp[data->time_period] < 10.0)))
               if_trigger = 1;

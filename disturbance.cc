@@ -139,14 +139,35 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
       /* clear for wood harvesting */
       if ( q == 9 ) { 
          if ( dp->area > 0.000001 ) {
-             if (dp->landuse == LU_NTRL)
-                 fraction_harvest_left_on_site = data->fraction_harvest_left_on_prim_site[spp];
-             else if (dp->landuse == LU_SCND)
-                 fraction_harvest_left_on_site = data->fraction_harvest_left_on_secd_site[spp];
-             else
+//             if (dp->landuse == LU_NTRL)
+//                 fraction_harvest_left_on_site = data->fraction_harvest_left_on_prim_site[spp];
+//             else if (dp->landuse == LU_SCND)
+//                 fraction_harvest_left_on_site = data->fraction_harvest_left_on_secd_site[spp];
+//             else
+//             {
+//                 fraction_harvest_left_on_site = 1.0;
+//             }
+             
+             //test_larch
+             double fraction_harvest_left_on_prim_site_spp = 0.0;
+             double fraction_harvest_left_on_secd_site_spp = 0.0;
+             if (cs->climate_zone==1)
              {
-                 fraction_harvest_left_on_site = 1.0;
+                 fraction_harvest_left_on_prim_site_spp = data->fraction_harvest_left_on_prim_site_tro[spp];
+                 fraction_harvest_left_on_secd_site_spp = data->fraction_harvest_left_on_secd_site_tro[spp];
              }
+            else
+            {
+                fraction_harvest_left_on_prim_site_spp = data->fraction_harvest_left_on_prim_site_temp[spp];
+                fraction_harvest_left_on_secd_site_spp = data->fraction_harvest_left_on_secd_site_temp[spp];
+            }
+
+             if (dp->landuse == LU_NTRL)
+                 fraction_harvest_left_on_site = fraction_harvest_left_on_prim_site_spp;
+             else if (dp->landuse == LU_SCND)
+                 fraction_harvest_left_on_site = fraction_harvest_left_on_secd_site_spp;
+             else
+                 fraction_harvest_left_on_site = 1.0;
              
             fast_litter +=  data->fraction_balive_2_fast * 
                fraction_harvest_left_on_site *
@@ -169,9 +190,28 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
 //             tp->yr100_decay_product_pool += data->fraction_harvest_to_100yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
              
              // *LANDUSE_FREQ seems a bug, here delete them for testing
-             tp->yr1_decay_product_pool += data->fraction_harvest_to_1yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
-             tp->yr10_decay_product_pool += data->fraction_harvest_to_10yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
-             tp->yr100_decay_product_pool += data->fraction_harvest_to_100yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+             //test_larch
+             double fraction_harvest_to_1yr_pool = 0.0, fraction_harvest_to_10yr_pool = 0.0, fraction_harvest_to_100yr_pool = 0.0;
+             if (cs->climate_zone==1)
+             {
+                 fraction_harvest_to_1yr_pool = data->fraction_harvest_to_1yr_pool_tro[spp];
+                 fraction_harvest_to_10yr_pool = data->fraction_harvest_to_10yr_pool_tro[spp];
+                 fraction_harvest_to_100yr_pool = data->fraction_harvest_to_100yr_pool_tro[spp];
+             }
+             else
+             {
+                 fraction_harvest_to_1yr_pool = data->fraction_harvest_to_1yr_pool_temp[spp];
+                 fraction_harvest_to_10yr_pool = data->fraction_harvest_to_10yr_pool_temp[spp];
+                 fraction_harvest_to_100yr_pool = data->fraction_harvest_to_100yr_pool_temp[spp];
+             }
+             
+//             tp->yr1_decay_product_pool += data->fraction_harvest_to_1yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+//             tp->yr10_decay_product_pool += data->fraction_harvest_to_10yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+//             tp->yr100_decay_product_pool += data->fraction_harvest_to_100yr_pool[spp]*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+             
+             tp->yr1_decay_product_pool += fraction_harvest_to_1yr_pool*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+             tp->yr10_decay_product_pool += fraction_harvest_to_10yr_pool*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+             tp->yr100_decay_product_pool += fraction_harvest_to_100yr_pool*(1-fraction_harvest_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
 #endif
          }
       }
@@ -180,7 +220,12 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
       {
           if ( dp->area > 0.000001 )
           {
-              fraction_clearing_left_on_site = data->fraction_clearing_left_on_site[spp];
+//              fraction_clearing_left_on_site = data->fraction_clearing_left_on_site[spp];
+              
+              if (cs->climate_zone==1)
+                  fraction_clearing_left_on_site = data->fraction_clearing_left_on_site_tro[spp];
+              else
+                  fraction_clearing_left_on_site = data->fraction_clearing_left_on_site_temp[spp];
               
               fast_litter +=  data->fraction_balive_2_fast *
               fraction_clearing_left_on_site *
@@ -202,9 +247,28 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
               ///In next update, the c loss due to LU change may be out into LU_emission instead of forest_harvested_c
               tp->forest_harvested_c += (1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area*LANDUSE_FREQ;
               
-              tp->yr1_decay_product_pool += data->fraction_clearing_to_1yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
-              tp->yr10_decay_product_pool += data->fraction_clearing_to_10yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
-              tp->yr100_decay_product_pool += data->fraction_clearing_to_100yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+              //test_larch
+              double fraction_clearing_to_1yr_pool = 0.0, fraction_clearing_to_10yr_pool = 0.0, fraction_clearing_to_100yr_pool = 0.0;
+              if (cs->climate_zone==1)
+              {
+                  fraction_clearing_to_1yr_pool = data->fraction_clearing_to_1yr_pool_tro[spp];
+                  fraction_clearing_to_10yr_pool = data->fraction_clearing_to_10yr_pool_tro[spp];
+                  fraction_clearing_to_100yr_pool = data->fraction_clearing_to_100yr_pool_tro[spp];
+              }
+              else
+              {
+                  fraction_clearing_to_1yr_pool = data->fraction_clearing_to_1yr_pool_temp[spp];
+                  fraction_clearing_to_10yr_pool = data->fraction_clearing_to_10yr_pool_temp[spp];
+                  fraction_clearing_to_100yr_pool = data->fraction_clearing_to_100yr_pool_temp[spp];
+              }
+              
+//              tp->yr1_decay_product_pool += data->fraction_clearing_to_1yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+//              tp->yr10_decay_product_pool += data->fraction_clearing_to_10yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+//              tp->yr100_decay_product_pool += data->fraction_clearing_to_100yr_pool[spp]*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+                  
+                tp->yr1_decay_product_pool += fraction_clearing_to_1yr_pool*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+                tp->yr10_decay_product_pool += fraction_clearing_to_10yr_pool*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
+                tp->yr100_decay_product_pool += fraction_clearing_to_100yr_pool*(1-fraction_clearing_left_on_site)*(cc->balive+cc->bdead)*cc->nindivs*change_in_area/dp->area;
 #endif
           }
       }

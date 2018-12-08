@@ -1,7 +1,4 @@
-NUM_SOIS   3
+NUM_SOIS   1
 
 
-
-TRO3    0    -60
-TRO3    0    -70
-TRO3    -5    -60
+Fire_Rh    27.0    115.0

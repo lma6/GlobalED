@@ -141,6 +141,8 @@ void patch::Dsdt (unsigned int time_period, double time, UserData* data) {
    /* K3 is high bc we wanted to added back the n immobilization story 
       without tracking the slow pool */
     
+    //test_larch
+    K3 = 0.2;
 
    /* std values= 1, .3, 1, 0 */
    double r_fsc=1.0, r_stsc=0.3, r_ssc=1.0, r_psc=0.0;
@@ -348,37 +350,43 @@ else
 //
 //    Td/=5.0;
     double q10 = 1.5;
-    double R0 = 0.5;
-    // Layer 1
-    Td += R0*pow(q10, (currents->sdata->soil_temp1[time_period]-25.0)/10.0);
-    // Layer 2
-    Td += R0*pow(q10, (currents->sdata->soil_temp2[time_period]-25.0)/10.0);
-    // Layer 3
-    Td += R0*pow(q10, (currents->sdata->soil_temp3[time_period]-25.0)/10.0);
-//    // Layer 4
-//    Td += pow(q10, (currents->sdata->soil_temp4[time_period]-25.0)/10.0);
-//    // Layer 5
-//    Td += pow(q10, (currents->sdata->soil_temp5[time_period]-25.0)/10.0);
-
-    Td/=3.0;
-    
-    //test_larch
-//    if(currents->sdata->soil_temp1[time_period]>-1)
-//        Td += R0*pow(q10, (currents->sdata->soil_temp1[time_period]-25.0)/10.0);
-//    else
-//        Td += 0.0;
-//
-//    if(currents->sdata->soil_temp2[time_period]>-1)
-//        Td += R0*pow(q10, (currents->sdata->soil_temp2[time_period]-25.0)/10.0);
-//    else
-//        Td += 0.0;
-//
-//    if(currents->sdata->soil_temp3[time_period]>-1)
-//        Td += R0*pow(q10, (currents->sdata->soil_temp3[time_period]-25.0)/10.0);
-//    else
-//        Td += 0.0;
+    double R0 = 0.40;
+//    // Layer 1
+//    Td += R0*pow(q10, (currents->sdata->soil_temp1[time_period]-25.0)/10.0);
+//    // Layer 2
+//    Td += R0*pow(q10, (currents->sdata->soil_temp2[time_period]-25.0)/10.0);
+//    // Layer 3
+//    Td += R0*pow(q10, (currents->sdata->soil_temp3[time_period]-25.0)/10.0);
+////    // Layer 4
+////    Td += pow(q10, (currents->sdata->soil_temp4[time_period]-25.0)/10.0);
+////    // Layer 5
+////    Td += pow(q10, (currents->sdata->soil_temp5[time_period]-25.0)/10.0);
 //
 //    Td/=3.0;
+    
+    //test_larch
+    if(currents->sdata->soil_temp1[time_period]>0)
+        Td += R0*pow(q10, (currents->sdata->soil_temp1[time_period]-25.0)/10.0);
+    else
+        Td += 0.0;
+
+    if(currents->sdata->soil_temp2[time_period]>0)
+        Td += R0*pow(q10, (currents->sdata->soil_temp2[time_period]-25.0)/10.0);
+    else
+        Td += 0.0;
+
+    if(currents->sdata->soil_temp3[time_period]>0)
+        Td += R0*pow(q10, (currents->sdata->soil_temp3[time_period]-25.0)/10.0);
+    else
+        Td += 0.0;
+    
+    //test_larch
+    if(currents->sdata->soil_temp1[time_period]<0)
+        Td = 0.0;
+
+    Td/=3.0;
+    //test_larch
+//    printf("site %s mon %d Td %f stmp1 %f stmp2 %f stmp3 %f\n",currents->sdata->name_,data->time_period,Td,currents->sdata->soil_temp1[time_period],currents->sdata->soil_temp2[time_period],currents->sdata->soil_temp3[time_period]);
 }
    
 
@@ -395,6 +403,22 @@ else
    } else {
       Wd = 0.6 / (1.2 * theta);
    }
+    
+    //test_larch
+    //As altering water1 paramter in water limittation module, resulting in relatively high soil mosiure, then cause high repspration in boreal
+    //Test whether change below will increase soil carbon density in boreal forest -- Lei
+    double adjust_theta = theta/2.0;
+    if (adjust_theta <= 0.3) {
+        Wd = 0.2;
+    } else if (adjust_theta <= 0.46) {
+        Wd = adjust_theta / 0.46;
+    } else {
+        Wd = adjust_theta*0.5;
+    }
+    
+    //test_larch
+//    printf("                Wd %f theta %f\n",Wd,theta);
+    
    return (Td * Wd);
 
 #elif defined MIAMI_LU

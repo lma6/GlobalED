@@ -282,7 +282,7 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
             else if (data->single_year)
             {
                 CO2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
-            }     
+            }
             
             //As growth temperature defined in Lombardozzi et all 2015 and Atkin et al 2008 is the preceding 10 days running mean of air temperature, here for simplicity, use mean temperature of current month
             Tg=0;

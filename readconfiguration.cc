@@ -198,7 +198,10 @@ void initialize_model_params(UserData* data) {
 
     /* LANDUSE */
     data->landuse_bau    = get_val<int>(data, PARAMS, "", "landuse_bau");    
-    data->landuse_stop   = get_val<int>(data, PARAMS, "", "landuse_stop");    
+    data->landuse_stop   = get_val<int>(data, PARAMS, "", "landuse_stop");
+    
+    //test_larch
+    data->is_external_crop_calendar = get_val<int>(data, PARAMS, "", "is_external_crop_calendar");
 
     /* FIRE  */
     data->fire_suppression_stop = get_val<int>(data, PARAMS, "", "fire_suppression_stop"); 

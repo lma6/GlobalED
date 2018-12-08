@@ -248,16 +248,70 @@ void init_data (const char* cfgFile, UserData* data) {
       printf("spp %d  qsw = %f \n", i, data->qsw[i]);
        
 #if LANDUSE
-       data->fraction_harvest_left_on_prim_site[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_prim_site");
-       data->fraction_harvest_left_on_secd_site[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_secd_site");
-       data->fraction_harvest_to_1yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_1yr_pool");
-       data->fraction_harvest_to_10yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_10yr_pool");
-       data->fraction_harvest_to_100yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_100yr_pool");
+//       data->fraction_harvest_left_on_prim_site[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_prim_site");
+//       data->fraction_harvest_left_on_secd_site[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_secd_site");
+//       data->fraction_harvest_to_1yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_1yr_pool");
+//       data->fraction_harvest_to_10yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_10yr_pool");
+//       data->fraction_harvest_to_100yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_100yr_pool");
+//
+//       data->fraction_clearing_left_on_site[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_left_on_site");
+//       data->fraction_clearing_to_1yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_1yr_pool");
+//       data->fraction_clearing_to_10yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_10yr_pool");
+//       data->fraction_clearing_to_100yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_100yr_pool");
        
-       data->fraction_clearing_left_on_site[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_left_on_site");
-       data->fraction_clearing_to_1yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_1yr_pool");
-       data->fraction_clearing_to_10yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_10yr_pool");
-       data->fraction_clearing_to_100yr_pool[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_100yr_pool");
+       //test_larch
+       //Loading two different parameters set for early-, mid- and late- succ in tropical and temperate region
+       // But just one set for grass and conifer
+       if((i==2) || (i==3) || (i==4)) // If PFT is early-, mid- and late succ
+       {
+           //Read parameters for tropical reigon
+           data->fraction_harvest_left_on_prim_site_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_prim_site_tro");
+           data->fraction_harvest_left_on_secd_site_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_secd_site_tro");
+           data->fraction_harvest_to_1yr_pool_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_1yr_pool_tro");
+           data->fraction_harvest_to_10yr_pool_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_10yr_pool_tro");
+           data->fraction_harvest_to_100yr_pool_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_100yr_pool_tro");
+           
+           data->fraction_clearing_left_on_site_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_left_on_site_tro");
+           data->fraction_clearing_to_1yr_pool_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_1yr_pool_tro");
+           data->fraction_clearing_to_10yr_pool_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_10yr_pool_tro");
+           data->fraction_clearing_to_100yr_pool_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_100yr_pool_tro");
+           
+           //Read parameters for temperate region
+           data->fraction_harvest_left_on_prim_site_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_prim_site_temp");
+           data->fraction_harvest_left_on_secd_site_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_secd_site_temp");
+           data->fraction_harvest_to_1yr_pool_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_1yr_pool_temp");
+           data->fraction_harvest_to_10yr_pool_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_10yr_pool_temp");
+           data->fraction_harvest_to_100yr_pool_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_100yr_pool_temp");
+           
+           data->fraction_clearing_left_on_site_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_left_on_site_temp");
+           data->fraction_clearing_to_1yr_pool_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_1yr_pool_temp");
+           data->fraction_clearing_to_10yr_pool_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_10yr_pool_temp");
+           data->fraction_clearing_to_100yr_pool_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_100yr_pool_temp");
+       }
+       else
+       {
+           data->fraction_harvest_left_on_prim_site_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_prim_site");
+           data->fraction_harvest_left_on_secd_site_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_secd_site");
+           data->fraction_harvest_to_1yr_pool_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_1yr_pool");
+           data->fraction_harvest_to_10yr_pool_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_10yr_pool");
+           data->fraction_harvest_to_100yr_pool_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_100yr_pool");
+           
+           data->fraction_clearing_left_on_site_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_left_on_site");
+           data->fraction_clearing_to_1yr_pool_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_1yr_pool");
+           data->fraction_clearing_to_10yr_pool_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_10yr_pool");
+           data->fraction_clearing_to_100yr_pool_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_100yr_pool");
+           
+           data->fraction_harvest_left_on_prim_site_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_prim_site");
+           data->fraction_harvest_left_on_secd_site_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_secd_site");
+           data->fraction_harvest_to_1yr_pool_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_1yr_pool");
+           data->fraction_harvest_to_10yr_pool_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_10yr_pool");
+           data->fraction_harvest_to_100yr_pool_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_to_100yr_pool");
+
+           data->fraction_clearing_left_on_site_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_left_on_site");
+           data->fraction_clearing_to_1yr_pool_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_1yr_pool");
+           data->fraction_clearing_to_10yr_pool_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_10yr_pool");
+           data->fraction_clearing_to_100yr_pool_temp[i]          =   get_val<double>(data, PFTS, pft, "fraction_clearing_to_100yr_pool");
+       }
 #endif
    } /* end loop over species */ 
      
