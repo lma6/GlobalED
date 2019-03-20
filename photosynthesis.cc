@@ -216,7 +216,7 @@ void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
     Vpm25=0,
     TPU25=0,
     Rd25=0,
-    g0=0.02,
+    g0=0.01, // test_larch 0.02
     g1=10;
     stomaRatio=0.5;
     LfWidth=0.05;

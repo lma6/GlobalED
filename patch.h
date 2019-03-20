@@ -156,7 +156,10 @@ struct patch {
    
    // Belowgrnd.c
 #if defined ED
-   double Dwdt (double time, UserData* data); 
+   double Dwdt (double time, UserData* data);
+    //test_larch
+    double Soil_Canopy_evap(UserData* data);
+    
    void Update_Water(double time, UserData* data, double deltat);
     void Dsdt (unsigned int time_period, double time, UserData* data);
 #elif defined MIAMI_LU

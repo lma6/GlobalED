@@ -167,6 +167,9 @@ void create_patch (site** siteptr, patch** pnewp, int landuse,
    newpatch->theta              = newpatch->water / (current_site->sdata->soil_depth 
                                                      * current_site->sdata->theta_max);
    newpatch->total_water_uptake = 0.0;
+    //test_larch
+    newpatch->total_water_demand = 0.0;
+    newpatch->soil_evap         = 0.0;
     
     //CHANGE-ML ml-modified: Load restart files, pero is infinite sometimes
     newpatch->perc=0.0;
@@ -580,6 +583,8 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
 	       newp->structural_soil_L /= newp->area;
 	       newp->water /= newp->area;
 	       newp->theta /= newp->area;
+            //test_larch
+           newp->soil_evap /= newp->area;
 	       newp->rh /= newp->area;
             ///CarbonConserve
             newp->gpp_avg /= newp->area;

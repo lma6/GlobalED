@@ -1615,6 +1615,8 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
          cs->theta[lu]              += cp->theta * frac;
          /* TODO: why are these different? -justin */
          cs->total_water_uptake[lu] += cp->total_water_uptake / (cs->area_fraction[lu]*data->area);
+          //test_larch
+          cs->total_water_demand[lu] += cp->total_water_demand / (cs->area_fraction[lu]*data->area);
          cs->perc[lu]               += cp->perc * frac;
           //CHANGE-ML
           if (cp->perc>1e18)

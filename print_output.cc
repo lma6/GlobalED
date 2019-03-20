@@ -755,10 +755,10 @@ void print_cfluxes (unsigned int time, site** siteptr, UserData* data) {
 
       /* print to files */
 #if defined ED
-      fprintf(outfile, "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f\n",
+      fprintf(outfile, "%s time %f npp %8.6f rh %8.6f nep %8.6f npp2 %8.6f gpp %8.6f dndt %f nep3 %f gpp_avg %8.6f npp_avg %8.6f rh_avg %8.6f\n",
               cs->sdata->name_, time * TIMESTEP,
               cs->npp[lu], cs->rh[lu] ,cs->nep[lu],
-              cs->npp2[lu], cs->gpp[lu], cs->dndt[lu],cs->nep3[lu]);
+              cs->npp2[lu], cs->gpp[lu], cs->dndt[lu],cs->nep3[lu],cs->gpp_avg[lu],cs->npp_avg[lu],cs->rh_avg[lu]);
 #elif defined MIAMI_LU
       fprintf(outfile, "%s time %f npp %8.6f rh %8.6f nep %8.6f dndt %f\n",
           cs->sdata->name_, time * TIMESTEP,

@@ -110,6 +110,7 @@ void cohort::npp_function(UserData* data){
     An_max = 0.001*cs->sdata->An[species][time_index][0];  // TODO, should we use current Vm0_bin or 0
     An_shut = 0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1];
     An_shut_max = 0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1];
+
    
    /*convert from KgC/m2/mon to kgC/yr*/
    An_pot *= data->specific_leaf_area[species]*bl*12;
@@ -131,7 +132,7 @@ void cohort::npp_function(UserData* data){
    /*treat this way bc easier to test downregulation, i.e. resp down 
      regulated as well*/
    /*must also elim leaf resp from below*/
-   gpp =  fs_open*(An_pot) + (1-fs_open)*(An_shut);       
+   gpp =  fs_open*(An_pot) + (1-fs_open)*(An_shut);
    gpp_max =  fs_open*(An_max) + (1-fs_open)*(An_shut_max);
     
 //    //test_larch

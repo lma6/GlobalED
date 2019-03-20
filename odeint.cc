@@ -284,6 +284,7 @@ static void f(double t, void *f_data){
 void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, UserData* data) {
 
    site* currents= siteptr;
+
    
    /*TRANSPIRATION****************************/
    cohort* currentc=shortest;
@@ -328,28 +329,53 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
       if(data->water_competition) {
         double water_supply;
         double wilt_factor;
+//          //test_larch
+//          if(currentc->species==6)
+//              data->water1 = 20.0;
+//          else if (currentc->species==5)
+//              data->water1 = 12.0;
+//          else if (currentc->species==2)
+//              data->water1 = 80.0;
+//          else if (currentc->species==3)
+//              data->water1 = 80.0;
+//          else if (currentc->species==4)
+//              data->water1 = 80.0;
+//          else
+//              data->water1 = 80.0;
+//
+//          if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==1))
+//             data->water1 = 30.0;
+//          if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==2))
+//              data->water1 = 80.0;
+          
+
           //test_larch
           if(currentc->species==6)
-              data->water1 = 20.0;
+              data->water1 = 40.0; //50.0
           else if (currentc->species==5)
-              data->water1 = 12.0;
+              data->water1 = 40.0; //50.0
           else if (currentc->species==2)
-              data->water1 = 80.0;
+              data->water1 = 50.0; //60.0
           else if (currentc->species==3)
-              data->water1 = 80.0;
+              data->water1 = 50.0; //60.0
           else if (currentc->species==4)
-              data->water1 = 80.0;
-          else
+              data->water1 = 50.0; //60.0
+          else if (currentc->species==0)
+              data->water1 = 80.0; //40.0
+          else if (currentc->species==1)
               data->water1 = 80.0;
           
           if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==1))
-             data->water1 = 30.0;
+              data->water1 = 30.0;  //60.0
           if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==2))
-              data->water1 = 80.0;
+              data->water1 = 50.0;  //60.0
+          
           
 
         water_supply=data->water1*currentc->br*water*data->mass_of_water;
         currentc->fsw = (water_supply-currentc->E_shut)/(currentc->E_pot + water_supply-currentc->E_shut);
+          
+
           
           //test_larch
 //          if(currentc->species==7 and currentc->hite>0.5 and theta<0.5 and currentc->bl>1e-7)

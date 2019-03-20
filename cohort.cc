@@ -532,6 +532,14 @@ void init_cohorts(patch** patchptr, UserData* data){
             nindivs = 0.000001;
          }
       }
+       
+       //test_larch
+       // may cause carbon leakage
+       if (cp->landuse == LU_SCND) {
+           if (spp > 1) {
+               nindivs *= 10.0;
+           }
+       }
 #endif
 
       /* creat a dummy cohort to figure out size of biomass compartments */  
@@ -744,7 +752,6 @@ void terminate_cohorts(cohort** ptallest, cohort** pshortest, UserData* data){
         {
             data->btol = currentp->siteptr->site_total_biomass * 1e-5;
             data->btol   = (data->btol > 0.00000001)? data->btol : 0.00000001;
-//            data->btol = 1e-8;
         }
             
 

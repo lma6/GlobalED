@@ -169,6 +169,7 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
              else
                  fraction_harvest_left_on_site = 1.0;
              
+             
             fast_litter +=  data->fraction_balive_2_fast * 
                fraction_harvest_left_on_site *
                cc->balive * ( cc->nindivs / dp->area );
@@ -226,6 +227,7 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
                   fraction_clearing_left_on_site = data->fraction_clearing_left_on_site_tro[spp];
               else
                   fraction_clearing_left_on_site = data->fraction_clearing_left_on_site_temp[spp];
+              
               
               fast_litter +=  data->fraction_balive_2_fast *
               fraction_clearing_left_on_site *

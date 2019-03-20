@@ -1,4 +1,4 @@
 NUM_SOIS   1
 
+Fire_Rh    42.75    -72.25
 
-Fire_Rh    27.0    115.0

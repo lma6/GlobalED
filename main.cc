@@ -391,6 +391,19 @@ void model (UserData& data) {
                      data.MERRA2_LUT=0;
                  }
                  printf("Mechanism_year_to use: %d\n" , data.mechanism_year);
+                 
+                 //test_larch
+                 if(data.mechanism_year>=CO2_START_VARY)
+                 {
+                     site* siteptr = data.first_site;
+                     printf("Reload site data and also reset mechanisms (An, En) calculation\n");
+                     while (siteptr != NULL)
+                     {
+                         /* Now we have to read the site data again */
+                         siteptr->sdata->readSiteData(data);
+                         siteptr = siteptr->next_site;
+                     }
+                 }
             
                  if (data.mechanism_year>MERRA2_YEAR_START_USE) //loading data for everyear if COUPLE_MERRA2
                  {
@@ -420,6 +433,7 @@ void model (UserData& data) {
                      }
 
                      site* siteptr = data.first_site;
+                     printf("Reload site data and also reset mechanisms (An, En) calculation\n");
                      while (siteptr != NULL)
                      {
                          /* Now we have to read the site data again */

@@ -51,9 +51,10 @@
 #define COUPLE_MERRA2_LUT 0
 #define COUPLE_TemAccm 0
 #define CPOUPLE_VcmaxDownreg 0
-#define INI_Year 851  //In LANDUSE, it should be 1501; For spin-up. it is 791;  With LUH2, it should be 851, and running years should be 1165
+#define INI_Year 851  //In LANDUSE, it should be 1501; For spin-up. it is 791;  With LUH2, it should be 851, and running years should be 1165  ## 851  826
 #define N_LAI 6
 #define WT_Abg_PROFILE 0
+#define CO2_START_VARY 1850 // When global average of CO2 concentration start increasing from 280 ppm. From this year, An, En variables will be calculated annual based on new CO2
 #define MERRA2_YEAR_START_USE 1945   // When ED starts using MERRA2 yearly data, previously using 1980, using 1945 may cause high NBP in 1980s due to legency effect from 1970 when use 2000s climate -- test_larch
 #define MERRA2_START 1981
 #define MERRA2_END 2015

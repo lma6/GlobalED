@@ -1,6 +1,11 @@
 NUM_SOIS    26
 
 
+Fire_Rh    60.25    45.25
+Fire_Rh    62.25    90.25
+Fire_Rh    60.25    60.25
+Fire_Rh    60.25    50.25
+Fire_Rh    55.25    105.25
 TEMP    45.75  121.75
 TEMP    55.0  80.0
 TEMP    50.25  125.25
@@ -35,4 +40,14 @@ TEMP    2.0  28.0
 Fire_Rh    -40.0    -72.0
 TEMP    20.0  75.0
 TEMP    50.0  10.0
+Fire_Rh    55.25    100.25
+Fire_Rh    67.25    95.25
 
+
+Fire_Rh    55.25    100.25
+Fire_Rh    67.25    95.25
+
+Fire_Rh    39.25    -86.25
+Fire_Rh    44.25    -121.75
+Fire_Rh    45.25    -84.75
+Fire_Rh    38.25    -120.75
