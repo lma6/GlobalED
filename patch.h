@@ -25,6 +25,12 @@ struct patch {
    double total_water_demand;          ///< Total plant water uptake in mm kg/yr
    double perc;                        ///< Rate of percolation mm/yr
    double soil_evap;                   ///< Rate of evapotation mm/yr
+    
+//test_mor2
+#if SNOWPACK_SCHEME == 1
+    double snowpack;
+    double snow_melt;
+#endif
 
    double total_spp_biomass[NSPECIES]; ///< Biomass of each spp in patch (kgC/m2)
    double total_spp_babove[NSPECIES];  ///< Agb of each spp in patch (kgC/m2)
@@ -195,6 +201,14 @@ void create_patch(site** siteptr, patch** pnewp, int landuse,
                   int track, double age, double area, double water, double fsc, 
                   double stsc, double stsl, double ssc, double psc, double msn, 
                   double fsn, UserData* data);
+
+#if LANDUSE
+void create_patch_LU (site** siteptr, patch** pnewp, int landuse,
+                      int track, double age, double area, double water,
+                      double fsc, double stsc, double stsl, double ssc, double psc,
+                      double msn, double fsn, double yr1_pool, double yr10_pool, double yr100_pool, UserData* data);
+#endif
+
 #elif defined MIAMI_LU
 void create_patch (site** siteptr, patch** pnewp, int landuse,
                    int track, double age, double area, double fsc, 
@@ -214,5 +228,10 @@ void calculate_patch_disturbance_rates (unsigned int t,
 void light_levels(patch** patchptr, UserData* data);
 void species_patch_size_profile (patch** pcurrentp,
                                  unsigned int nbins, UserData* data);
+
+#if SOILGRIDS_SCHEME
+//test_soil
+float MvG_func(float water, float k_sat ,float soil_depth, float theta_r, float theta_s, float L, float m, float pipcip);
+#endif
 
 #endif // EDM_PATCH_H 

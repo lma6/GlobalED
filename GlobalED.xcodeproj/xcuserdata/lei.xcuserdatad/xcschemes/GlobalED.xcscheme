@@ -64,7 +64,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "test_FLUXNET_LUH2_GFED_redisual_patchSoilVar"
+            argument = "ED_animation_LUH2"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

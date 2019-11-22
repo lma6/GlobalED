@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include "netcdf.h"
 
+
 #include "edmodels.h"
 #if GCD
 #include <dispatch/dispatch.h> 
@@ -156,10 +157,11 @@ UserData* ed_initialize (char* expName, const char* cfgFile) {
    if(data->print_output_files) {
       print_initial(first_site, data);
    }
-
-#if TBB
-   task_scheduler_init init(500);
-#endif
+//test_tbb  the below code is orginal, but seems not working for limiting threads number
+// I copy this code to main function, works so far --lei
+//#if TBB
+//   task_scheduler_init init(300);
+//#endif
 
 #if GCD || TBB 
    // TODO: this should replace site list
@@ -314,6 +316,11 @@ void model (UserData& data) {
    MPI::COMM_WORLD.Barrier();
 #endif
 
+    //test_tbb  NUMBER_THREADS is specified in edmodels.h
+#if TBB
+    task_scheduler_init init(NUMBER_THREADS);
+#endif
+    
    
    printf("****** running model \n"); 
 

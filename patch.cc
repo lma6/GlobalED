@@ -53,6 +53,50 @@ void init_patches (site** siteptr, UserData* data) {
       double water = (currents->sdata->soil_depth * currents->sdata->theta_max) 
                    * pow(currents->sdata->precip_average / currents->sdata->k_sat, 
                          1.0 / (2.0 * currents->sdata->tau + 2.0));
+    
+#if SOILGRIDS_SCHEME
+       //test_soil
+       water = 0.0;
+       float k_sat = currents->sdata->MvG_k_sat;
+       float soil_depth = currents->sdata->MvG_soil_depth;
+       float theta_s = currents->sdata->MvG_theta_saturated;
+       float theta_r = currents->sdata->MvG_theta_residual;
+       float L = currents->sdata->MvG_L;
+       float m = currents->sdata->MvG_m;
+       float precip = currents->sdata->precip_average;
+       float x0, x0_a, x0_b;
+       float eps = 0.5;
+       int n_iter = 0;
+       int max_iter = 50;
+
+       x0 = (theta_s+theta_r)/2.0*soil_depth;
+       x0_a = (0.0000001*(theta_s-theta_r)+theta_r)*soil_depth;
+       x0_b = (0.9999999*(theta_s-theta_r)+theta_r)*soil_depth;
+       float f_x0, f_x0_a, f_x0_b;
+       while(abs(x0_a-x0_b)>1.0)
+       {
+           x0 = (x0_a+x0_b)/2.0;
+           f_x0 = MvG_func(x0, k_sat, soil_depth, theta_r, theta_s, L, m, precip);
+           f_x0_a = MvG_func(x0_a, k_sat, soil_depth, theta_r, theta_s, L, m, precip);
+           f_x0_b = MvG_func(x0_b, k_sat, soil_depth, theta_r, theta_s, L, m, precip);
+
+           if(abs(f_x0)<eps)
+               break;
+
+           if (f_x0*f_x0_b<0.0)
+               x0_a = x0;
+           if (f_x0*f_x0_a<0.0)
+               x0_b = x0;
+
+           n_iter++;
+           if (n_iter>max_iter)
+           {
+               printf("error in initilize water at %d-%d, params are %f %f %f %f %f %f %f %f\n",currents->sdata->globX_,currents->sdata->globY_,L,m,k_sat,theta_r,theta_s,precip,x0_a,x0_b);
+               break;
+           }
+       }
+       water = (x0_a+x0_b)/2.0;
+#endif
 
       create_patch(&currents, &newp, LU_NTRL, track, age, area, 
                    water, fsc, stsc, stsl, ssc, psc, msn, fsn, data);
@@ -77,6 +121,20 @@ void init_patches (site** siteptr, UserData* data) {
       }
    }
 }
+
+#if SOILGRIDS_SCHEME
+//test_soil
+float MvG_func(float water, float k_sat, float soil_depth, float theta_r, float theta_s, float L, float m, float pipcip)
+{
+    double se = 0.0;
+    double y = 0.0;
+    se = (water/soil_depth-theta_r)/(theta_s-theta_r);
+    se = min(1.0,se);
+    se = max(0.0,se);
+    y = k_sat*pow(se, L)*pow(1.0-pow(1.0-pow(se,1/m),m),2.0) - pipcip;
+    return y;
+}
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 //! create_patch
@@ -170,6 +228,12 @@ void create_patch (site** siteptr, patch** pnewp, int landuse,
     //test_larch
     newpatch->total_water_demand = 0.0;
     newpatch->soil_evap         = 0.0;
+  
+//test_mor2
+#if SNOWPACK_SCHEME == 1
+    newpatch->snowpack = 0.0;
+    newpatch->snow_melt = 0.0;
+#endif
     
     //CHANGE-ML ml-modified: Load restart files, pero is infinite sometimes
     newpatch->perc=0.0;
@@ -198,6 +262,123 @@ void create_patch (site** siteptr, patch** pnewp, int landuse,
 
    (*pnewp) = newpatch;
 }
+    
+#if LANDUSE
+//test_restart
+//this function will read product pool, only active for landuse
+void create_patch_LU (site** siteptr, patch** pnewp, int landuse,
+                   int track, double age, double area, double water,
+                   double fsc, double stsc, double stsl, double ssc, double psc,
+                   double msn, double fsn, double yr1_pool, double yr10_pool, double yr100_pool, UserData* data)
+    {
+        site* current_site = *siteptr; /* assign pointer to site */
+        
+        patch* newpatch = (patch*) malloc (sizeof(patch));
+        if (newpatch == NULL) {
+            fprintf(stderr, "create_patch: out of memory\n");
+            exit(1);
+        }
+        
+        /* assign patch attributes */
+        newpatch->track              = track;
+        newpatch->age                = age;
+        newpatch->area               = area;
+        newpatch->landuse            = landuse;
+        newpatch->siteptr            = current_site; /*pointer to parent site*/
+        newpatch->fast_soil_C        = fsc;
+        newpatch->structural_soil_C  = stsc;
+#if defined ED
+        newpatch->water              = water;
+        newpatch->structural_soil_L  = stsl;
+        newpatch->slow_soil_C        = ssc;
+        newpatch->passive_soil_C     = psc;
+        newpatch->mineralized_soil_N = msn;
+        newpatch->fast_soil_N        = fsn;
+#elif defined MIAMI_LU
+        newpatch->total_biomass      = tb;
+        newpatch->total_ag_biomass   = data->agf_biomass * tb;
+#endif
+        
+        for (size_t i=0; i<N_SUB; i++) {
+            newpatch->lambda1[i] = 0.0;
+        }
+        
+        for (size_t i=0; i<NUM_TRACKS; i++) {
+            newpatch->disturbance_rate[i] = 0.0;
+        }
+        
+        newpatch->older            = NULL;
+        newpatch->younger          = NULL;
+        newpatch->rh               = 0.0;
+        newpatch->nep              = 0.0;
+        newpatch->npp              = 0.0;
+        ///CarbonConserve
+        newpatch->gpp_avg           = 0.0;
+        newpatch->npp_avg           = 0.0;
+        newpatch->rh_avg            = 0.0;
+        newpatch->fire_emission     = 0.0;
+        newpatch->fire_c_loss       = 0.0;
+#if LANDUSE
+        newpatch->product_emission = 0.0;
+        newpatch->forest_harvested_c = 0.0;
+        newpatch->yr1_decay_product_pool = yr1_pool;
+        newpatch->yr10_decay_product_pool = yr10_pool;
+        newpatch->yr100_decay_product_pool = yr100_pool;
+        newpatch->past_harvested_c = 0.0;
+        newpatch->crop_harvested_c = 0.0;
+#endif
+        
+        newpatch->fire_dndt_factor = 0.0;
+        newpatch->A                = 0.0;
+        
+#ifdef ED
+        newpatch->tallest            = NULL;
+        newpatch->shortest           = NULL;
+        newpatch->total_ag_biomass   = 0.0;
+        newpatch->total_biomass      = 0.0;
+        newpatch->basal_area         = 0.0;
+        newpatch->theta              = newpatch->water / (current_site->sdata->soil_depth
+                                                          * current_site->sdata->theta_max);
+        newpatch->total_water_uptake = 0.0;
+        //test_larch
+        newpatch->total_water_demand = 0.0;
+        newpatch->soil_evap         = 0.0;
+        
+        //test_mor2
+#if SNOWPACK_SCHEME == 1
+        newpatch->snowpack = 0.0;
+        newpatch->snow_melt = 0.0;
+#endif
+        
+        //CHANGE-ML ml-modified: Load restart files, pero is infinite sometimes
+        newpatch->perc=0.0;
+        
+        /* assign elements of integration array */
+        newpatch->fsc_e  = 1;
+        newpatch->fsn_e  = 5;
+        newpatch->fstd   = 0.0;
+        for (size_t spp=0; spp<NSPECIES; spp++) {
+            newpatch->repro[spp]             = 0.0; /* initialize birth array to zero */
+            newpatch->total_spp_biomass[spp] = 0.0;
+            newpatch->total_spp_babove[spp]  = 0.0;
+            newpatch->basal_area_spp[spp]    = 0.0;
+        }
+#endif /* ED */
+        
+        /*calloc array for disturbance A history and set pointers*/
+        if (landuse == LU_SCND) {
+            /*allocate memory for array*/
+            double* parray = (double *) calloc(data->n_years_to_simulate + 1, sizeof(double));
+            /*initialize array*/
+            for (size_t j=0; j<data->n_years_to_simulate+1; j++)
+                *(parray + j) = 0.0;
+            newpatch->phistory = parray;
+        }
+        
+        (*pnewp) = newpatch;
+    }
+    
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 //! update_patch
@@ -583,6 +764,13 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
 	       newp->structural_soil_L /= newp->area;
 	       newp->water /= newp->area;
 	       newp->theta /= newp->area;
+            
+//test_mor
+#if SNOWPACK_SCHEME == 1
+            newp->snowpack/=newp->area;
+            newp->snow_melt/=newp->area;
+#endif
+                
             //test_larch
            newp->soil_evap /= newp->area;
 	       newp->rh /= newp->area;
@@ -597,6 +785,11 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
             newp->yr1_decay_product_pool /= newp->area;
             newp->yr10_decay_product_pool /= newp->area;
             newp->yr100_decay_product_pool /= newp->area;
+                
+            //test_product
+            newp->crop_harvested_c /= newp->area;
+            newp->past_harvested_c /= newp->area;
+            newp->product_emission /= newp->area;
 #endif
                /**************************/
                /***  INSERT NEW PATCH   **/    
@@ -1171,7 +1364,7 @@ void light_levels (patch** patchptr, UserData* data) {
    cohort* cc = cp->tallest;
    if(cc !=NULL){ /*make sure not empty patch*/
        //checkLAI
-         cc->lai =  cc->nindivs*(1.0/cp->area)*(cc->bl*data->specific_leaf_area[cc->species]);
+       cc->lai =  cc->nindivs*(1.0/cp->area)*(cc->bl*data->specific_leaf_area[cc->species]);
       cc->lite = current_site->sdata->L_top;
       cc->lite *= exp(-data->cohort_shading*(data->L_extinct)*(cc->lai));
       cc = cc->shorter;

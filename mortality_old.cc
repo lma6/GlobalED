@@ -131,17 +131,14 @@ double cohort::den_dep_death (UserData* data ) {
 //
 //    }
     
-    //test_mor
-    if (siteptr->climate_zone==1)
-    {
-        data->m1 = 0.15;
-        dmort = data->m1 * ( data->rho_max1 - data->rho[species] );
-        dmort += 0.011;
-    }
-    else
-    {
-        dmort = data->den_ind_mort[species];
-    }
+    //test_larch
+    data->m1 = 0.15;
+    dmort = data->m1 * ( data->rho_max1 - data->rho[species] );
+    dmort += 0.011;
+//    if(siteptr->is_tropical_site)
+//        dmort += 0.02;
+//    if(siteptr->climate_zone==1)
+//        dmort += 0.02;
     
     //test_mor
 //    dmort = data->den_ind_mort[species];
@@ -162,58 +159,40 @@ double cohort::den_dep_death (UserData* data ) {
 //        dmort = 0.002; // 0.002
     
 
-//   double lat = siteptr->sdata->lat_;
-//   if ( hite < data->treefall_hite_threshold ) {
-//      if ( (lat < data->tropic_n_limit) && (lat > data->tropic_s_limit) ) {
-//         dmort += data->treefall_max_disturbance_rate_trop;
-//      } else {
-//         dmort += data->treefall_max_disturbance_rate_temp;
-//      }
-//   }
-    
-    // test_glb_newPFT_soilgrids_v3_potveg_potfire ran in cluter still use above code, same problematic as it has hard line atound tropic_n_limit
-    if ( hite < data->treefall_hite_threshold )
-    {
-        if (siteptr->climate_zone==1)
-        {
-            dmort += data->treefall_max_disturbance_rate_trop;
-        }
-        else
-        {
-            dmort += data->treefall_max_disturbance_rate_temp;
-        }
-    }
+   double lat = siteptr->sdata->lat_;
+   if ( hite < data->treefall_hite_threshold ) {  
+      if ( (lat < data->tropic_n_limit) && (lat > data->tropic_s_limit) ) {
+         dmort += data->treefall_max_disturbance_rate_trop; 
+      } else {
+         dmort += data->treefall_max_disturbance_rate_temp; 
+      }
+   } 
    
    dmort += data->m2 * 1.0 / ( 1.0 + exp( data->m3 * cbr_bar ));
    /*dmort += data->m2 / ( 1.0 + exp( data->m3 * cbr_bar[data->time_period] ) );*/
 
    /* do mean field treefall disturbance when fire *
     * is the dominant disturbance mode             */
-//   if ( patchptr->treefall_as_dndt_flag == 1 ) {
-//      if ( (lat < data->tropic_n_limit) && (lat > data->tropic_s_limit) ) {
-//         dmort += data->treefall_max_disturbance_rate_trop;
-//      } else {
-//         dmort += data->treefall_max_disturbance_rate_temp;
-//      }
-//   }
-    
-    // test_glb_newPFT_soilgrids_v3_potveg_potfire ran in cluter still use above code, same problematic as it has hard line atound tropic_n_limit
-   if ( patchptr->treefall_as_dndt_flag == 1 )
-    {
-        if (siteptr->climate_zone==1)
-        {
-            dmort += data->treefall_max_disturbance_rate_trop;
-        }
-        else
-        {
-         dmort += data->treefall_max_disturbance_rate_temp;
+   if ( patchptr->treefall_as_dndt_flag == 1 ) {
+      if ( (lat < data->tropic_n_limit) && (lat > data->tropic_s_limit) ) {
+         dmort += data->treefall_max_disturbance_rate_trop; 
+      } else {
+         dmort += data->treefall_max_disturbance_rate_temp; 
       }
    }
-    
    /* do mean field fire when treefall is dominant mode */
-   if ( patchptr->fire_as_dndt_flag == 1 )
-    {
-      dmort += patchptr->fire_dndt_factor * ( 1.0 - survivorship_from_disturbance(1, data) );
+   if ( patchptr->fire_as_dndt_flag == 1 ) {
+      dmort += patchptr->fire_dndt_factor 
+             * ( 1.0 - survivorship_from_disturbance(1, data) );
+   }
+
+   if(data->additional_mort and ( !data->mort_s_hemi or 
+           (lat > data->tropic_s_limit) )) {
+      dmort += data->den_ind_mort[species];
+   } else if (data->additional_mort and data->mort_s_hemi 
+           and (lat < data->tropic_s_limit) and data->is_cold_deciduous[species]) {
+      // Only applicable to Southern Hemisphere, Cold Deciduous PFT
+      dmort += data->den_ind_mort_s_hemi[species];
    }
 
    return dmort;

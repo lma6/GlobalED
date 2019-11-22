@@ -1,6 +1,6 @@
 #include <cmath>
 #include <cstdio>
-
+#include <cstring>
 #include "edmodels.h"
 #include "site.h"
 #include "read_site_data.h"
@@ -371,6 +371,7 @@ void cohort_dynamics(unsigned int t, double t1, double t2,
 #endif
        
       reproduction(t,&currentp,data);
+       
 #if CHECK_C_CONSERVE
        ///CarbonConserve
        mlcp = *patchptr;
@@ -432,10 +433,19 @@ void cohort_dynamics(unsigned int t, double t1, double t2,
        }
        all_tc_before = all_tb_before + all_sc_before + all_repro_before;
 #endif
-      while (currentp != NULL){
-          spawn_cohorts(t,&currentp,data);
-         currentp = currentp->older;
-      }
+//      while (currentp != NULL){
+//          spawn_cohorts(t,&currentp,data);
+//         currentp = currentp->older;
+//      }
+       //test_crop, should uncomment above lines
+       while (currentp != NULL)
+       {
+           if(currentp->landuse != LU_CROP)
+           {
+               spawn_cohorts(t,&currentp,data);
+           }
+           currentp = currentp->older;
+       }
        
 #if CHECK_C_CONSERVE
        ///CarbonConserve
@@ -498,10 +508,36 @@ void init_cohorts(patch** patchptr, UserData* data){
    patch* cp = *patchptr;
    site* cs = cp->siteptr;
     
+    //test_mor
+//    if(cs->climate_zone == 0)
+    //test_chunk
+    if((abs(cs->climate_zone) == 0) || abs(cs->climate_zone)>3)
+    {
+        double annual_minimum_temperature = 100000.0;
+        for (size_t mon=0;mon<N_CLIMATE;mon++)
+        {
+            if (cs->sdata->temp[mon] < 10.0)
+            {
+                cs->is_tropical_site = 0;
+            }
+            if(cs->sdata->temp[mon] < annual_minimum_temperature)
+                annual_minimum_temperature = cs->sdata->temp[mon];
+        }
+        //classify site climate zone based on Köppen climate classification scheme
+        if(annual_minimum_temperature>18.0)  // tropical climate
+            cs->climate_zone = 1;
+        else if((annual_minimum_temperature>-3) && (annual_minimum_temperature<18.0))  // temperate climate
+            cs->climate_zone = 2;
+        else // boreal climate
+            cs->climate_zone = 3;
+    }
+    
+    //test_chunk
+    int climate_zone = cs->climate_zone;
 
    /* add new cohorts to linked list of cohorts */
    for (int spp=0; spp<NSPECIES; spp++) {
-      /*initial number of seedlings of each spp in patch */    
+      /*initial number of seedlings of each spp in patch */
       double nindivs = data->initial_density[spp] * (*patchptr)->area; 
 
        //test_larch
@@ -521,13 +557,39 @@ void init_cohorts(patch** patchptr, UserData* data){
 //       if ((is_tropical_climate) && (!data->is_tropical[spp]) &&(!data->is_grass[spp]))
 //           nindivs = 0.000001;
        
+       //test_mor, should delete this block
+//       if((*patchptr)->siteptr->climate_zone==1)
+       //test_chunk
+       if(climate_zone == 1)
+       {
+           if (!strcmp(data->title[spp],"early_succ_temp"))
+               continue;
+           if (!strcmp(data->title[spp],"mid_succ_temp"))
+               continue;
+           if (!strcmp(data->title[spp],"late_succ_temp"))
+               continue;
+       }
+       else
+       {
+           if (!strcmp(data->title[spp],"early_succ"))
+               continue;
+           if (!strcmp(data->title[spp],"mid_succ"))
+               continue;
+           if (!strcmp(data->title[spp],"late_succ"))
+               continue;
+       }
+       
     
 #if LANDUSE
       /* plant gasses only cropland, and at much higher density */
       if (cp->landuse == LU_CROP) { 
-         if (spp < 2) {
-            nindivs *= 100.0;
-         }
+//         if (spp < 2) {
+//            nindivs *= 100.0;
+//         }
+          //test_crop
+          if (spp < 2) {
+              nindivs *= 20.0;  // 10.0
+          }
          if (spp > 1) {
             nindivs = 0.000001;
          }
@@ -555,7 +617,7 @@ void init_cohorts(patch** patchptr, UserData* data){
          dc->hite = (data->hgt_min[spp]); 
       } else {
          dc->hite = (data->min_hgt[spp]);
-      }             
+      }
       dc->dbh = dc->Dbh(data);    
       /* calculate size of biomass compartments */
       dc->bdead = dc->Bdead(data);
@@ -638,17 +700,10 @@ void create_cohort (unsigned int spp, double nindivs, double hite, double dbh,
    // }
 
    newcohort->b = newcohort->balive + newcohort->bdead;
-  
-   newcohort->bl = (1.0 / (1.0 + data->q[spp] + data->qsw[newcohort->species]
-                           * newcohort->hite) ) * newcohort->balive;
+   newcohort->bl = (1.0 / (1.0 + data->q[spp] + data->qsw[newcohort->species] * newcohort->hite) ) * newcohort->balive;
    newcohort->blv = 0.0;
-   newcohort->br = (data->q[newcohort->species] 
-                    / (1.0 + data->q[spp] + data->qsw[newcohort->species] * newcohort->hite) )
-      * newcohort->balive;
-   newcohort->bsw = (data->qsw[newcohort->species] * newcohort->hite
-                     / (1.0 + data->q[spp] + data->qsw[newcohort->species] * newcohort->hite) ) 
-      * newcohort->balive;
-
+   newcohort->br = (data->q[newcohort->species]  / (1.0 + data->q[spp] + data->qsw[newcohort->species] * newcohort->hite) )* newcohort->balive;
+   newcohort->bsw = (data->qsw[newcohort->species] * newcohort->hite / (1.0 + data->q[spp] + data->qsw[newcohort->species] * newcohort->hite) )* newcohort->balive;
    newcohort->bs  = newcohort->bsw + newcohort->bdead;   
    newcohort->bstem = data->agf_bs*newcohort->bs;
 
@@ -662,8 +717,9 @@ void create_cohort (unsigned int spp, double nindivs, double hite, double dbh,
    /*101398-GCH: this calc really only needs to be done once for each 
      species*/
 
-   data->c2n_recruit[spp] = newcohort->b 
+   data->c2n_recruit[spp] = newcohort->b
       / (newcohort->balive / data->c2n_leaf[spp] + newcohort->bdead/data->c2n_stem);
+    
   
    /*printf("spp %d c2n_recruit %f\n",spp,data->c2n_recruit[spp]);*/
    /****************************/
@@ -681,7 +737,7 @@ void create_cohort (unsigned int spp, double nindivs, double hite, double dbh,
       * (newcohort->bl * data->specific_leaf_area[newcohort->species])
       * (1.0 / ((*patchptr)->area));
     
-    
+
    insert_cohort(&newcohort, &(*patchptr)->tallest, &(*patchptr)->shortest,data);
    if(data->num_Vm0  > 1) {
       // Multiple mechanism file case
@@ -691,6 +747,131 @@ void create_cohort (unsigned int spp, double nindivs, double hite, double dbh,
       // Single mechanism file case
       newcohort->Vm0_bin = 0;
    }
+}
+
+//test_mor
+//void create_cohort_test_mor(unsigned int spp, double nindivs, double hite, double dbh,
+//                            double balive, double bdead, double bl, double br, double blv,
+//                            double bsw, patch** patchptr, UserData* data) {
+//test_restart
+void create_cohort_test_mor(unsigned int spp, double nindivs, double hite, double dbh,
+                            double balive, double bdead, double bl, double br, double blv,
+                            double bsw, patch** patchptr, double cb[N_CLIMATE], double cb_toc[N_CLIMATE],UserData* data) {
+    /* this function is called in model initialization from init_cohorts and *
+     * read cohort distribution and during the model run from spawn_cohorts  */
+    
+    cohort* newcohort = (cohort*) malloc(sizeof(cohort));
+    if (newcohort == NULL) {
+        printf("out of memory\n");
+        while( getchar() != '\n');
+    }
+    /* assign cohort attributes */
+    newcohort->siteptr  = (*patchptr)->siteptr;
+    newcohort->patchptr = *patchptr;
+    newcohort->species  = spp;
+    newcohort->pt       = data->pt[spp];
+    newcohort->gpp      = 0.0;
+    newcohort->npp      = 0.0;
+    //checkstep
+    newcohort->gpp_avg = 0.0;
+    newcohort->npp_avg = 0.0;
+    newcohort->md_avg = 0.0;
+    newcohort->npp2     = 0.0;
+    newcohort->md       = 0.0;
+    newcohort->fs_open  = 1.0;
+    newcohort->fsn      = 1.0;
+    newcohort->fsw      = 1.0;
+//    for(size_t i=0; i<N_CLIMATE; i++) {
+//        newcohort->cbr[i]    = 1.0;
+//        newcohort->cb[i]     = 1.0;
+//        newcohort->cb_toc[i] = 1.0;
+//    }
+    //test_restart
+    for(size_t i=0; i<N_CLIMATE; i++) {
+        newcohort->cbr[i]    = 1.0;
+        newcohort->cb[i]     =cb[i];
+        newcohort->cb_toc[i] = cb_toc[i];
+    }
+    
+    newcohort->cbr_bar= 1.0;
+    newcohort->hite               = hite;
+    newcohort->dbh                = dbh;
+    newcohort->p[0]               = 0.0;
+    newcohort->p[1]               = 0.0;
+    newcohort->status             = 0;
+    
+    /* initialize derivatives to zero */
+    newcohort->dndt               = 0.0;
+    newcohort->ddbhdt             = 0.0;
+    newcohort->dhdt               = 0.0;
+    newcohort->dbalivedt          = 0.0;
+    newcohort->dbdeaddt           = 0.0;
+    newcohort->payment_to_Nfixers = 0.0;
+    
+    /* calculate size of biomass compartments */
+    newcohort->bdead = bdead;
+    newcohort->balive = balive;
+    
+    // if(data->restart) {
+    //   if(data->allometry_type == 0) {
+    //      newcohort->hite = (data->hgt_min[spp]);
+    //   } else {
+    //      newcohort->hite = (data->min_hgt[spp]);
+    //   }
+    //   newcohort->dbh = newcohort->Dbh(data);
+    //   newcohort->bdead = newcohort->Bdead(data);
+    //   newcohort->balive= newcohort->Bleaf(data)*(1.0 + data->q[spp] + data->qsw[spp]*newcohort->hite);
+    // }
+    
+    newcohort->b = newcohort->balive + newcohort->bdead;
+    
+    newcohort->bl = bl;
+    newcohort->blv = blv;
+    newcohort->br = br;
+    newcohort->bsw = bsw;
+    
+    newcohort->bs  = newcohort->bsw + newcohort->bdead;
+    newcohort->bstem = data->agf_bs*newcohort->bs;
+    
+    newcohort->babove = newcohort->bl + data->agf_bs * newcohort->bs;
+    newcohort->bbelow = newcohort->br + (1.0 - data->agf_bs) * newcohort->bs;
+    
+    
+    /***********************/
+    /* Nitrogen in recruit */
+    /***********************/
+    /*101398-GCH: this calc really only needs to be done once for each
+     species*/
+    
+    data->c2n_recruit[spp] = newcohort->b
+    / (newcohort->balive / data->c2n_leaf[spp] + newcohort->bdead/data->c2n_stem);
+    
+    /*printf("spp %d c2n_recruit %f\n",spp,data->c2n_recruit[spp]);*/
+    /****************************/
+    newcohort->resp         = 0.0;
+    newcohort->gr_resp      = 0.0;
+    newcohort->An_pot       = 0.0;
+    newcohort->An_shut      = 0.0;
+    newcohort->E_pot        = 0.0;
+    newcohort->E_shut       = 0.0;
+    newcohort->water_uptake = 0.0;
+    
+    newcohort->nindivs = nindivs;
+    
+    newcohort->lai = (newcohort->nindivs)
+    * (newcohort->bl * data->specific_leaf_area[newcohort->species])
+    * (1.0 / ((*patchptr)->area));
+    
+    
+    insert_cohort(&newcohort, &(*patchptr)->tallest, &(*patchptr)->shortest,data);
+    if(data->num_Vm0  > 1) {
+        // Multiple mechanism file case
+        newcohort->get_cohort_vm0(data);
+        newcohort->Vm0_bin = newcohort->get_cohort_vm0_bin(newcohort->Vm0, data);
+    } else {
+        // Single mechanism file case
+        newcohort->Vm0_bin = 0;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -753,7 +934,13 @@ void terminate_cohorts(cohort** ptallest, cohort** pshortest, UserData* data){
             data->btol = currentp->siteptr->site_total_biomass * 1e-5;
             data->btol   = (data->btol > 0.00000001)? data->btol : 0.00000001;
         }
-            
+        //test_mor
+//        if(currentp->total_biomass<1e-10)
+//            data->btol = 1e-7;  // 1e-5
+//        else
+//            data->btol = currentp->total_biomass*5e-5;
+        
+        data->btol = 1e-5;
 
 //        data->btol = currentp->siteptr->site_total_biomass * 1e-5;
 //        data->btol   = (data->btol > 0.00000001)? data->btol : 0.00000001;
@@ -769,15 +956,61 @@ void terminate_cohorts(cohort** ptallest, cohort** pshortest, UserData* data){
 //       else
 //           data->btol = btol_backup;
        
-      if(((currentc->nindivs/currentc->patchptr->area)*currentc->b) < data->btol){
+//      if(((currentc->nindivs/currentc->patchptr->area)*currentc->b) < data->btol){
+       //test_mor
+       bool terminate_cc = false;
+       if(currentc->siteptr->climate_zone==1)
+       {
+           //test_mor2
+//           data->btol = 0.0001;
+           data->btol = 1e-5;
+           if(((currentc->nindivs/currentc->patchptr->area)*currentc->b) < data->btol)
+               terminate_cc = true;
+       }
+       else
+       {
+           //test_mor2
+//           data->btol = 1e-5;
+//           if(currentc->nindivs<1e-10)
+//               terminate_cc = true;
+//           if((((currentc->nindivs/currentc->patchptr->area)*currentc->b) < data->btol) && (currentc->hite>data->repro_ht_thresh[currentc->species]))
+//               terminate_cc = true;
+//
+//
+           if(((currentc->nindivs/currentc->patchptr->area)*currentc->b) < data->btol)
+               terminate_cc = true;
+       }
+       
+       
+       if(terminate_cc){
           /// Collect carbon back to soil when cohort is terminating
-          fast_litter += data->fraction_balive_2_fast*currentc->balive*currentc->nindivs/currentp->area;
-          fast_litter += (currentc->p[0]+currentc->p[1])*(1-data->sd_mort)*(data->deltat*COHORT_FREQ)*currentc->nindivs/currentp->area;
-          fast_litter_n += data->fraction_balive_2_fast*(1.0/data->c2n_leaf[currentc->species])*currentc->balive*currentc->nindivs/currentp->area;
-          fast_litter_n +=(1.0/data->c2n_leaf[currentc->species])*(currentc->p[0]+currentc->p[1])*(1-data->sd_mort)*(data->deltat*COHORT_FREQ)*currentc->nindivs/currentp->area;
-          struct_litter += currentc->bdead*currentc->nindivs/currentp->area;
-          struct_litter +=(1.0-data->fraction_balive_2_fast)*currentc->balive*currentc->nindivs/currentp->area;
-          
+//          fast_litter += data->fraction_balive_2_fast*currentc->balive*currentc->nindivs/currentp->area;
+//          fast_litter += (currentc->p[0]+currentc->p[1])*(1-data->sd_mort)*(data->deltat*COHORT_FREQ)*currentc->nindivs/currentp->area;
+//          fast_litter_n += data->fraction_balive_2_fast*(1.0/data->c2n_leaf[currentc->species])*currentc->balive*currentc->nindivs/currentp->area;
+//          fast_litter_n +=(1.0/data->c2n_leaf[currentc->species])*(currentc->p[0]+currentc->p[1])*(1-data->sd_mort)*(data->deltat*COHORT_FREQ)*currentc->nindivs/currentp->area;
+//          struct_litter += currentc->bdead*currentc->nindivs/currentp->area;
+//          struct_litter +=(1.0-data->fraction_balive_2_fast)*currentc->balive*currentc->nindivs/currentp->area;
+           
+           //test_crop, should uncomment the above lines
+           double tmp_sd_mort = 0.0;
+#if LANDUSE
+           if(currentp->landuse==LU_CROP)
+               tmp_sd_mort = data->sd_mort_crop;
+           else
+               tmp_sd_mort = data->sd_mort;
+#else
+           tmp_sd_mort = data->sd_mort;
+#endif
+           
+           fast_litter += data->fraction_balive_2_fast*currentc->balive*currentc->nindivs/currentp->area;
+           fast_litter += (currentc->p[0]+currentc->p[1])*(1-tmp_sd_mort)*(data->deltat*COHORT_FREQ)*currentc->nindivs/currentp->area;
+           fast_litter_n += data->fraction_balive_2_fast*(1.0/data->c2n_leaf[currentc->species])*currentc->balive*currentc->nindivs/currentp->area;
+           fast_litter_n +=(1.0/data->c2n_leaf[currentc->species])*(currentc->p[0]+currentc->p[1])*(1-tmp_sd_mort)*(data->deltat*COHORT_FREQ)*currentc->nindivs/currentp->area;
+           struct_litter += currentc->bdead*currentc->nindivs/currentp->area;
+           struct_litter +=(1.0-data->fraction_balive_2_fast)*currentc->balive*currentc->nindivs/currentp->area;
+           
+           
+               
          if (currentc->taller == NULL) *ptallest = currentc->shorter;
          else (currentc->taller)->shorter = currentc->shorter;
          if (currentc->shorter == NULL) *pshortest = currentc->taller;
@@ -1287,50 +1520,121 @@ void insert_cohort (cohort** pcurrentc, cohort** ptallest,
 ////////////////////////////////////////////////////////////////////////////////
 void reproduction (unsigned int t, patch** patchptr, UserData* data) {
 
-   patch* cp = *patchptr;
+//   patch* cp = *patchptr;
+//#if LANDUSE
+//   site* cs = cp->siteptr;
+//#endif
+//
+//
+//   /* for each target patch */
+//   patch* target = cp;
+//   while (target != NULL) {
+//      /* goto every other patch */
+//      patch* source = cp;
+//      while (source !=NULL) {
+//         /* add in repro from all cohorts weighted by the fraction of total area that is the focal patch */
+//         cohort* cc = source->tallest;
+//         while (cc != NULL) {
+//            /* global dispersal */
+//            size_t spp = cc->species;
+//
+//#if LANDUSE
+//            /* this says dispersal stays within landuse type      */
+//            /* first term is abs amount produced                  */
+//            /* second term is fraction that lands on target site  */
+//            /* last term converts xamount to amount per unit area */
+//            target->repro[spp] += ((data->m[spp] * cc->nindivs
+//                                    * (1.0 - data->sd_mort) * cc->p[0])
+//                                   * (target->area / (cs->area_fraction[target->landuse] * data->area))
+//                                   / (target->area)) * (data->deltat*COHORT_FREQ);
+//#else
+//            /* this assumes only one landuse type */
+//            target->repro[spp] += ((data->m[spp] * cc->nindivs
+//                                    * (1.0 - data->sd_mort) * cc->p[0])
+//                                   * (target->area / (data->area)) / (target->area)) * (data->deltat*COHORT_FREQ);
+//#endif
+//            if(source==target) /* if source = target add in local dispersal */
+//               target->repro[spp] += (cc->nindivs * ((1.0 - data->m[spp])
+//                                                     * (1.0 - data->sd_mort)
+//                                                     * cc->p[0] + cc->p[1])
+//                                      / (target->area)) * (data->deltat*COHORT_FREQ);
+//
+//            cc = cc->shorter;
+//         }
+//         source = source->older;
+//      }
+//      target = target->older;
+//   }  /* end loop over targets */
+//
+//    ///CarbonConserve
+//    /// Reset p biomass as zero as all have been put into repro.
+//    /// If not reset here, problem will occur in terminate_cohort in patct_dynamic as cohorts still carry biomass for reproduction
+//    cp = *patchptr;
+//    while (cp!=NULL) {
+//        cohort* cc = cp->shortest;
+//        while (cc!=NULL) {
+//            cc->p[0] = 0.0;
+//            cc->p[1] = 0.0;
+//            cc = cc->taller;
+//        }
+//        cp = cp->older;
+//    }
+    
+    //test_crop
+    patch* cp = *patchptr;
 #if LANDUSE
-   site* cs = cp->siteptr;
+    site* cs = cp->siteptr;
 #endif
-
-   /* for each target patch */
-   patch* target = cp;
-   while (target != NULL) {
-      /* goto every other patch */
-      patch* source = cp;
-      while (source !=NULL) {
-         /* add in repro from all cohorts weighted by the fraction of total area that is the focal patch */
-         cohort* cc = source->tallest;
-         while (cc != NULL) {  
-            /* global dispersal */
-            size_t spp = cc->species;  
-
+    
+    //test_crop
+    double tmp_sd_mort = 0.0;
+    tmp_sd_mort = data->sd_mort;
 #if LANDUSE
-            /* this says dispersal stays within landuse type      */
-            /* first term is abs amount produced                  */
-            /* second term is fraction that lands on target site  */
-            /* last term converts xamount to amount per unit area */
-            target->repro[spp] += ((data->m[spp] * cc->nindivs
-                                    * (1.0 - data->sd_mort) * cc->p[0])
-                                   * (target->area / (cs->area_fraction[target->landuse] * data->area))
-                                   / (target->area)) * (data->deltat*COHORT_FREQ);
+    if(cp->landuse==LU_CROP)
+    {
+        tmp_sd_mort = data->sd_mort_crop;
+    }
+#endif
+    
+    /* for each target patch */
+    patch* target = cp;
+    while (target != NULL) {
+        /* goto every other patch */
+        patch* source = cp;
+        while (source !=NULL) {
+            /* add in repro from all cohorts weighted by the fraction of total area that is the focal patch */
+            cohort* cc = source->tallest;
+            while (cc != NULL) {
+                /* global dispersal */
+                size_t spp = cc->species;
+                
+#if LANDUSE
+                /* this says dispersal stays within landuse type      */
+                /* first term is abs amount produced                  */
+                /* second term is fraction that lands on target site  */
+                /* last term converts xamount to amount per unit area */
+                target->repro[spp] += ((data->m[spp] * cc->nindivs
+                                        * (1.0 - tmp_sd_mort) * cc->p[0])
+                                       * (target->area / (cs->area_fraction[target->landuse] * data->area))
+                                       / (target->area)) * (data->deltat*COHORT_FREQ);
 #else
-            /* this assumes only one landuse type */
-            target->repro[spp] += ((data->m[spp] * cc->nindivs 
-                                    * (1.0 - data->sd_mort) * cc->p[0])
-                                   * (target->area / (data->area)) / (target->area)) * (data->deltat*COHORT_FREQ);
+                /* this assumes only one landuse type */
+                target->repro[spp] += ((data->m[spp] * cc->nindivs
+                                        * (1.0 - tmp_sd_mort) * cc->p[0])
+                                       * (target->area / (data->area)) / (target->area)) * (data->deltat*COHORT_FREQ);
 #endif
-            if(source==target) /* if source = target add in local dispersal */
-               target->repro[spp] += (cc->nindivs * ((1.0 - data->m[spp])
-                                                     * (1.0 - data->sd_mort)
-                                                     * cc->p[0] + cc->p[1])
-                                      / (target->area)) * (data->deltat*COHORT_FREQ);
-
-            cc = cc->shorter;  
-         }
-         source = source->older;
-      }
-      target = target->older;
-   }  /* end loop over targets */
+                if(source==target) /* if source = target add in local dispersal */
+                    target->repro[spp] += (cc->nindivs * ((1.0 - data->m[spp])
+                                                          * (1.0 - tmp_sd_mort)
+                                                          * cc->p[0] + cc->p[1])
+                                           / (target->area)) * (data->deltat*COHORT_FREQ);
+                
+                cc = cc->shorter;
+            }
+            source = source->older;
+        }
+        target = target->older;
+    }  /* end loop over targets */
     
     ///CarbonConserve
     /// Reset p biomass as zero as all have been put into repro.

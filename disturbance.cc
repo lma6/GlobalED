@@ -33,7 +33,10 @@ void calculate_disturbance_rates ( unsigned int t,
    cp->disturbance_rate[1] = fire(t, &cp, data);
   
    /* CALCULATE TREEFALL DISTURBANCE RATES */
-   if ( (cs->sdata->lat_ > data->tropic_s_limit) && (cs->sdata->lat_ < data->tropic_n_limit ) ) {
+//   if ( (cs->sdata->lat_ > data->tropic_s_limit) && (cs->sdata->lat_ < data->tropic_n_limit ) ) {
+    //test_mor above line is problematic as it creat uggly line at 27N and 27S
+    if (cs->climate_zone==1)
+    {
       cp->disturbance_rate[0] = data->treefall_max_disturbance_rate_trop;
 #ifdef MIAMI_LU
    } else if((cs->sdata->lat_ > -45.0) && (cs->sdata->lat_ < 45.0)) {
@@ -371,7 +374,7 @@ void accumulate_litter_from_disturbance ( patch** target_patch,
 #ifdef ED
    tp->structural_soil_L += (data->l2n_stem / data->c2n_stem ) * struct_litter * change_in_area;
    tp->fast_soil_N       += fast_litter_n * change_in_area;
-#endif 
+#endif
 }
 
 
@@ -404,6 +407,13 @@ void aggregate_in_soil_state_from_disturbance ( patch** target_patch,
    tp->theta              += dp->theta * change_in_area;
    tp->rh                 += dp->rh * change_in_area ;
    tp->soil_evap          += dp->soil_evap * change_in_area ;
+    
+//test_mor
+#if SNOWPACK_SCHEME == 1
+    tp->snowpack              += dp->snowpack * change_in_area ;
+    tp->snow_melt              += dp->snow_melt * change_in_area ;
+#endif
+    
     ///CarbonConserve
     tp->npp_avg         += dp->npp_avg * change_in_area ;
     tp->rh_avg          += dp->rh_avg * change_in_area;

@@ -29,6 +29,9 @@ float getSPP4Biomass (site* cs)      { return cs->site_total_spp_biomass[4]; }
 float getSPP5Biomass (site* cs)      { return cs->site_total_spp_biomass[5]; }
 float getSPP6Biomass (site* cs)      { return cs->site_total_spp_biomass[6]; }
 float getSPP7Biomass (site* cs)      { return cs->site_total_spp_biomass[7]; }
+//test_mor
+float getSPP8Biomass (site* cs)      { return cs->site_total_spp_biomass[8]; }
+float getSPP9Biomass (site* cs)      { return cs->site_total_spp_biomass[9]; }
 
 float getLeafAnPot_spp1 (site* cs)      { return cs->Leaf_An_pot[0]; }
 float getLeafAnPot_spp2 (site* cs)      { return cs->Leaf_An_pot[1]; }
@@ -66,6 +69,10 @@ float getPercSPP3    (site* cs)      { return cs->site_total_spp_biomass[3]/(cs-
 float getPercSPP4    (site* cs)      { return cs->site_total_spp_biomass[4]/(cs->site_total_biomass+0.0000001); }
 float getPercSPP5    (site* cs)      { return cs->site_total_spp_biomass[5]/(cs->site_total_biomass+0.0000001); }
 float getPercSPP6    (site* cs)      { return cs->site_total_spp_biomass[6]/(cs->site_total_biomass+0.0000001); }
+//test_mor
+float getPercSPP7    (site* cs)      { return cs->site_total_spp_biomass[7]/(cs->site_total_biomass+0.0000001); }
+float getPercSPP8    (site* cs)      { return cs->site_total_spp_biomass[8]/(cs->site_total_biomass+0.0000001); }
+float getPercSPP9    (site* cs)      { return cs->site_total_spp_biomass[9]/(cs->site_total_biomass+0.0000001); }
 
 float getGPP (site* cs)              { return cs->site_gpp; }
 float getFS_OPEN (site* cs)          { return cs->site_fs_open; }      /// CHANGE-ML
@@ -94,6 +101,8 @@ float getYR100_PRODUCT_POOL (site* cs)   { return cs->site_yr100_decay_product_p
 float getFOREST_HARVEST (site* cs)   { return cs->site_forest_harvest;}
 float getPASTURE_HARVEST (site* cs)  {return cs->site_pasture_harvest;};
 float getCROP_HARVEST (site* cs)     {return cs->site_crop_harvest;};
+//test_crop
+float getREPRO_POOL (site* cs)     {return cs->site_total_repro_pool;};
 #endif
 
 float getNEP (site* cs)              { return cs->site_nep; }
@@ -121,6 +130,12 @@ float getBasalArea (site* cs)        { return cs->site_basal_area; }
 float getWater (site* cs)            { return cs->site_total_water; }
 float getPercolation (site* cs)      { return cs->site_total_perc; }
 float getEvaporation (site* cs)      { return cs->site_total_soil_evap; }
+
+//test_mor2
+#if SNOWPACK_SCHEME == 1
+    float getSnowpack (site* cs)      { return cs->site_total_snowpack; }
+#endif
+
 float getTranspiration (site* cs)    { return cs->site_total_water_uptake; }
 float getTheta (site* cs)            { return cs->site_total_theta; }
 float getMeanHeight (site* cs)       { return cs->site_avg_height; }
@@ -266,6 +281,9 @@ void registerOutputVars(Outputter *o) {
     //test_larch
    o->registerVar("biomass_spp6", &getSPP6Biomass, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("biomass_spp7", &getSPP7Biomass, "kg/m2", -9999.0F, ncFloat);
+    //test_mor
+    o->registerVar("biomass_spp8", &getSPP8Biomass, "kg/m2", -9999.0F, ncFloat);
+    o->registerVar("biomass_spp9", &getSPP9Biomass, "kg/m2", -9999.0F, ncFloat);
     
 //   o->registerVar("Leaf_An_pot_spp1", &getLeafAnPot_spp1, "kg/m2", -9999.0F, ncFloat);
 //     o->registerVar("Leaf_An_pot_spp2", &getLeafAnPot_spp2, "kg/m2", -9999.0F, ncFloat);
@@ -305,7 +323,11 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("perc_spp3", &getPercSPP3, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("perc_spp4", &getPercSPP4, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("perc_spp5", &getPercSPP5, "kg/m2", -9999.0F, ncFloat);
-   o->registerVar("perc_spp6", &getPercSPP6, "kg/m2", -9999.0F, ncFloat);   
+   o->registerVar("perc_spp6", &getPercSPP6, "kg/m2", -9999.0F, ncFloat);
+    //test_mor
+   o->registerVar("perc_spp7", &getPercSPP7, "kg/m2", -9999.0F, ncFloat);
+   o->registerVar("perc_spp8", &getPercSPP8, "kg/m2", -9999.0F, ncFloat);
+   o->registerVar("perc_spp9", &getPercSPP9, "kg/m2", -9999.0F, ncFloat);
 #endif   
    o->registerVar("aa_LAI", &getLAIAA, "kg/m2/yr", -9999.0F, ncFloat);
 //    o->registerVar("aa_LAI0", &getLAIAA0, "", -9999.0F, ncFloat);
@@ -335,6 +357,8 @@ void registerOutputVars(Outputter *o) {
     o->registerVar("forest_harvest", &getFOREST_HARVEST, "kg/m2/yr", -9999.0F, ncFloat);
     o->registerVar("pasture_harvest", &getPASTURE_HARVEST, "kg/m2/yr", -9999.0F, ncFloat);
     o->registerVar("crop_harvest", &getCROP_HARVEST, "kg/m2/yr", -9999.0F, ncFloat);
+    //test_crop
+    o->registerVar("repro_pool", &getREPRO_POOL, "kg/m2/yr", -9999.0F, ncFloat);
 #endif
     
 #ifdef ED
@@ -348,12 +372,12 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("soil_N", &getSiteSoilN, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("mineralized_soil_N", &getSiteMineralizedN, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("LAI", &getLAI, "", -9999.0F, ncFloat);
-//    o->registerVar("LAI0", &getLAI0, "", -9999.0F, ncFloat);
-//    o->registerVar("LAI1", &getLAI1, "", -9999.0F, ncFloat);
-//    o->registerVar("LAI2", &getLAI2, "", -9999.0F, ncFloat);
-//    o->registerVar("LAI3", &getLAI3, "", -9999.0F, ncFloat);
-//    o->registerVar("LAI4", &getLAI4, "", -9999.0F, ncFloat);
-//    o->registerVar("LAI5", &getLAI5, "", -9999.0F, ncFloat);
+    o->registerVar("LAI0", &getLAI0, "", -9999.0F, ncFloat);
+    o->registerVar("LAI1", &getLAI1, "", -9999.0F, ncFloat);
+    o->registerVar("LAI2", &getLAI2, "", -9999.0F, ncFloat);
+    o->registerVar("LAI3", &getLAI3, "", -9999.0F, ncFloat);
+    o->registerVar("LAI4", &getLAI4, "", -9999.0F, ncFloat);
+    o->registerVar("LAI5", &getLAI5, "", -9999.0F, ncFloat);
    o->registerVar("max_height", &getMaxHeight, "m", -9999.0F, ncFloat);
    o->registerVar("basal_area", &getBasalArea, "", -9999.0F, ncFloat);
    o->registerVar("water", &getWater, "", -9999.0F, ncFloat);
@@ -361,6 +385,10 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("percolation", &getPercolation, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("evaporation", &getEvaporation, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("transpiration", &getTranspiration, "kg/m2", -9999.0F, ncFloat);
+//test_mor2
+#if SNOWPACK_SCHEME == 1
+    o->registerVar("snowpack", &getSnowpack, "", -9999.0F, ncFloat);
+#endif
    o->registerVar("n_cohorts", &getNCohorts, "", -99, ncInt);
    o->registerVar("mean_height", &getMeanHeight, "m", -9999.0F, ncFloat);
     
@@ -682,13 +710,22 @@ void print_water (unsigned int time, site** siteptr, UserData* data) {
       cp = cs->youngest_patch[lu];
       while (cp != NULL) {
 
-         fprintf(outfile,
-                 "%s t= %f pid= %p track= %u age= %f theta= %f w= %f rain= %f uptake= %f demand= %f perc= %f lu= %d\n",
-                 cs->sdata->name_, time*TIMESTEP, cp, cp->track, cp->age,
-                 cp->theta, cp->water, cs->sdata->precip[data->time_period], 
-                 cp->total_water_uptake / cp->area,
-                 cp->total_water_demand / cp->area,
-                 cp->perc, cp->landuse);
+//         fprintf(outfile,
+//                 "%s t= %f pid= %p track= %u age= %f theta= %f w= %f rain= %f uptake= %f demand= %f perc= %f lu= %d\n",
+//                 cs->sdata->name_, time*TIMESTEP, cp, cp->track, cp->age,
+//                 cp->theta, cp->water, cs->sdata->precip[data->time_period],
+//                 cp->total_water_uptake / cp->area,
+//                 cp->total_water_demand / cp->area,
+//                 cp->perc, cp->landuse);
+          
+          //test_mor2
+          fprintf(outfile,
+                  "%s t= %f pid= %p track= %u age= %f theta= %f w= %f rain= %f snowpack= %f snow_melt= %f uptake= %f demand= %f perc= %f lu= %d\n",
+                  cs->sdata->name_, time*TIMESTEP, cp, cp->track, cp->age,
+                  cp->theta, cp->water, cs->sdata->precip[data->time_period],cp->snowpack,cp->snow_melt,
+                  cp->total_water_uptake / cp->area,
+                  cp->total_water_demand / cp->area,
+                  cp->perc, cp->landuse);
 
          cp = cp->older;
       }
@@ -1015,7 +1052,7 @@ void print_biomass (unsigned int time, site** siteptr, UserData* data) {
    /* print to files */
    cp = *cs->oldest_patch;
 #if defined ED
-   fprintf(outfile, "%s t= %5.5f total_c %.20f tb %8.5f tagb %8.5f ba %8.5f lai %8.5f havg %8.5f 1yr_pool %.15f 10_yr_pool %.15f 100_yr_pool %.15f ",
+   fprintf(outfile, "%s t= %5.5f total_c %.20f tb %8.5f tagb %8.5f ba %8.5f lai %8.5f havg %8.5f 1yr_pool %.15f 10_yr_pool %.15f 100_yr_pool %.15f repro_pool %.15f ",
            cs->sdata->name_,
            time * TIMESTEP,
            cs->site_total_c,
@@ -1024,9 +1061,10 @@ void print_biomass (unsigned int time, site** siteptr, UserData* data) {
            cs->site_basal_area,
            cs->site_lai,
            cs->site_avg_height,
-           cs->yr1_decay_product_pool,
-           cs->yr10_decay_product_pool,
-           cs->yr100_decay_product_pool);
+           cs->site_yr1_decay_product_pool,
+           cs->site_yr10_decay_product_pool,
+           cs->site_yr100_decay_product_pool,
+           cs->site_total_repro_pool);
   
    for (i=0; i<NSPECIES; i++) {
       fprintf(outfile, "spp %d b %8.6f agb %8.6f ba %8.6f ",
@@ -1384,9 +1422,19 @@ void print_site_chars (site** fsite, UserData* data) {
 #ifdef ED
       fprintf(outfile, "l_top= %8.4f Rn_top= %8.4f ",
               cs->sdata->L_top, cs->sdata->Rn_top);
-      fprintf(outfile, "depth= %8.3f ksat= %8.4f theta_max= %6.3f conduct= %6.3f ",
-              cs->sdata->soil_depth, cs->sdata->k_sat,
-              cs->sdata->theta_max, cs->sdata->soil_evap_conductivity);
+       
+#if SOILGRIDS_SCHEME
+       //test_soil uncomment below else block, and delete "#if SOILGRIDS_SCHEME, else, #endif"
+       fprintf(outfile, "depth= %8.3f ksat= %8.4f theta_satu= %6.3f theta_resi= %6.3f L= %6.3f m= %6.3f conduct= %6.3f ",
+               cs->sdata->MvG_soil_depth, cs->sdata->MvG_k_sat,cs->sdata->MvG_theta_saturated,cs->sdata->MvG_theta_residual,
+               cs->sdata->MvG_L,cs->sdata->MvG_m,cs->sdata->soil_evap_conductivity);
+#else
+       //code for using MSTMIP parameters
+       fprintf(outfile, "depth= %8.3f ksat= %8.4f theta_max= %6.3f conduct= %6.3f ",
+               cs->sdata->soil_depth, cs->sdata->k_sat,
+               cs->sdata->theta_max, cs->sdata->soil_evap_conductivity);
+#endif
+       
 #elif defined MIAMI_LU
       fprintf(outfile, "depth= %8.3f conduct= %6.3f ",
               cs->sdata->soil_depth, cs->sdata->soil_evap_conductivity);
@@ -1627,7 +1675,8 @@ void print_cohorts (unsigned int time, site** siteptr, UserData* data) {
          cohortfile = fopen(filename, "w");
       }
  
-      cp = cs->oldest_patch[LU_NTRL];
+//      cp = cs->oldest_patch[LU_NTRL];
+       cp = cs->oldest_patch[lu];
       while (cp != NULL) {
          cc = (cp->tallest);
          while (cc != NULL) {

@@ -21,6 +21,7 @@ void cohort::Allocate_Biomass (UserData* data){
    hite = Hite(data);
 
    double salloc = (1.0 + data->qsw[species] * hite + data->q[species]);
+    
    if ( status >= 5 ) {
       bl = 0.0;
       blv = (balive) / salloc;
@@ -60,7 +61,7 @@ void cohort::Growth_Derivatives (double time, UserData* data ) {
    npp_function(data);
   
    /* calculate maintenance demands = tissue decay */
-   md = data->alpha[species][2] * bl + 
+   md = data->alpha[species][2] * bl +
       data->alpha[species][3] * br + data->alpha[species][4] * blv;
 
    /* calculate projected size of living biomass compartment */  
@@ -78,6 +79,16 @@ void cohort::Growth_Derivatives (double time, UserData* data ) {
       cb_act += cb[j];
       cb_max += cb_toc[j];
    }
+    //test_mor
+//   for(int j=4; j<9; j++)
+//   {
+//      if (cb[j]>0.0)
+//      {
+//          cb_act += cb[j];
+//          cb_max += cb_toc[j];
+//      }
+//   }
+
 
    /* calc carbon balance ratio */
    if((cb_max)>0.0) {
@@ -99,6 +110,7 @@ void cohort::Growth_Derivatives (double time, UserData* data ) {
             dbrdbd = data->q[species]*dbldbd;
             dhdbd = dHdBd(data);
             dbswdbd = data->qsw[species]*(hite*dbldbd + bl*dhdbd);
+             
             u  = 1.0/(dbldbd + dbrdbd + dbswdbd);     /* TODO Units don't match*/
             va = 1.0/(1.0 + u);
             vs = u/(1.0 + u);
@@ -159,9 +171,9 @@ void cohort::Growth_Derivatives (double time, UserData* data ) {
    /* measured above ground npp = leaf litter + repro/stem litter +      *
     *                             above ground wood production +         *
     *                             leaf production                        */
-   npp2 = bl * data->alpha[species][2] + p[0] + 
+   npp2 = bl * data->alpha[species][2] + p[0] +
       data->agf_bs * dbdeaddt + 0.5 * dbalivedt;
-
+    
    /*************/
    /* mortality */
    /*************/
@@ -270,8 +282,25 @@ void patch::Litter (double time, UserData* data ) {
         fast_litter += data->fraction_balive_2_fast * plant_litter;
         fast_litter_n +=  data->fraction_balive_2_fast *
         ( 1.0 / data->c2n_leaf[spp] ) * plant_litter;
-        double seed_litter = ( (cc->p[0] * data->sd_mort) * cc->nindivs ) / area;
+        
+//        double seed_litter = ( (cc->p[0] * data->sd_mort) * cc->nindivs ) / area;
+        //test_crop, should uncomment the above line
+        double seed_litter = 0.0;
+#if LANDUSE
+        if(landuse==LU_CROP)
+        {
+            seed_litter = ( (cc->p[0] * data->sd_mort_crop) * cc->nindivs ) / area;
+        }
+        else
+        {
+            seed_litter = ( (cc->p[0] * data->sd_mort) * cc->nindivs ) / area;
+        }
+#else
+        seed_litter = ( (cc->p[0] * data->sd_mort) * cc->nindivs ) / area;
+#endif
+        
         double seed_litter_n = ( 1.0 / data->c2n_recruit[spp] ) * seed_litter;
+        
         fast_litter +=  data->fraction_balive_2_fast * seed_litter;
         fast_litter_n +=  data->fraction_balive_2_fast * seed_litter_n;
         
@@ -325,6 +354,7 @@ double cohort::nitrogen_demand_function (double time, UserData* data ) {
    n_demand += p[0] / data->c2n_recruit[species];
    n_demand += p[1] / data->c2n_recruit[species];
    n_demand += md / data->c2n_leaf[species];
+    
 
    /* printf("h %f l %f n %f An_pot %f bl %f npp %f dbalivedt %f dbdeaddt %f N_demand %f\n",
            currentc->hite, currentc->lite, currentc->nindivs, currentc->An_pot, 

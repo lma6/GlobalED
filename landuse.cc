@@ -291,6 +291,52 @@ void init_landuse_patches (site** siteptr, UserData* data) {
    double water = (cs->sdata->soil_depth * cs->sdata->theta_max) 
                 * pow(cs->sdata->precip_average / cs->sdata->k_sat, 
                       1.0 / (2.0 * cs->sdata->tau + 3.0));
+    
+#if SOILGRIDS_SCHEME
+    //test_soil
+    water = 0.0;
+    float k_sat = cs->sdata->MvG_k_sat;
+    float soil_depth = cs->sdata->MvG_soil_depth;
+    float theta_s = cs->sdata->MvG_theta_saturated;
+    float theta_r = cs->sdata->MvG_theta_residual;
+    float L = cs->sdata->MvG_L;
+    float m = cs->sdata->MvG_m;
+    float precip = cs->sdata->precip_average;
+    float x0, x0_a, x0_b;
+    float eps = 0.5;
+    int n_iter = 0;
+    int max_iter = 50;
+
+    x0 = (theta_s+theta_r)/2.0*soil_depth;
+    x0_a = (0.0000001*(theta_s-theta_r)+theta_r)*soil_depth;
+    x0_b = (0.9999999*(theta_s-theta_r)+theta_r)*soil_depth;
+    float f_x0, f_x0_a, f_x0_b;
+    while(abs(x0_a-x0_b)>1.0)
+    {
+        x0 = (x0_a+x0_b)/2.0;
+        f_x0 = MvG_func(x0, k_sat, soil_depth, theta_r, theta_s, L, m, precip);
+        f_x0_a = MvG_func(x0_a, k_sat, soil_depth, theta_r, theta_s, L, m, precip);
+        f_x0_b = MvG_func(x0_b, k_sat, soil_depth, theta_r, theta_s, L, m, precip);
+
+        if(abs(f_x0)<eps)
+            break;
+
+        if (f_x0*f_x0_b<0.0)
+            x0_a = x0;
+        if (f_x0*f_x0_a<0.0)
+            x0_b = x0;
+
+        n_iter++;
+        if (n_iter>max_iter)
+        {
+            printf("error in initilize water at %d-%d, params are %f %f %f %f %f %f %f %f\n",cs->sdata->globX_,cs->sdata->globY_,L,m,k_sat,theta_r,theta_s,precip,x0_a,x0_b);
+            break;
+        }
+    }
+    water = (x0_a+x0_b)/2.0;
+#endif
+
+    
 #endif /* ED */
     // These two will be initialized from file values
    double area, stsc;
@@ -381,19 +427,30 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
 
    site* currents = *siteptr;
 
-   if (t == 0) {
-      if (currents->total_ag_biomass[0] > data->forest_definition) {
-         currents->maintain_pasture_flag = 1;
-      } else {
-         currents->maintain_pasture_flag = 0;
-      }
-   }
-   if ( (t % LANDUSE_FREQ == 0) && (t > 0) ) {
-      if ( (currents->total_ag_biomass[0] > data->forest_definition) ) {
+//   if (t == 0) {
+//      if (currents->total_ag_biomass[0] > data->forest_definition) {
+//         currents->maintain_pasture_flag = 1;
+//      } else {
+//         currents->maintain_pasture_flag = 0;
+//      }
+//   }
+    
+   if ( (t % LANDUSE_FREQ == 0) && (t > 0) )
+    {
+      if ( (currents->total_ag_biomass[0] > data->forest_definition) )
+        {
          currents->forest_harvest_flag = 1;
       } else {
          currents->forest_harvest_flag = 0;
       }
+        
+        //test_mor.
+        //Above code line 430-436 where use t=0 to determine maintain_pasture_flag is a bug. As when restart from midpoint of a run, t is usually not zero, resulting fail to determine maintain_pasture_flag and fail to clear trees in pasture pataches
+        if (currents->total_ag_biomass[0] > data->forest_definition) {
+            currents->maintain_pasture_flag = 1;
+        } else {
+            currents->maintain_pasture_flag = 0;
+        }
 
       /************************************************/
       /****            aging of crops              ****/
@@ -776,8 +833,11 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
           }
 #endif
       }
-       wood_pool_decay(&currents, data);
+//       wood_pool_decay(&currents, data);
    }
+    //test_crop, should uncomment the above line in the bracket
+    wood_pool_decay(&currents, data);
+    
     if (data->planting_probability[data->time_period][currents->sdata->globY_][currents->sdata->globX_]>0.8)
     {
         plant_croplands(&currents, data);
@@ -1394,11 +1454,23 @@ void harvest_croplands (site** siteptr, UserData* data) {
        cohort* currentc = currentp->tallest;
        while (currentc != NULL) {
            /*harvest everything*/
-           harvested_structural_C += currentc->bdead * (currentc->nindivs-0.00001);
-           harvested_fast_C += currentc->balive * (currentc->nindivs-0.00001);
-           harvested_fast_N += (1.0 / data->c2n_leaf[currentc->species])
-           * currentc->balive * (currentc->nindivs-0.00001);
-           currentc->nindivs = 0.00001;
+//           harvested_structural_C += currentc->bdead * (currentc->nindivs-0.00001);
+//           harvested_fast_C += currentc->balive * (currentc->nindivs-0.00001);
+//           harvested_fast_N += (1.0 / data->c2n_leaf[currentc->species])
+//           * currentc->balive * (currentc->nindivs-0.00001);
+//           currentc->nindivs = 0.00001;
+//           currentc = currentc->shorter;
+           
+           //test_crop, should uncomment the above lines
+//           double mini_crop_nindiv = 5.0;
+           if (currentc->nindivs > data->crop_mini_nindiv*currentp->area)
+           {
+               harvested_structural_C += currentc->bdead * (currentc->nindivs - data->crop_mini_nindiv*currentp->area);
+               harvested_fast_C += currentc->balive * (currentc->nindivs - data->crop_mini_nindiv*currentp->area);
+               harvested_fast_N += (1.0 / data->c2n_leaf[currentc->species])
+               * currentc->balive * (currentc->nindivs- data->crop_mini_nindiv*currentp->area);
+               currentc->nindivs = data->crop_mini_nindiv*currentp->area;
+           }
            currentc = currentc->shorter;
        }
        
@@ -1469,12 +1541,49 @@ void harvest_croplands (site** siteptr, UserData* data) {
 ////////////////////////////////////////////////////////////////////////////////
 void plant_croplands(site** siteptr, UserData* data)
 {
+//    //plant the crops by initilizing all cohorts if crop calendar indicates
+//    site* currents = *siteptr;
+//    patch* currentp = currents->youngest_patch[LU_CROP];
+//    ///CarbonConserve
+//    /// As to initiliza cohorts in crop patches will cause carbon leakage, there the added total biomass will be deducted from harvested biomass to compensate the carbon leakage -- Lei
+//    double total_tb_beforePlanted = 0.0, total_tb_afterPlanted = 0.0;
+//    cohort* currentc = NULL;
+//    while (currentp != NULL)
+//    {
+//        /*resest total biomass*/
+//        currentp->total_biomass = 0.0;
+//        currentp->total_ag_biomass = 0.0;
+//
+//        ///CarbonConserve
+//        /// Here, calculate total biomass before planting new cohorts
+//        currentc = currentp->shortest;
+//        while(currentc!=NULL)
+//        {
+//            total_tb_beforePlanted += (currentc->balive+currentc->bdead)*currentc->nindivs/currentp->area;
+//            currentc = currentc->taller;
+//        }
+//
+//        init_cohorts(&currentp, data);
+//
+//        /// Here, calculate total biomass after planting new cohorts, the difference is the biomass of planted cohort and it will be deducted from harvested crop biomass -- Lei
+//        currentc = currentp->shortest;
+//        while(currentc!=NULL)
+//        {
+//            total_tb_afterPlanted += (currentc->balive+currentc->bdead)*currentc->nindivs/currentp->area;
+//            currentc = currentc->taller;
+//        }
+//        currentp->crop_harvested_c -= (total_tb_afterPlanted-total_tb_beforePlanted)*LANDUSE_FREQ;
+//
+//        currentp = currentp->older;
+//    }
+    
+    //test_crop, should uncomment above entire block
     //plant the crops by initilizing all cohorts if crop calendar indicates
     site* currents = *siteptr;
     patch* currentp = currents->youngest_patch[LU_CROP];
     ///CarbonConserve
     /// As to initiliza cohorts in crop patches will cause carbon leakage, there the added total biomass will be deducted from harvested biomass to compensate the carbon leakage -- Lei
-    double total_tb_beforePlanted = 0.0, total_tb_afterPlanted = 0.0;
+//    double total_tb_beforePlanted = 0.0, total_tb_afterPlanted = 0.0;
     cohort* currentc = NULL;
     while (currentp != NULL)
     {
@@ -1484,24 +1593,20 @@ void plant_croplands(site** siteptr, UserData* data)
         
         ///CarbonConserve
         /// Here, calculate total biomass before planting new cohorts
-        currentc = currentp->shortest;
-        while(currentc!=NULL)
+        double total_repro_pool = 0.0;
+        for (size_t spp=0;spp<NSPECIES;spp++)
         {
-            total_tb_beforePlanted += (currentc->balive+currentc->bdead)*currentc->nindivs/currentp->area;
-            currentc = currentc->taller;
+            total_repro_pool += currentp->repro[spp];
         }
         
-        init_cohorts(&currentp, data);
-        
-        /// Here, calculate total biomass after planting new cohorts, the difference is the biomass of planted cohort and it will be deducted from harvested crop biomass -- Lei
-        currentc = currentp->shortest;
-        while(currentc!=NULL)
+        if((total_repro_pool>1e-9) && (currentp->shortest != NULL))
         {
-            total_tb_afterPlanted += (currentc->balive+currentc->bdead)*currentc->nindivs/currentp->area;
-            currentc = currentc->taller;
+            spawn_cohorts(0,&currentp,data);
         }
-        currentp->crop_harvested_c -= (total_tb_afterPlanted-total_tb_beforePlanted)*LANDUSE_FREQ;
-        
+        else
+        {
+            init_cohorts(&currentp, data);
+        }
         currentp = currentp->older;
     }
 }
@@ -1574,11 +1679,24 @@ void graze_pastures (site** siteptr, UserData* data) {
            }
            /* 2. remove trees explicitly if primary vegetation forested*/
            if ( (currents->maintain_pasture_flag == 1) && (!data->is_grass[currentc->species]) ) {
-               grazed_structural_C += currentc->bdead * (currentc->nindivs-0.000001);
-               grazed_fast_C += currentc->balive * (currentc->nindivs-0.000001);
-               grazed_fast_N += (1.0 / data->c2n_leaf[currentc->species])
-               * currentc->balive * (currentc->nindivs-0.000001);
-               currentc->nindivs = 0.000001;
+               //test_mor
+               // below code is problematic when nindivs is less than 0.000001, this will cause negave grazed_fast_C
+//               grazed_structural_C += currentc->bdead * (currentc->nindivs-0.000001);
+//               grazed_fast_C += currentc->balive * (currentc->nindivs-0.000001);
+//               grazed_fast_N += (1.0 / data->c2n_leaf[currentc->species])
+//               * currentc->balive * (currentc->nindivs-0.000001);
+//               currentc->nindivs = 0.000001;
+               
+               //test_mor fixed above code by following
+               double mini_nindiv_to_graze = 0.000001;
+               if(currentc->nindivs > mini_nindiv_to_graze) //only graze cohorts with enough individuals
+               {
+                   grazed_structural_C += currentc->bdead * (currentc->nindivs-mini_nindiv_to_graze);
+                   grazed_fast_C += currentc->balive * (currentc->nindivs-mini_nindiv_to_graze);
+                   grazed_fast_N += (1.0 / data->c2n_leaf[currentc->species])
+                   * currentc->balive * (currentc->nindivs-mini_nindiv_to_graze);
+                   currentc->nindivs = mini_nindiv_to_graze;
+               }
            }
            currentc = currentc->shorter;
        }
@@ -1738,20 +1856,37 @@ void wood_pool_decay(site** siteptr, UserData* data)
         patch* currentp = currents->youngest_patch[lu];
         while(currentp!=NULL)
         {
+//            currentp->product_emission = 0.0;
+//
+//            decay = currentp->yr1_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr1_decay_rate));
+//            currentp->product_emission += decay*LANDUSE_FREQ;
+//            currentp->yr1_decay_product_pool -= decay;
+//
+//            decay = currentp->yr10_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr10_decay_rate));
+//            currentp->product_emission += decay*LANDUSE_FREQ;
+//            currentp->yr10_decay_product_pool -= decay;
+//
+//            decay = currentp->yr100_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr100_decay_rate));
+//            currentp->product_emission += decay*LANDUSE_FREQ;
+//            currentp->yr100_decay_product_pool -= decay;
+//
+//            currentp = currentp->older;
+            
+            //test_crop, should uncomment the above block
             currentp->product_emission = 0.0;
-            
-            decay = currentp->yr1_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr1_decay_rate));
-            currentp->product_emission += decay*LANDUSE_FREQ;
+
+            decay = currentp->yr1_decay_product_pool * (1.0-exp(TIMESTEP*data->yr1_decay_rate));
+            currentp->product_emission += decay*N_CLIMATE;
             currentp->yr1_decay_product_pool -= decay;
-            
-            decay = currentp->yr10_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr10_decay_rate));
-            currentp->product_emission += decay*LANDUSE_FREQ;
+
+            decay = currentp->yr10_decay_product_pool * (1.0-exp(TIMESTEP*data->yr10_decay_rate));
+            currentp->product_emission += decay*N_CLIMATE;
             currentp->yr10_decay_product_pool -= decay;
-            
-            decay = currentp->yr100_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr100_decay_rate));
-            currentp->product_emission += decay*LANDUSE_FREQ;
+
+            decay = currentp->yr100_decay_product_pool * (1.0-exp(TIMESTEP*data->yr100_decay_rate));
+            currentp->product_emission += decay*N_CLIMATE;
             currentp->yr100_decay_product_pool -= decay;
-            
+
             currentp = currentp->older;
         }
     }

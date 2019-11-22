@@ -294,6 +294,8 @@ void Restart::readPatchDistribution (site* s, UserData& data) {
    } else {
       data.start_time = 0;
    }
+//    //test_multi_restart
+//   data.start_time = (int) floor(sr.year_) * N_CLIMATE + 1;
    
 }
 
@@ -388,7 +390,21 @@ void print_system_state (unsigned int time, site** siteptr,
    pfile = fopen(pfilename,"w");
 
 #if defined ED
-   fprintf(pfile,"time patch trk age area water fsc stsc stsl ssc psc msn fsn lu ");
+//   fprintf(pfile,"time patch trk age area water fsc stsc stsl ssc psc msn fsn lu ");
+    //test_restart
+    // above line does not output product pools
+#if LANDUSE
+    fprintf(pfile,"time patch trk age area water fsc stsc stsl ssc psc msn fsn lu 1yr_pool 10yr_pool 100yr_pool ");
+    
+    //test_crop, should remove the code block below
+    for(size_t spp=0;spp<NSPECIES;spp++)
+    {
+        fprintf(pfile,"repro_spp%d ",spp);
+    }
+#else
+    fprintf(pfile,"time patch trk age area water fsc stsc stsl ssc psc msn fsn lu ");
+#endif
+    
 #elif defined MIAMI_LU
    fprintf(pfile,"time patch trk age area fsc stsc lu tb ");
 #endif
@@ -405,7 +421,9 @@ void print_system_state (unsigned int time, site** siteptr,
    char cfilename[STR_LEN];
    sprintf(cfilename, "%s.css", basename);
    FILE* cfile = fopen(cfilename, "w");
-   fprintf(cfile, "time patch cohort dbh hite spp nindivs bdead balive \n");
+//   fprintf(cfile, "time patch cohort dbh hite spp nindivs bdead balive \n");
+    //test_mor
+    fprintf(cfile, "time patch cohort dbh hite spp nindivs bdead balive bl br blv bsw\n");
 #endif /* ED */
 
    for (int lu=0; lu<N_LANDUSE_TYPES; lu++) {
@@ -413,21 +431,72 @@ void print_system_state (unsigned int time, site** siteptr,
       while (cp != NULL) {
 #if defined ED
          /* print patch distribution */
-         fprintf(pfile, "%6.3f %p %d %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %1d ",
-                 time * TIMESTEP, 
-                 cp, 
-                 cp->track, 
-                 cp->age, 
-                 cp->area,
-                 cp->water,
-                 cp->fast_soil_C,
-                 cp->structural_soil_C,
-                 cp->structural_soil_L,
-                 cp->slow_soil_C,
-                 cp->passive_soil_C,
-                 cp->mineralized_soil_N,
-                 cp->fast_soil_N,
-                 cp->landuse);
+//         fprintf(pfile, "%6.3f %p %d %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %1d ",
+//                 time * TIMESTEP,
+//                 cp,
+//                 cp->track,
+//                 cp->age,
+//                 cp->area,
+//                 cp->water,
+//                 cp->fast_soil_C,
+//                 cp->structural_soil_C,
+//                 cp->structural_soil_L,
+//                 cp->slow_soil_C,
+//                 cp->passive_soil_C,
+//                 cp->mineralized_soil_N,
+//                 cp->fast_soil_N,
+//                 cp->landuse);
+          
+          //test_restart
+          //above line does not output product pools, fixed by below
+#if LANDUSE
+//          fprintf(pfile, "%6.3f %p %d %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %1d %8.4f %8.4f %8.4f ",
+          //test_restart
+          fprintf(pfile, "%6.3f %p %d %8.8f %8.8f %8.8f %8.8f %8.8f %8.8f %8.8f %8.8f %8.8f %8.8f %1d %8.8f %8.8f %8.8f ",
+                  time * TIMESTEP,
+                  cp,
+                  cp->track,
+                  cp->age,
+                  cp->area,
+                  cp->water,
+                  cp->fast_soil_C,
+                  cp->structural_soil_C,
+                  cp->structural_soil_L,
+                  cp->slow_soil_C,
+                  cp->passive_soil_C,
+                  cp->mineralized_soil_N,
+                  cp->fast_soil_N,
+                  cp->landuse,
+                  cp->yr1_decay_product_pool,
+                  cp->yr10_decay_product_pool,
+                  cp->yr100_decay_product_pool);
+          
+          //test_crop, should remove the code block below
+          for(size_t spp=0;spp<NSPECIES;spp++)
+          {
+              fprintf(pfile,"%4.4f ",cp->repro[spp]);
+          }
+#else
+//          fprintf(pfile, "%6.3f %p %d %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %1d ",
+          //test_restart
+          fprintf(pfile, "%6.3f %p %d %8.8f %8.8f %8.8f %8.8f %8.8f %8.8f %8.8f %8.8f %8.8f %8.8f %1d ",
+                  time * TIMESTEP,
+                  cp,
+                  cp->track,
+                  cp->age,
+                  cp->area,
+                  cp->water,
+                  cp->fast_soil_C,
+                  cp->structural_soil_C,
+                  cp->structural_soil_L,
+                  cp->slow_soil_C,
+                  cp->passive_soil_C,
+                  cp->mineralized_soil_N,
+                  cp->fast_soil_N,
+                  cp->landuse);
+#endif
+          
+          
 #if 0
          if (lu == LU_SCND)
             for (int i=0; i<=data->year; i++) 
@@ -438,16 +507,56 @@ void print_system_state (unsigned int time, site** siteptr,
          /* print cohort distribution */
          cohort* cc = (cp->tallest);
          while (cc != NULL){  
-            fprintf(cfile, "%6.3f %p %p %8.4f %8.4f %2d %8.4f %8.4f %8.4f \n",
-                    time * TIMESTEP,
-                    cp,
-                    cc,
-                    cc->dbh,
-                    cc->hite,
-                    cc->species,
-                    cc->nindivs / cp->area,
-                    cc->bdead, 
-                    cc->balive);
+//            fprintf(cfile, "%6.3f %p %p %8.4f %8.4f %2d %8.4f %8.4f %8.4f \n",
+//                    time * TIMESTEP,
+//                    cp,
+//                    cc,
+//                    cc->dbh,
+//                    cc->hite,
+//                    cc->species,
+//                    cc->nindivs / cp->area,
+//                    cc->bdead,
+//                    cc->balive);
+             //test_mor
+             //above code doesn's ouput leaf biomass which is problmetic for deciduous tree which leaf biomass is zero
+//             fprintf(cfile, "%6.3f %p %p %8.8f %8.8f %2d %8.20f %8.8f %8.8f %8.8f %8.8f %8.8f %8.8f\n",
+//                     time * TIMESTEP,
+//                     cp,
+//                     cc,
+//                     cc->dbh,
+//                     cc->hite,
+//                     cc->species,
+//                     cc->nindivs / cp->area,
+//                     cc->bdead,
+//                     cc->balive,
+//                     cc->bl,
+//                     cc->br,
+//                     cc->blv,
+//                     cc->bsw);
+             
+             //test_restart
+             //below line will output cb cb_toc
+             fprintf(cfile, "%6.3f %p %p %8.8f %8.8f %2d %8.20f %8.8f %8.8f %8.8f %8.8f %8.8f %8.8f ",
+                     time * TIMESTEP,
+                     cp,
+                     cc,
+                     cc->dbh,
+                     cc->hite,
+                     cc->species,
+                     cc->nindivs / cp->area,
+                     cc->bdead,
+                     cc->balive,
+                     cc->bl,
+                     cc->br,
+                     cc->blv,
+                     cc->bsw);
+             
+             for(size_t imon=0;imon<N_CLIMATE;imon++)
+             {
+                 fprintf(cfile, "%8.8f %8.8f ",cc->cb[imon], cc->cb_toc[imon]);
+             }
+             fprintf(cfile, "\n");
+             
             cc = cc->shorter;
          } /* end loop over cohorts */
 #elif defined MIAMI_LU
@@ -501,6 +610,17 @@ void read_patch_distribution (site** siteptr, UserData* data) {
 #endif
    double age, area, water, fsc, stsc;
    char dummy[100000];
+    
+    //test_restart
+#if LANDUSE & RESTART_FROM_LU
+    double yr1_pool, yr10_pool, yr100_pool;
+    
+    //test_crop
+#if RESTART_FROM_REPRO
+    double repro[NSPECIES];
+#endif // RESTART_FROM_REPRO
+    
+#endif
 
    site* cs = *siteptr; /* assign pointer to site */
 
@@ -532,9 +652,31 @@ void read_patch_distribution (site** siteptr, UserData* data) {
     
 #if defined ED
     printf("ED mode\n");
+//   while( fscanf( infile, "%lf%s%d%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%d",
+//                  &old_time, old_address, &track, &age, &area, &water,
+//                  &fsc, &stsc, &stsl, &ssc, &psc, &msn, &fsn, &lu ) != EOF ){
+    
+    //test_restart
+#if LANDUSE & RESTART_FROM_LU
+    while( fscanf( infile, "%lf%s%d%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%d%lf%lf%lf",
+                  &old_time, old_address, &track, &age, &area, &water,
+                  &fsc, &stsc, &stsl, &ssc, &psc, &msn, &fsn, &lu, &yr1_pool, &yr10_pool, &yr100_pool) != EOF ){
+    
+//test_crop, shoule remove the blow if block
+#if RESTART_FROM_REPRO
+        for(size_t spp=0;spp<NSPECIES;spp++)
+        {
+            fscanf( infile, "%lf",&repro[spp]);
+        }
+#endif // RESTART_FROM_REPRO
+        
+#else
    while( fscanf( infile, "%lf%s%d%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%d",
                   &old_time, old_address, &track, &age, &area, &water,
-                  &fsc, &stsc, &stsl, &ssc, &psc, &msn, &fsn, &lu ) != EOF ){    
+                  &fsc, &stsc, &stsl, &ssc, &psc, &msn, &fsn, &lu ) != EOF ){
+#endif
+    
+        
       if (start_time < old_time)
          start_time = old_time;
 #elif defined MIAMI_LU
@@ -546,7 +688,15 @@ void read_patch_distribution (site** siteptr, UserData* data) {
       if (area  < 0.0001) area  = 0.0001; 
       if (water < 0.0001) water = 0.0001; 
       if (fsc   < 0.0001) fsc   = 0.0001; 
-      if (stsc  < 0.0001) stsc  = 0.0001; 
+      if (stsc  < 0.0001) stsc  = 0.0001;
+       
+#if LANDUSE & RESTART_FROM_LU
+       //test_restart
+       if (yr1_pool  < 0.0001) yr1_pool  = 0.0001;
+       if (yr10_pool  < 0.0001) yr10_pool  = 0.0001;
+       if (yr100_pool  < 0.0001) yr100_pool  = 0.0001;
+#endif
+       
 #if defined ED
       if (stsl  < 0.0001) stsl  = 0.0001; 
       if (ssc   < 0.0001) ssc   = 0.0001; 
@@ -560,8 +710,26 @@ void read_patch_distribution (site** siteptr, UserData* data) {
       printf("Initializing patch %d \n", count);
       patch* newp = NULL;
 #if defined ED
-      create_patch( &cs, &newp, lu, track, age, area, water,
-                    fsc, stsc, stsl, ssc, psc, msn, fsn, data);
+//      create_patch( &cs, &newp, lu, track, age, area, water,
+//                    fsc, stsc, stsl, ssc, psc, msn, fsn, data);
+       
+       //test_restart
+       //above creat_patch does not call a function to read product pools
+#if LANDUSE & RESTART_FROM_LU
+       create_patch_LU( &cs, &newp, lu, track, age, area, water,fsc, stsc, stsl, ssc, psc, msn, fsn, yr1_pool, yr10_pool, yr100_pool, data);
+       
+       //test_crop, shoule remove the below if block
+#if RESTART_FROM_REPRO
+       for(size_t spp=0;spp<NSPECIES;spp++)
+       {
+           newp->repro[spp] = repro[spp];
+       }
+#endif // RESTART_FROM_REPRO
+       
+#else
+       create_patch( &cs, &newp, lu, track, age, area, water,fsc, stsc, stsl, ssc, psc, msn, fsn, data);
+#endif
+       
 #if 0 //switch to 1 if line 431 is on indicating history are output
       if (lu == LU_SCND) {
          double tmp = 0.0;
@@ -601,11 +769,19 @@ void read_patch_distribution (site** siteptr, UserData* data) {
   
    fclose(infile);
 
-   if (last_lu > LU_NTRL) {
-      data->start_time = (int) floor(start_time) * N_CLIMATE + 1;
-   } else {
-      data->start_time = 0;
-   }
+//   if (last_lu > LU_NTRL) {
+////      data->start_time = (int) floor(start_time) * N_CLIMATE + 1;
+//       data->start_time = (int) floor(start_time) * N_CLIMATE;
+//   } else {
+//      data->start_time = 0;
+//   }
+    //test_multi_restart
+////    data->start_time = (int) floor(start_time) * N_CLIMATE + 1;
+#if LANDUSE && RESTART_FROM_LU
+    data->start_time = (int) floor(start_time) * N_CLIMATE;
+#else
+    data->start_time = 0;
+#endif
 }
 
 
@@ -624,6 +800,9 @@ void read_cohort_distribution( char* filename, site** siteptr,
    FILE *infile;
    char cfilename[STR_LEN];
    double dbh, hite, nindivs, bdead, balive;
+    //test_mor
+    double bl,br,blv,bsw;
+    
    int  spp;
    char paddress2[20];
    double fdum;
@@ -643,28 +822,59 @@ void read_cohort_distribution( char* filename, site** siteptr,
       printf("rcd: Can't open file: %p %s \n", infile, cfilename);
       return;
    }
+    
+    //test_restart
+    double cb[N_CLIMATE];
+    double cb_toc[N_CLIMATE];
 
    /*function to read over header line*/
    fgets(dummy,10000,infile);
 
-   /* read in  data elements */
-   while( fscanf( infile, "%lf%s%s%lf%lf%d%lf%lf%lf\n",
+//   /* read in  data elements */
+//   while( fscanf( infile, "%lf%s%s%lf%lf%d%lf%lf%lf\n",
+//                  &fdum, paddress2, cdum, &dbh, &hite,
+//                  &spp, &nindivs, &bdead, &balive ) != EOF ){
+//      /* error trap to correct for reading in numerical zeros */
+//      if(dbh     < 0.0001) dbh     = 0.0001;
+//      if(hite    < data->hgtmin) hite    = data->hgtmin;
+//      if(nindivs < 0.0001) nindivs = 0.0001;
+//      if(bdead   < 0.0001) bdead   = 0.0001;
+//      if(balive  < 0.0001) balive  = 0.0001;
+//      //hite = data->hgtmin;
+//
+//      /* compare patch addresses if match create cohort with read-in parameters */
+//      if ( strcmp(paddress1, paddress2) == 0 )
+//      {
+//         create_cohort(spp, nindivs * cp->area, hite, dbh, balive, bdead, &cp, data);
+//         count++;
+//      }  /* end if */
+//   } /* end while */
+    
+    //test_mor
+    //should uncomment above while block line 670-688, delete this block between line 691-709
+//    while( fscanf( infile, "%lf%s%s%lf%lf%d%lf%lf%lf%lf%lf%lf%lf\n",
+//                  &fdum, paddress2, cdum, &dbh, &hite,
+//                  &spp, &nindivs, &bdead, &balive,&bl,&br,&blv,&bsw) != EOF ){
+    //test_restart
+    while( fscanf( infile, "%lf%s%s%lf%lf%d%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf\n",
                   &fdum, paddress2, cdum, &dbh, &hite,
-                  &spp, &nindivs, &bdead, &balive ) != EOF ){
-      /* error trap to correct for reading in numerical zeros */
-      if(dbh     < 0.0001) dbh     = 0.0001;
-      if(hite    < data->hgtmin) hite    = data->hgtmin;
-      if(nindivs < 0.0001) nindivs = 0.0001;
-      if(bdead   < 0.0001) bdead   = 0.0001;
-      if(balive  < 0.0001) balive  = 0.0001;
-      //hite = data->hgtmin;
-      
-      /* compare patch addresses if match create cohort with read-in parameters */
-      if ( strcmp(paddress1, paddress2) == 0 ) {
-         create_cohort(spp, nindivs * cp->area, hite, dbh, balive, bdead, &cp, data);
-         count++;
-      }  /* end if */
-   } /* end while */
+                  &spp, &nindivs, &bdead, &balive,&bl,&br,&blv,&bsw,&cb[0],&cb_toc[0],&cb[1],&cb_toc[1],&cb[2],&cb_toc[2],&cb[3],&cb_toc[3],&cb[4],&cb_toc[4],&cb[5],&cb_toc[5],&cb[6],&cb_toc[6],&cb[7],&cb_toc[7],&cb[8],&cb_toc[8],&cb[9],&cb_toc[9],&cb[10],&cb_toc[10],&cb[11],&cb_toc[11]) != EOF){
+//                  &spp, &nindivs, &bdead, &balive,&bl,&br,&blv,&bsw,cb[0],cb_toc[0],cb[1],cb_toc[1],cb[2],cb_toc[2],cb[3],cb_toc[3],cb[4],cb_toc[4],cb[5],cb_toc[5],cb[6],cb_toc[6],cb[7],cb_toc[7],cb[8],cb_toc[8],cb[9],cb_toc[9],cb[10],cb_toc[10],cb[11],cb_toc[11]) != EOF){
+        /* error trap to correct for reading in numerical zeros */
+        if(dbh     < 0.0001) dbh     = 0.0001;
+        if(hite    < data->hgtmin) hite    = data->hgtmin;
+//        if(nindivs < 0.0001) nindivs = 0.0001;
+//        if(bdead   < 0.0001) bdead   = 0.0001;
+//        if(balive  < 0.0001) balive  = 0.0001;
+        //hite = data->hgtmin;
+        
+        /* compare patch addresses if match create cohort with read-in parameters */
+        if ( strcmp(paddress1, paddress2) == 0 )
+        {
+            create_cohort_test_mor(spp, nindivs * cp->area, hite, dbh, balive, bdead,bl,br,blv,bsw, &cp, cb, cb_toc, data);
+            count++;
+        }  /* end if */
+    } /* end while */
 
    printf("rcd: cohorts read= %d \n", count);
    fclose(infile);

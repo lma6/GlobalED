@@ -295,25 +295,21 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
             ////Currently, ambient CO2 concentration is 350 umol
             //farquhar(Vcmax25,CO2,tmp,Ts,hum,swd,shade,pt,farquhar_results);
             
-            //test_larch
-//            for (tmp=-20;tmp<60;tmp+=1)
+//            for(float tmp1=-10.0;tmp1<50.0;tmp1+=1.0)
 //            {
-//                swd = 600;
-//                spp = 5;
 //                pt = 0;
-//                Vcmax25 = 50;
-//                shade = 1.0;
-//                tmp = 25.0;
-//                Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
-//                printf("tmp %f Anb %.6f\n",tmp,farquhar_results[1]*3600);
-//                shade = 0.2;
-//                Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
-//                printf("tmp %f Anb %.6f\n",tmp,farquhar_results[1]*3600);
+//                swd = 600;
+//                double farquhar_results_c3[6];
+//                double farquhar_results_c4[6];
+//                double Vcmax25_c3 = 80.0;
+//                double Vcmax25_c4 = 40.0;
+////                tmp1 = 34.0;
+//                Farquhar_couple(0,spp,data,tmp1,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25_c3,farquhar_results_c3);
+//                Farquhar_couple(1,spp,data,tmp1,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25_c4,farquhar_results_c4);
+//                printf("tmp %.2f Ao_c3 %2.3f Ac_c3 %.3f Ao_c4 %.3f Ac_c4 %.3f\n",tmp1,farquhar_results_c3[1]*1e6,farquhar_results_c3[3]*1e6,farquhar_results_c4[1]*1e6,farquhar_results_c4[3]*1e6);
 //            }
-        
-
-            Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
             
+            Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
 
             tf_air[spp][time_period]+=farquhar_results[0];
             tf_soil[spp][time_period]+=farquhar_results[5];
@@ -1219,6 +1215,8 @@ void update_site (site** current_site, UserData* data) {
     cs->site_yr100_decay_product_pool = 0.0;
     cs->site_pasture_harvest        = 0.0;
     cs->site_crop_harvest           = 0.0;
+    //test_crop
+    cs->site_total_repro_pool       = 0.0;
 #endif
    cs->site_dndt                    = 0.0;
    cs->site_aa_lai                  = 0.0;
@@ -1243,6 +1241,11 @@ void update_site (site** current_site, UserData* data) {
    cs->site_total_water_demand      = 0.0;
    cs->site_total_perc              = 0.0;
    cs->site_total_soil_evap         = 0.0;
+    
+    //test_mor2
+#if SNOWPACK_SCHEME == 1
+    cs->site_total_snowpack = 0.0;
+#endif
    /* height */
    cs->site_avg_height              = 0.0;
 #endif
@@ -1286,16 +1289,28 @@ void update_site (site** current_site, UserData* data) {
     }
     for (size_t mon=data->time_period*24;mon<data->time_period*24+24;mon++)
     {
-        if(data->global_tmp[mon][cs->sdata->globY_][cs->sdata->globX_]<-2.0)
+        if(data->global_tmp[mon][cs->sdata->globY_][cs->sdata->globX_]<-80.0)
         {
             cs->is_frozen_evergreen_short = 1;
             break;
         }
     }
     
+//    for (size_t mon=data->time_period*24;mon<data->time_period*24+24;mon++)
+//    {
+//        if(data->global_tmp[mon][cs->sdata->globY_][cs->sdata->globX_]<-20.0)
+//        {
+//            cs->is_frozen_early_succ = 1;
+//            cs->is_frozen_mid_succ = 1;
+//            cs->is_frozen_late_succ = 1;
+//            break;
+//        }
+//    }
+    
+    //test_mor should uncomment above block
     for (size_t mon=data->time_period*24;mon<data->time_period*24+24;mon++)
     {
-        if(data->global_tmp[mon][cs->sdata->globY_][cs->sdata->globX_]<-25.0)
+        if(data->global_tmp[mon][cs->sdata->globY_][cs->sdata->globX_]<-15.0)
         {
             cs->is_frozen_early_succ = 1;
             cs->is_frozen_mid_succ = 1;
@@ -1303,6 +1318,7 @@ void update_site (site** current_site, UserData* data) {
             break;
         }
     }
+    
     
     //test_larch
     //use climate to define tropical zone. where twelve months have mean temperature of at least 18 degree
@@ -1327,7 +1343,6 @@ void update_site (site** current_site, UserData* data) {
         cs->climate_zone = 2;
     else // boreal climate
         cs->climate_zone = 3;
-    
 
    for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++) {
       update_site_landuse(&cs, lu, data);
@@ -1392,6 +1407,8 @@ void update_site (site** current_site, UserData* data) {
        cs->site_yr100_decay_product_pool += cs->yr100_decay_product_pool[lu]*cs->area_fraction[lu];
        cs->site_pasture_harvest     += cs->pasture_harvest[lu]*cs->area_fraction[lu];
        cs->site_crop_harvest        += cs->crop_harvest[lu]*cs->area_fraction[lu];
+       //test_crop
+       cs->site_total_repro_pool    += cs->site_repro_pool[lu]*cs->area_fraction[lu];
 #endif
        
 #ifdef ED
@@ -1415,6 +1432,11 @@ void update_site (site** current_site, UserData* data) {
 
       cs->site_total_perc         += cs->perc[lu] * cs->area_fraction[lu];
       cs->site_total_soil_evap    += cs->soil_evap[lu] * cs->area_fraction[lu];
+ //test_mor2
+#if SNOWPACK_SCHEME == 1
+       cs->site_total_snowpack += cs->snowpack[lu] * cs->area_fraction[lu];
+#endif
+       
       /* height */
       cs->site_avg_height         += cs->lu_avg_height[lu] * cs->area_fraction[lu];
 #endif
@@ -1426,13 +1448,23 @@ void update_site (site** current_site, UserData* data) {
     cs->site_nep3 = (cs->site_total_c- cs->last_site_total_c_last_month)*N_CLIMATE;   /// Here multiply by N_CLIMATE as in npp_function, all fluxes is yearly based than monthly
     
 #if LANDUSE
+//    // move this block to where is before refershing last_site_total_c_last_month
+//    cs->site_nep3_product = cs->site_total_c + cs->site_yr1_decay_product_pool+cs->site_yr10_decay_product_pool+cs->site_yr100_decay_product_pool;
+//    cs->site_nep3_product -= cs->last_site_total_c_last_month + cs->last_site_yr1_decay_product_pool + cs->last_site_yr10_decay_product_pool + cs->last_site_yr100_decay_product_pool;
+//    cs->site_nep3_product *= N_CLIMATE;
+//    cs->last_site_yr1_decay_product_pool = cs->site_yr1_decay_product_pool;
+//    cs->last_site_yr10_decay_product_pool = cs->site_yr10_decay_product_pool;
+//    cs->last_site_yr100_decay_product_pool = cs->site_yr100_decay_product_pool;
+    
+    //test_crop, should recommment the above lines
     // move this block to where is before refershing last_site_total_c_last_month
-    cs->site_nep3_product = cs->site_total_c + cs->site_yr1_decay_product_pool+cs->site_yr10_decay_product_pool+cs->site_yr100_decay_product_pool;
-    cs->site_nep3_product -= cs->last_site_total_c_last_month + cs->last_site_yr1_decay_product_pool + cs->last_site_yr10_decay_product_pool + cs->last_site_yr100_decay_product_pool;
+    cs->site_nep3_product = cs->site_total_c + cs->site_yr1_decay_product_pool+cs->site_yr10_decay_product_pool+cs->site_yr100_decay_product_pool+cs->site_total_repro_pool;
+    cs->site_nep3_product -= cs->last_site_total_c_last_month + cs->last_site_yr1_decay_product_pool + cs->last_site_yr10_decay_product_pool + cs->last_site_yr100_decay_product_pool+cs->last_site_total_repro_pool;
     cs->site_nep3_product *= N_CLIMATE;
     cs->last_site_yr1_decay_product_pool = cs->site_yr1_decay_product_pool;
     cs->last_site_yr10_decay_product_pool = cs->site_yr10_decay_product_pool;
     cs->last_site_yr100_decay_product_pool = cs->site_yr100_decay_product_pool;
+    cs->last_site_total_repro_pool = cs->site_total_repro_pool;
 #endif
     
     cs->last_site_total_c_last_month=cs->site_total_c;
@@ -1512,6 +1544,11 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
     cs->yr100_decay_product_pool[lu] = 0.0;
     cs->crop_harvest[lu]            = 0.0;
     cs->pasture_harvest[lu]         = 0.0;
+    //test_crop
+    for(size_t i=0;i<NSPECIES;i++)
+    {
+        cs->site_repro_pool[lu]       = 0.0;
+    }
 #endif
    cs->aa_npp[lu]                  = 0.0; 
    cs->aa_nep[lu]                  = 0.0; 
@@ -1530,7 +1567,13 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
    cs->total_water_uptake[lu]      = 0.0;
    cs->total_water_demand[lu]      = 0.0;
    cs->perc[lu]                    = 0.0;
-   cs->soil_evap[lu]               = 0.0;        
+   cs->soil_evap[lu]               = 0.0;
+    
+    //test_mor2
+#if SNOWPACK_SCHEME == 1
+    cs->snowpack[lu] = 0.0;
+#endif
+    
    /* height */
    cs->lu_avg_height[lu]           = 0.0;
    cs->basal_area[lu]              = 0.0;
@@ -1601,6 +1644,11 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
           cs->yr100_decay_product_pool[lu]    += cp->yr100_decay_product_pool*frac;
           cs->pasture_harvest[lu]       += cp->past_harvested_c*frac;
           cs->crop_harvest[lu]          += cp->crop_harvested_c*frac;
+          //test_crop
+          for(int spp=0;spp<NSPECIES;spp++)
+          {
+              cs->site_repro_pool[lu]       += cp->repro[spp]*frac;
+          }
 #endif
           
 #ifdef ED
@@ -1625,6 +1673,12 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
               //exit(1);
           }
          cs->soil_evap[lu]          += cp->soil_evap * frac;
+          
+          //test_mor2
+#if SNOWPACK_SCHEME == 1
+          cs->snowpack[lu] += cp->snowpack * frac;
+#endif
+          
          /* height */
          /* insulate against empty patches */
          if (cp->tallest != NULL)

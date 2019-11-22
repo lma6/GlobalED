@@ -7,7 +7,7 @@
 #include "cohort.h"
 #include <cstring>
 
-#define THETA_CRIT 0.2      /* theta threshold for leaf drop (mm)*/
+#define THETA_CRIT 0.1      /* theta threshold for leaf drop (mm)*/
 #define L_FRACT 0.5 /* 0.5 fraction of leaves retained after leaf fall */
 
 using namespace std;
@@ -51,27 +51,47 @@ void phenology (int t, patch** patchptr, UserData* data) {
           if((data->phenology[spp] == 3) && ((currentp->theta < THETA_CRIT) || (currents->sdata->temp[data->time_period] < 10.0)))
               if_trigger = 1;
           
+          //test_C4
+          if((data->phenology[spp] == 5) && ((currentp->theta < THETA_CRIT) || (currents->sdata->temp[data->time_period] < 15.0)))
+              if_trigger = 1;
+          if((data->phenology[spp] == 6) && ((currentp->theta < THETA_CRIT) || (currents->sdata->temp[data->time_period] < 5.0)))
+              if_trigger = 1;
+          
           //test_larch
-          if(!strcmp(data->title[spp],"early_succ") and currents->is_frozen_early_succ)
-          {
-              if_trigger = 2;
-          }
-          if(!strcmp(data->title[spp],"mid_succ") and currents->is_frozen_mid_succ)
-          {
-              if_trigger = 2;
-          }
-          if(!strcmp(data->title[spp],"late_succ") and currents->is_frozen_late_succ)
-          {
-              if_trigger = 2;
-          }
-          if(!strcmp(data->title[spp],"cold_decid") and currents->is_frozen_cold_decid)
-          {
-              if_trigger = 2;
-          }
-          else if (!strcmp(data->title[spp],"evergreen_short") and currents->is_frozen_evergreen_short)
-          {
-              if_trigger = 2;
-          }
+//          if(!strcmp(data->title[spp],"early_succ") and currents->is_frozen_early_succ)
+//          {
+//              if_trigger = 2;
+//          }
+//          if(!strcmp(data->title[spp],"mid_succ") and currents->is_frozen_mid_succ)
+//          {
+//              if_trigger = 2;
+//          }
+//          if(!strcmp(data->title[spp],"late_succ") and currents->is_frozen_late_succ)
+//          {
+//              if_trigger = 2;
+//          }
+//          if(!strcmp(data->title[spp],"cold_decid") and currents->is_frozen_cold_decid)
+//          {
+//              if_trigger = 2;
+//          }
+//          else if (!strcmp(data->title[spp],"evergreen_short") and currents->is_frozen_evergreen_short)
+//          {
+//              if_trigger = 2;
+//          }
+          
+          //test_mor
+          if(!strcmp(data->title[spp],"early_succ") or !strcmp(data->title[spp],"early_succ_temp"))
+              if(currents->is_frozen_early_succ)
+                  if_trigger = 2;
+          if(!strcmp(data->title[spp],"mid_succ") or !strcmp(data->title[spp],"mid_succ_temp"))
+              if(currents->is_frozen_mid_succ)
+                  if_trigger = 2;
+          if(!strcmp(data->title[spp],"late_succ") or !strcmp(data->title[spp],"late_succ_temp"))
+              if(currents->is_frozen_late_succ)
+                  if_trigger = 2;
+          if(!strcmp(data->title[spp],"evergreen_short") or !strcmp(data->title[spp],"pine"))
+              if(currents->is_frozen_evergreen_short)
+                  if_trigger = 2;
           
           
           //test_larch
@@ -116,8 +136,7 @@ void phenology (int t, patch** patchptr, UserData* data) {
                  currentc->bl = 0.0;
 
                  /* add litter to soil pools */
-                 currentp->fast_soil_N += data->fraction_balive_2_fast * leaf_litter
-                 / data->c2n_leaf[currentc->species];
+                 currentp->fast_soil_N += data->fraction_balive_2_fast * leaf_litter/ data->c2n_leaf[currentc->species];
                  currentp->fast_soil_C += data->fraction_balive_2_fast * leaf_litter;
                  currentp->structural_soil_C += (1.0 - data->fraction_balive_2_fast) * leaf_litter;
                  currentp->structural_soil_L += (1.0 - data->fraction_balive_2_fast)
@@ -130,8 +149,8 @@ void phenology (int t, patch** patchptr, UserData* data) {
                  currentp->litter += leaf_litter;
 
                  /* add litter to soil pools */
-                 currentp->fast_soil_N += data->fraction_balive_2_fast * leaf_litter
-                 / data->c2n_leaf[currentc->species];
+                 currentp->fast_soil_N += data->fraction_balive_2_fast * leaf_litter / data->c2n_leaf[currentc->species];
+                 
                  currentp->fast_soil_C += data->fraction_balive_2_fast * leaf_litter;
                  currentp->structural_soil_C += (1.0 - data->fraction_balive_2_fast) * leaf_litter;
                  currentp->structural_soil_L += (1.0 - data->fraction_balive_2_fast)
@@ -196,9 +215,7 @@ void new_phenology (int t, patch** patchptr, UserData* data) {
             currentc->status = 5;
             double leaf_litter = (1.0 - L_FRACT) * currentc->bl * (currentc->nindivs / currentp->area);
             currentp->litter += leaf_litter;
-            
-            currentp->fast_soil_N += data->fraction_balive_2_fast * leaf_litter
-                                   / data->c2n_leaf[currentc->species];
+            currentp->fast_soil_N += data->fraction_balive_2_fast * leaf_litter / data->c2n_leaf[currentc->species];
             currentp->fast_soil_C += data->fraction_balive_2_fast * leaf_litter;
             currentp->structural_soil_C += (1.0 - data->fraction_balive_2_fast) * leaf_litter;
             currentp->structural_soil_L += (1.0 - data->fraction_balive_2_fast)

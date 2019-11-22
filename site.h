@@ -138,6 +138,10 @@ struct site {
     double yr1_decay_product_pool[N_LANDUSE_TYPES];  /// (kgC/m2/yr), product pool of harvested wood with 1-year decay rate
     double yr10_decay_product_pool[N_LANDUSE_TYPES];  /// (kgC/m2/yr), product pool of harvested wood with 10-year decay rate
     double yr100_decay_product_pool[N_LANDUSE_TYPES];  /// (kgC/m2/yr), product pool of harvested wood with 100-year decay rate
+    //test_crop
+    double site_repro_pool[N_LANDUSE_TYPES];
+    double site_total_repro_pool;
+    double last_site_total_repro_pool;
 #endif
 
 
@@ -156,6 +160,13 @@ struct site {
    double site_total_water_demand;
    double site_total_perc;
    double site_total_soil_evap;
+    
+    //test_mor2
+#if SNOWPACK_SCHEME == 1
+    double snowpack[N_LANDUSE_TYPES];              ///< snowpack, mm
+    double site_total_snowpack;
+#endif
+    
 #endif
   
    // soil pools

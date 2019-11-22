@@ -87,9 +87,12 @@ double fire (int t, patch** patchptr, UserData* data) {
    if(data->fire_gfed) {
        if (PATCH_FREQ==12)
        {
-           for (size_t mon=0;mon<12.0;mon++)
+           for (size_t mon=0;mon<12;mon++)
            {
-               fireterm += data->gfed_bf[data->time_period][cp->siteptr->sdata->globY_][cp->siteptr->sdata->globX_];
+//               fireterm += data->gfed_bf[data->time_period][cp->siteptr->sdata->globY_][cp->siteptr->sdata->globX_];
+               //test_larch
+               // above line seems problematic, fixed as below
+               fireterm += data->gfed_bf[mon][cp->siteptr->sdata->globY_][cp->siteptr->sdata->globX_];
            }
            fireterm /=12.0;   // Lei- If raw GFED burned fraction is multiplied by 12 in load_GFED(), here to take a average than sum. If no, here take sum to get yearly total disturbance rate
        }

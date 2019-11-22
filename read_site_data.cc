@@ -30,6 +30,7 @@ void read_sois (UserData* data);
 size_t read_input_data_layers (UserData* data) {
 
    read_sois(data);
+
    size_t nPotentialSites = read_gridspec(data);
 #if LANDUSE
 #ifndef COUPLED
@@ -657,12 +658,23 @@ bool setCropCalendar (site** sitrptr,UserData* data)
         {
             for (size_t mon=0;mon<N_CLIMATE-1;mon++)
             {
-                if((cs->sdata->precip[mon] < precip_crit) && (cs->sdata->precip[mon] >= precip_crit))
+//                if((cs->sdata->precip[mon] < precip_crit) && (cs->sdata->precip[mon] >= precip_crit))
+//                    data->planting_probability[mon][ilat][ilon] = 1.0;
+//                else
+//                    data->planting_probability[mon][ilat][ilon] = 0.0;
+//
+//                if((cs->sdata->precip[mon] > precip_crit) && (cs->sdata->precip[mon] <= precip_crit))
+//                    data->harvest_probability[mon][ilat][ilon] = 1.0;
+//                else
+//                    data->harvest_probability[mon][ilat][ilon] = 0.0;
+                
+                //test_crop
+                if((cs->sdata->precip[mon] < precip_crit) && (cs->sdata->precip[mon+1] >= precip_crit))
                     data->planting_probability[mon][ilat][ilon] = 1.0;
                 else
                     data->planting_probability[mon][ilat][ilon] = 0.0;
                 
-                if((cs->sdata->precip[mon] > precip_crit) && (cs->sdata->precip[mon] <= precip_crit))
+                if((cs->sdata->precip[mon] > precip_crit) && (cs->sdata->precip[mon+1] <= precip_crit))
                     data->harvest_probability[mon][ilat][ilon] = 1.0;
                 else
                     data->harvest_probability[mon][ilat][ilon] = 0.0;
@@ -810,6 +822,19 @@ bool loadGlobalEnvironmentData(UserData* data)
                 strcpy(climatename, data->climate_file);
                 strcat(climatename, convert);
                 strcat(climatename, nc);
+//test_forecast
+#if FORECAST
+                if(abs(FORECAST_yr-data->mechanism_year)<0.5)
+                {
+                    printf("Loading forecast meteorology for climate\n");
+                    strcpy(convert, "");
+                    sprintf(convert, "_%s%d", base, FORECAST_yr);
+                    strcpy(climatename, data->forecast_climate_file);
+                    strcat(climatename, FORECAST_ENS);
+                    strcat(climatename, convert);
+                    strcat(climatename, nc);
+                }
+#endif
             }
             else
             {
@@ -867,6 +892,82 @@ bool loadGlobalEnvironmentData(UserData* data)
     {
         reset_2d_float(data->tau,360,720);
     }
+
+#if SOILGRIDS_SCHEME
+    //test_soil
+    if (data->MvG_soil_depth==NULL)
+    {
+        data->MvG_soil_depth=malloc_2d_float(360,720);
+    }
+    else
+    {
+        reset_2d_float(data->MvG_soil_depth,360,720);
+    }
+    if (data->MvG_k_sat==NULL)
+    {
+        data->MvG_k_sat=malloc_2d_float(360,720);
+    }
+    else
+    {
+        reset_2d_float(data->MvG_k_sat,360,720);
+    }
+    if (data->MvG_L==NULL)
+    {
+        data->MvG_L=malloc_2d_float(360,720);
+    }
+    else
+    {
+        reset_2d_float(data->MvG_L,360,720);
+    }
+    if (data->MvG_m==NULL)
+    {
+        data->MvG_m=malloc_2d_float(360,720);
+    }
+    else
+    {
+        reset_2d_float(data->MvG_m,360,720);
+    }
+    if (data->MvG_theta_saturated==NULL)
+    {
+        data->MvG_theta_saturated=malloc_2d_float(360,720);
+    }
+    else
+    {
+        reset_2d_float(data->MvG_theta_saturated,360,720);
+    }
+    if (data->MvG_theta_residual==NULL)
+    {
+        data->MvG_theta_residual=malloc_2d_float(360,720);
+    }
+    else
+    {
+        reset_2d_float(data->MvG_theta_residual,360,720);
+    }
+    //test_soil
+    int ncid_soilGrids;
+    char soil_file_soilGrids[256];
+    strcpy(soil_file_soilGrids,data->soilgrids_file);
+    printf("SOILGRIDS_SCHEME is ON, loading paramemters from %s\n",soil_file_soilGrids);
+    if ((rv = nc_open(soil_file_soilGrids, NC_NOWRITE, &ncid_soilGrids)))
+    {
+        NCERR(soil_file_soilGrids, rv);
+    }
+    nc_inq_varid(ncid_soilGrids, "soil_depth", &varid);
+    nc_get_vara_float(ncid_soilGrids, varid, index1,count1, &data->MvG_soil_depth[0][0]);
+    nc_inq_varid(ncid_soilGrids, "k_sat", &varid);
+    nc_get_vara_float(ncid_soilGrids, varid, index1,count1, &data->MvG_k_sat[0][0]);
+    nc_inq_varid(ncid_soilGrids, "L", &varid);
+    nc_get_vara_float(ncid_soilGrids, varid, index1,count1, &data->MvG_L[0][0]);
+    nc_inq_varid(ncid_soilGrids, "m", &varid);
+    nc_get_vara_float(ncid_soilGrids, varid, index1,count1, &data->MvG_m[0][0]);
+    nc_inq_varid(ncid_soilGrids, "residual_theta", &varid);
+    nc_get_vara_float(ncid_soilGrids, varid, index1,count1, &data->MvG_theta_residual[0][0]);
+    nc_inq_varid(ncid_soilGrids, "saturated_theta", &varid);
+    nc_get_vara_float(ncid_soilGrids, varid, index1,count1, &data->MvG_theta_saturated[0][0]);
+    ncclose(ncid_soilGrids);
+    //test_soil
+#endif
+    
     
     if (data->soil_file_ncid == 0) {
         if ((rv = nc_open(data->soil_file, NC_NOWRITE, &ncid))) {
@@ -1128,6 +1229,18 @@ bool loadPREMECH (UserData* data)
             strcpy(premech_clim, data->PREMECH);
             sprintf(premech_clim, "%s%d", premech_clim, data->MERRA2_timestamp+MERRA2_START-1);
             strcat(premech_clim, ".nc");
+            
+            //test_forecast
+#if FORECAST
+            if(abs(FORECAST_yr-data->mechanism_year)<0.5)
+            {
+                printf("Loading forecast meteorology for premech\n");
+                strcpy(premech_clim, data->forecast_PREMECH);
+                sprintf(premech_clim, "%s%s_%d", premech_clim,FORECAST_ENS, FORECAST_yr);
+                strcat(premech_clim, ".nc");
+            }
+#endif
+            
         }
         else
         {
@@ -1188,6 +1301,7 @@ bool loadPREMECH (UserData* data)
     
     if ((rv = nc_inq_varid(ncid, "SoilTemp", &varid))) NCERR("SoilTemp", rv);
     if ((rv = nc_get_vara_double(ncid, varid, index3, count3, &data->global_soiltmp[0][0][0]))) NCERR("SoilTemp", rv);
+    
     for (size_t mon=0;mon<288;mon++)
     {
         for (size_t lat_n=0;lat_n<360;lat_n++)
@@ -1200,6 +1314,7 @@ bool loadPREMECH (UserData* data)
             }
         }
     }
+    
     
     //load spatial CO2 data
     if ((rv = nc_inq_varid(ncid_co2, "co2_ambient", &varid_co2))) NCERR("co2_ambient", rv);
@@ -1252,9 +1367,21 @@ bool load_GFED(UserData* data)
     }
     
     /* set all missing values to 0 */
+//    for (k=0;k<N_CLIMATE;k++){
+//        for (i=0; i<data->n_lat; i++) {
+//            for (j=0; j<data->n_lon; j++) {
+//                if (data->gfed_bf[k][i][j] < 0.0)
+//                {
+//                    data->gfed_bf[k][i][j] = 0.0;
+//                }
+//                data->gfed_bf[k][i][j] *= 12.0;  /// Lei - Convert monthly burned area fraction to yearly as all disturbance rate in para.cfg file is yearly based.
+//            }
+//        }
+//    }
+    //test_mor
     for (k=0;k<N_CLIMATE;k++){
-        for (i=0; i<data->n_lat; i++) {
-            for (j=0; j<data->n_lon; j++) {
+        for (i=0; i<360; i++) {
+            for (j=0; j<720; j++) {
                 if (data->gfed_bf[k][i][j] < 0.0)
                 {
                     data->gfed_bf[k][i][j] = 0.0;
@@ -1263,6 +1390,7 @@ bool load_GFED(UserData* data)
             }
         }
     }
+    
     rv = nc_close(ncid_gfed);
     return true;
 }
@@ -1450,6 +1578,16 @@ bool SiteData::readEnvironmentalData (UserData& data)
     theta_max=data.theta_max[globY_][globX_];
     k_sat=data.k_sat[globY_][globX_];
     tau=data.tau[globY_][globX_];
+
+#if SOILGRIDS_SCHEME
+    //test_soil
+    MvG_soil_depth = data.MvG_soil_depth[globY_][globX_];
+    MvG_k_sat = data.MvG_k_sat[globY_][globX_];
+    MvG_L = data.MvG_L[globY_][globX_];
+    MvG_m = data.MvG_m[globY_][globX_];
+    MvG_theta_saturated = data.MvG_theta_saturated[globY_][globX_];
+    MvG_theta_residual = data.MvG_theta_residual[globY_][globX_];
+#endif
     
     if ( (soil_depth <= 0) || (theta_max == -9999.0)
         || (k_sat == -9999.0) || (tau == -9999.0) ) {

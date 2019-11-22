@@ -63,7 +63,17 @@ struct SiteData {
 
    double theta_max;                 ///< volume of water in saturated soil (mm/mm^3)
    double k_sat;                     ///< conductivity of saturated soil (yr^-1) 
-   double tau;                       ///< conductivity exponent 
+   double tau;                       ///< conductivity exponent
+  
+#if SOILGRIDS_SCHEME
+    //test_soil
+    double MvG_soil_depth;
+    double MvG_k_sat;
+    double MvG_theta_saturated;
+    double MvG_theta_residual;
+    double MvG_L;
+    double MvG_m;
+#endif
     
    // potential photosynthesis and evap
 

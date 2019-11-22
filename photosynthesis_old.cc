@@ -202,27 +202,13 @@ void SiteData::Initilize(int pt,int spp,double Tg,UserData* data)
     }
     else
     {
-//        EaVc=55900;
-//        EaVp=75100;
-//        Ear=39800;
-//        Eaj=32800;
-//
-//        Sj=702.6;
-//        Hj=220000;
+        EaVc=55900;
+        EaVp=75100;
+        Ear=39800;
+        Eaj=32800;
         
-        // from R.-S.  Massadet al. 2007
-//        EaVc = 67294;
-//        EaVp = 70373;
-////        Ear = ;
-//        Eaj = 77900;
-//
-//        Svc = 472;
-//        Svp = 376;
-//        Sj = 627;
-//
-//        Hvc = 144568;
-//        Hvp = 117910;
-//        Hj = 191929;
+        Sj=702.6;
+        Hj=220000;
     }
 
     iter_total=0,
@@ -462,34 +448,19 @@ void SiteData::PhotosynthesisC3(double Ci)
 
 void SiteData::PhotosynthesisC4(double Ci)
 {
-    //test_C4
-    EaVc = 67294;
-    EaVp = 70373;
-    //        Ear = ;
-    Eaj = 77900;
-    
-    double Svc = 472;
-    double Svp = 376;
-    Sj = 627;
-    
-    double Hvc = 144568;
-    double Hvp = 117910;
-    Hj = 191929;
-    
-    
     const double    curvature=0.995; //!< \b curvature factor of Av and Aj colimitation
     
     
     const int       Kc25 = 650,    //!< \b Kc25, Michaelis constant of rubisco for CO2 of C4 plants (2.5 times that of tobacco), ubar, Von Caemmerer 2000
     Ko25 = 450,                //!< \b Ko25, Michaelis constant of rubisco for O2 (2.5 times C3), mbar
-    Kp25 = 80;                 //*!< \b Kp25, Michaelis constant for PEP caboxylase for CO2 - was 60 in Kim's paper */ 57
+    Kp25 = 57;                 //*!< \b Kp25, Michaelis constant for PEP caboxylase for CO2 - was 60 in Kim's paper */
     const long       Eao = 36000;  //*!< \b EAO, activation energy for Ko */
     const int        Vpr25 = 80;    //*!<   \b Vpr25, PEP regeneration limited Vp at 25C, value adopted from vC book */
     const double    gbs = 0.003;   //*!< \b gbs, bundle sheath conductance to CO2, umol m-2 s-1 gbs x Cm is the inward diffusion of CO2 into the bundle sheath  */
     const double    x = 0.4;       //*!< \b x Partitioning factor of J, yield maximal J at this value */
-    const double    alpha = 0.1; //*!< \b alpha, fraction of PSII activity in the bundle sheath cell, very low for NADP-ME types  */ 0.001
+    const double    alpha = 0.001; //*!< \b alpha, fraction of PSII activity in the bundle sheath cell, very low for NADP-ME types  */ 0.001
     const double    gi = 5.0;      //*!< \b gi, conductance to CO2 from intercelluar to mesophyle, mol m-2 s-1, assumed  was 1, changed to 5 as per Soo 6/2012*/
-    const double    beta = 0.7;   //*!< \b beta, smoothing factor */ 0.99
+    const double    beta = 0.99;   //*!< \b beta, smoothing factor */
     const double    gamma1 = 0.193; //*!< \b gamma1, half the reciprocal of rubisco specificity, to account for O2 dependence of CO2 comp point, note that this become the same as that in C3 model when multiplied by [O2] */
     
     double Kp, Kc, Ko, Km;         //!<\b Kp, \b Kc, \b Ko, \b Km, Calculated Michaelis params as a function of temperature
@@ -512,29 +483,14 @@ void SiteData::PhotosynthesisC4(double Ci)
     Kc = Kc25*exp(Eac*(Tleaf-25)/(298*R_gas*(Tleaf+273))); //Kc adjusted for temperature
     Ko = Ko25*exp(Eao*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
     Km = Kc*(1+Om/Ko); //* effective M-M constant for Kc in the presence of O2 */
-//    DarkRespiration = Rd25*exp(Ear*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
+    DarkRespiration = Rd25*exp(Ear*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
     // The following are Arrhenius Equations for parameter temperature dependencies
     // Vpm25 (PEPC activity rate) , Vcm25  (Rubisco Capacity rate) and Jm25 (Whole chain electron transport rate) are the rates at 25C for Vp, Vc and Jm
-//    Vpmax = Vpm25*exp(EaVp*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
-//    Vcmax = Vcm25*exp(EaVc*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
-//    Jmax = Jm25*exp((((Tleaf+273)-298)*Eaj)/(R_gas*(Tleaf+273)*298))*(1+exp((Sj*298-Hj)/(R_gas*298)))
-//    /(1+exp((Sj*(Tleaf+273)-Hj)/(R_gas*(Tleaf+273.0))));
-//    Rm = 0.5*DarkRespiration;
-    
-    
-    //test_C4
-    Vcmax = Vcm25*exp(EaVc*(Tleaf-25)/(298*R_gas*(Tleaf+273)))*
-    (1+exp((Svc*298-Hvc)/(R_gas*298)))/
-    (1+exp((Svc*(Tleaf+273)-Hvc)/(R_gas*(Tleaf+273)))); // Used peaked response, DHF
-    Jmax = Jm25*exp(Eaj*(Tleaf-25)/(298*R_gas*(Tleaf+273)))*
-    (1+exp((Sj*298-Hj)/(R_gas*298)))/
-    (1+exp((Sj*(Tleaf+273)-Hj)/(R_gas*(Tleaf+273)))); // Used peaked response, DHF
-    Vpmax = Vpm25*exp(EaVp*(Tleaf-25)/(298*R_gas*(Tleaf+273)))*
-    (1+exp((Svp*298-Hvp)/(R_gas*298)))/
-    (1+exp((Svp*(Tleaf+273)-Hvp)/(R_gas*(Tleaf+273)))); // Used peaked response, DHF
-    DarkRespiration = Vcmax*0.01;
+    Vpmax = Vpm25*exp(EaVp*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
+    Vcmax = Vcm25*exp(EaVc*(Tleaf-25)/(298*R_gas*(Tleaf+273)));
+    Jmax = Jm25*exp((((Tleaf+273)-298)*Eaj)/(R_gas*(Tleaf+273)*298))*(1+exp((Sj*298-Hj)/(R_gas*298)))
+    /(1+exp((Sj*(Tleaf+273)-Hj)/(R_gas*(Tleaf+273.0))));
     Rm = 0.5*DarkRespiration;
-    
     
     Cm=Ci; //* mesophyle CO2 partial pressure, ubar, one may use the same value as Ci assuming infinite mesohpyle conductance */
     double gs_last=0;
@@ -551,7 +507,7 @@ void SiteData::PhotosynthesisC4(double Ci)
     b1 = -(Ac1 + Ac2 + gbs*Km + (alpha/0.047)*(gamma1*Vcmax + DarkRespiration*Kc/Ko));
     c1 = Ac1*Ac2-(Vcmax*gbs*gamma1*Om+DarkRespiration*gbs*Km);
     Ac = QuadSolnLower(a1,b1,c1);
-//    Ac = fmin(Ac1,Ac2);
+    Ac = fmin(Ac1,Ac2);
     //* Light and electron transport limited  A mediated by J */
     J=minh(I2,Jmax,Theta);  //* rate of electron transport */
     Aj1 = (x*J/2-Rm+gbs*Cm);  // Eq 4 in Kim, 2007

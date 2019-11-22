@@ -118,7 +118,7 @@ void cohort::npp_function(UserData* data){
    /*convert from KgC/m2/mon to kgC/yr*/
    An_shut *= data->specific_leaf_area[species]*bl*12;
    An_shut_max *= data->specific_leaf_area[species]*bl*12;
-    
+
 
    /* nitrogen fixation */
    if(data->Nfixer[species] == 1) payment_to_Nfixers = data->fraction_of_GPP_to_Nfixers*fs_open*An_pot;

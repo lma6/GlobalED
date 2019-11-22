@@ -32,6 +32,18 @@ void patch::Update_Water(double time, UserData* data, double deltat){
    double starting_dwdt = dwdt; 
    double starting_water = water;
    water += dwdt*deltat;
+    //test_mor
+#if SNOWPACK_SCHEME == 1
+    if (siteptr->sdata->temp[data->time_period]<0)
+    {
+        snowpack += siteptr->sdata->precip[data->time_period]*deltat;
+    }
+    else
+    {
+        snowpack -= snow_melt*deltat;
+        snowpack = fmax(snowpack, 0.0);
+    }
+#endif
    if (Dwdt(time, data)*starting_dwdt>0) return;
    
    //Otherwise find approximation to equilibrium. Note this is not true equilibrium as trees have not had a chance to adjust.
@@ -79,20 +91,21 @@ double patch::Dwdt (double time, UserData* data){
     
     //test_larch
     soil_evap = Soil_Canopy_evap(data);
-  
-   /* calculate water loss per unit area from patch */
-   theta = water / (currents->sdata->soil_depth * currents->sdata->theta_max);
-   if (water > 0.0) {
-      perc = currents->sdata->k_sat * pow(theta, 2.0 * currents->sdata->tau + 2.0);
-   } else {
-      perc = 0.0;
-   }
-   dwdt = (currents->sdata->precip[(int) data->time_period] 
-           - perc - total_water_uptake
-           / area) - soil_evap;
     
+#if SOILGRIDS_SCHEME == 0
+    /* calculate water loss per unit area from patch */
+    theta = water / (currents->sdata->soil_depth * currents->sdata->theta_max);
     
-    //if (dwdt<-100000) printf("water %f dwdt %f precip %f perc %f twu %f soev %f ksat %f theta %f tau %f\n",water,dwdt,currents->sdata->precip[(int) data->time_period],perc,total_water_uptake,soil_evap,currents->sdata->k_sat,theta,currents->sdata->tau);
+    if (water > 0.0) {
+        perc = currents->sdata->k_sat * pow(theta, 2.0 * currents->sdata->tau + 2.0);
+        
+    } else {
+        perc = 0.0;
+    }
+    dwdt = (currents->sdata->precip[(int) data->time_period]
+            - perc - total_water_uptake
+            / area) - soil_evap;
+    
 #if 1
     //if (dwdt*data->deltat+water<0)
     
@@ -128,6 +141,100 @@ double patch::Dwdt (double time, UserData* data){
         //printf("perco2 %f dwdt2 %f \n",perc,dwdt);
     }
 #endif
+    
+#else
+    //test_soil uncomment above
+    theta = (water - currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->MvG_soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
+    theta = fmin(1.0,theta);
+    theta = fmax(0.0,theta);
+    if(theta>0)
+    {
+        //test_soil
+        double se = 0.0;
+        se = fmin(1.0,theta);
+        se = fmax(0.0,se);
+        perc = currents->sdata->MvG_k_sat*pow(se, currents->sdata->MvG_L)*pow(1.0-pow(1.0-pow(se,1/currents->sdata->MvG_m),currents->sdata->MvG_m),2.0);
+    }
+    else
+    {
+        perc = 0.0;
+    }
+//    dwdt = (currents->sdata->precip[(int) data->time_period]
+//            - perc - total_water_uptake
+//            / area) - soil_evap;
+    //test_mor2
+#if SNOWPACK_SCHEME == 0
+    dwdt = (currents->sdata->precip[(int) data->time_period]
+            - perc - total_water_uptake
+            / area) - soil_evap;
+#else
+    double precip = currents->sdata->precip[(int) data->time_period];
+    if(currents->sdata->temp[data->time_period]<0)
+    {
+        dwdt = (0.0- perc - total_water_uptake
+                / area) - soil_evap;
+        snow_melt = 0.0;
+    }
+    else
+    {
+        if(snowpack>0)
+            snow_melt = abs(currents->sdata->temp[data->time_period])*100.0;
+        else
+            snow_melt = 0.0;
+
+        dwdt = (precip + snow_melt
+                - perc - total_water_uptake
+                / area) - soil_evap;
+    }
+#endif
+    
+    double theta_crit = 0.3, updated_theta = 0.0;
+//    updated_theta = (dwdt*data->deltat+water - currents->sdata->soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
+    updated_theta = (dwdt*data->deltat+water - currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->MvG_soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
+    if (updated_theta < theta_crit)
+    {
+        //printf("Start adjust dwdt perco1 %f dwdt1 %f ",perc,dwdt);
+        //soil_evap=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max);  // this line seems ignore perc and problematic
+//        soil_evap=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * (currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual)) - perc;
+//        soil_evap=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max) - perc;
+        
+//        soil_evap = (water-currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/data->deltat + currents->sdata->precip[(int) data->time_period] - total_water_uptake/area - perc;
+        
+        double MvG_theta = currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual;
+        double dwdt_crut = (theta_crit*currents->sdata->MvG_soil_depth*MvG_theta + currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual-water)/data->deltat;
+        soil_evap = (currents->sdata->precip[(int) data->time_period] - perc - total_water_uptake / area) - dwdt_crut;
+        
+        if (soil_evap<0) soil_evap=0;
+        dwdt=(currents->sdata->precip[(int) data->time_period]
+              - perc - total_water_uptake
+              / area) - soil_evap;
+//        printf("perco2 %f dwdt2 %f \n",perc,dwdt);
+    }
+    
+//    updated_theta = (dwdt*data->deltat+water - currents->sdata->soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
+    updated_theta = (dwdt*data->deltat+water - currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->MvG_soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
+    if (updated_theta < theta_crit)
+    {
+        //printf("Start adjust dwdt perco1 %f dwdt1 %f ",perc,dwdt);
+        //perc=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-(currents->sdata->soil_depth * currents->sdata->theta_max)-soil_evap;
+        
+        //test_larch
+//        perc=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * (currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual))-soil_evap;
+//        perc = (water-currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/data->deltat + currents->sdata->precip[(int) data->time_period] - total_water_uptake/area - soil_evap;
+        
+        double MvG_theta = currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual;
+        double dwdt_crut = (theta_crit*currents->sdata->MvG_soil_depth*MvG_theta + currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual-water)/data->deltat;
+        perc = (currents->sdata->precip[(int) data->time_period] - soil_evap - total_water_uptake / area) - dwdt_crut;
+        
+        if (perc<0) perc=0;
+        dwdt=(currents->sdata->precip[(int) data->time_period]
+              - perc - total_water_uptake
+              / area) - soil_evap;
+        //printf("perco2 %f dwdt2 %f \n",perc,dwdt);
+    }
+#endif
+
+
     //printf("dwdt %f precip %f perc %f twu %f soev %f ksat %f theta %f tau %f\n",dwdt,currents->sdata->precip[(int) data->time_period],perc,total_water_uptake,soil_evap,currents->sdata->k_sat,theta,currents->sdata->tau);
    return dwdt;
 }
@@ -586,7 +693,7 @@ else
 //    Td/=3.0;
     
     //test_larch
-    double Rh_freezing_crit = -100.0;
+    double Rh_freezing_crit = -0.0;
     if(currents->sdata->soil_temp1[time_period]>Rh_freezing_crit)
         Td += R0*pow(q10, (currents->sdata->soil_temp1[time_period]-25.0)/10.0);
     else
@@ -607,6 +714,14 @@ else
         Td = 0.0;
 
     Td/=3.0;
+    
+    
+    //test_soil_Afun
+//    Td = R0*pow(q10, (currents->sdata->temp[time_period]-25.0)/10.0);
+//    if(currents->sdata->temp[time_period]<Rh_freezing_crit)
+//        Td = 0.0;
+    
+    
     //test_larch
 //    printf("site %s mon %d Td %f stmp1 %f stmp2 %f stmp3 %f\n",currents->sdata->name_,data->time_period,Td,currents->sdata->soil_temp1[time_period],currents->sdata->soil_temp2[time_period],currents->sdata->soil_temp3[time_period]);
 }
@@ -626,6 +741,17 @@ else
       Wd = 0.6 / (1.2 * theta);
    }
     
+//    //test_mor2
+//    if (theta <= 0.6)
+//    {
+//        Wd = exp(-pow(theta*100.0-60.0,2.0)/800.0);
+//    }
+//    else
+//    {
+//        Wd = 0.000371*pow(theta*100.0, 2.0)-0.0748*theta*100.0+4.13;
+//    }
+    
+#if SOILGRIDS_SCHEME == 0
     //test_larch
     //As altering water1 paramter in water limittation module, resulting in relatively high soil mosiure, then cause high repspration in boreal
     //Test whether change below will increase soil carbon density in boreal forest -- Lei
@@ -637,6 +763,7 @@ else
     } else {
         Wd = adjust_theta*0.5;
     }
+#endif
     
     //test_larch
 //    printf("                Wd %f theta %f\n",Wd,theta);

@@ -69,8 +69,13 @@ double cohort::Hite (UserData *data ) {
          h = pow( 10.0, (log10(data->max_dbh[species]) * m + c) );
    }
    else {
-         dbh   = (dbh < data->max_dbh[species])? dbh : data->max_dbh[species];
-         h = data->ref_hgt[species] + data->b1Ht[species] * (1 - exp( data->b2Ht[species] * dbh));
+//         dbh   = (dbh < data->max_dbh[species])? dbh : data->max_dbh[species];
+//         h = data->ref_hgt[species] + data->b1Ht[species] * (1 - exp( data->b2Ht[species] * dbh));
+       //test_mor
+       if (dbh<data->max_dbh[species])
+           h = data->ref_hgt[species] + data->b1Ht[species] * (1 - exp( data->b2Ht[species] * dbh));
+       else
+           h = data->ref_hgt[species] + data->b1Ht[species] * (1 - exp( data->b2Ht[species] * data->max_dbh[species]));
    }
     
 
@@ -135,8 +140,13 @@ double cohort::Bleaf (UserData *data ) {
       }
    else
    {
-      dbh   = (dbh < data->max_dbh[species])? dbh : data->max_dbh[species];
-      bleaf = (1.0/data->c2b)*data->b1Bl[species] * pow(dbh,data->b2Bl[species]);
+//      dbh   = (dbh < data->max_dbh[species])? dbh : data->max_dbh[species];
+//      bleaf = (1.0/data->c2b)*data->b1Bl[species] * pow(dbh,data->b2Bl[species]);
+       //test_mor
+       if(dbh<data->max_dbh[species])
+           bleaf = (1.0/data->c2b)*data->b1Bl[species] * pow(dbh,data->b2Bl[species]);
+       else
+           bleaf = (1.0/data->c2b)*data->b1Bl[species] * pow(data->max_dbh[species],data->b2Bl[species]);
    }
     
    return bleaf;
@@ -196,8 +206,11 @@ double cohort::Bdead (UserData *data ) {
       bdead = ( 1.0 / data->c2b ) * ( exp(p) * pow(dbh,q) ) + data->bs_min[spp];
    }
    else {
-      dbh   = (dbh < data->max_dbh[species])? dbh : data->max_dbh[species];
-      bdead =  (1.0/data->c2b)*data->b1Bs[species] * pow(dbh,data->b2Bs[species]);
+//      dbh   = (dbh < data->max_dbh[species])? dbh : data->max_dbh[species];
+//      bdead =  (1.0/data->c2b)*data->b1Bs[species] * pow(dbh,data->b2Bs[species]);
+       //test_mor
+        bdead =  (1.0/data->c2b)*data->b1Bs[species] * pow(dbh,data->b2Bs[species]);
+       
    }
 
    return bdead;

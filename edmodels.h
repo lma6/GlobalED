@@ -18,8 +18,17 @@
 
 /// CHANGE-ML
 #define LOCAL_MACHINE 1  ///change it to 0 when copy to cluster.
+#define NUMBER_THREADS 20
 // THREADING: CHOOSE ONE OR NEITHER OF THE FOLLOWING TWO
 // Buggy with landuse
+
+// test_forecast
+#define RESTART_FROM_LU 0 ///< if restart from results which are from one with landuse and product pool variables in pss files.
+#define RESTART_FROM_REPRO 1 ///< if restart from results that export reproduction pool in .pss file. Shoule be 0 if .pss do not have any repro outputs
+#define FORECAST 0
+#define FORECAST_yr 2016
+#define FORECAST_ENS "ens4"
+
 #if 1-LOCAL_MACHINE
 #define MODEL_CONFIG_FILE "models.cfg"
 #define TBB 1 ///< Intel Thread Building Blocks
@@ -29,7 +38,7 @@
 
 #if LOCAL_MACHINE
 /// Turn off above 1, then type the below command in local terminal
-//// scp -r /Users/lei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_v1test/
+//// scp -r /Users/lei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_gsapp5/
 #define MODEL_CONFIG_FILE "models_local.cfg"
 #define TBB 1 ///< Intel Thread Building Blocks
 #define GCD 0 ///< Grand Central Dispatch. Works on Mac only
@@ -51,11 +60,13 @@
 #define COUPLE_MERRA2_LUT 0
 #define COUPLE_TemAccm 0
 #define CPOUPLE_VcmaxDownreg 0
+#define SOILGRIDS_SCHEME 1 // 0 using MSTMIP soil paramrters. 1 using soilGrids data from Montzka et al 2014
+#define SNOWPACK_SCHEME 1
 #define INI_Year 851  //In LANDUSE, it should be 1501; For spin-up. it is 791;  With LUH2, it should be 851, and running years should be 1165  ## 851  826
 #define N_LAI 6
 #define WT_Abg_PROFILE 0
 #define CO2_START_VARY 1850 // When global average of CO2 concentration start increasing from 280 ppm. From this year, An, En variables will be calculated annual based on new CO2
-#define MERRA2_YEAR_START_USE 1945   // When ED starts using MERRA2 yearly data, previously using 1980, using 1945 may cause high NBP in 1980s due to legency effect from 1970 when use 2000s climate -- test_larch
+#define MERRA2_YEAR_START_USE 1980   // When ED starts using MERRA2 yearly data, previously using 1980, using 1945 may cause high NBP in 1980s due to legency effect from 1970 when use 2000s climate -- test_larch
 #define MERRA2_START 1981
 #define MERRA2_END 2015
 const float LAI_INTERVAL[]={0,1.5,5, 10, 20, 30}; //The elements number should be same as N_LAI
@@ -97,7 +108,7 @@ const float CO2_VALUE[]={280}; //co2 concentration in nittial LUT, the number of
 //    BIOLOGY/BIOGEOCHEMISTRY     
 ////////////////////////////////////////
 #define NUM_TRACKS 2      ///< Number of disturbance tracks
-#define NSPECIES 7        ///< Number of species
+#define NSPECIES 10        ///< Number of species
 #define PT 2              ///< Number of different plant physiologies
 #define NCMPT 6           ///< Number carbon compartments in allocation array
 
@@ -226,6 +237,9 @@ struct UserData {
    const char *output_base_path;
    const char *gridspec;
    const char *soil_file;
+#if SOILGRIDS_SCHEME
+    const char *soilgrids_file;
+#endif
    const char *lu_file;
    const char *crop_calendar_file;
    const char *lu_init_c_file;
@@ -269,6 +283,11 @@ struct UserData {
     const char *PREMECH_avg;
     const char *PREMECH_CO2;
     const char *PREMECH_CO2_avg;
+    
+#if FORECAST
+    const char *forecast_climate_file;
+    const char *forecast_PREMECH;
+#endif
     
    int single_year;
    int do_yearly_mech;
@@ -522,6 +541,7 @@ struct UserData {
    double c2n_leaf[NSPECIES];    ///< (gC/gN)
    double c2n_recruit[NSPECIES]; ///< (gC/gN)
    double c2n_sd[NSPECIES];      ///< (gC/gN)
+    
    double c2n_stem;              ///< (gC/gN)
    double c2n_root;              ///< (gC/gN)
    double c2n_structural;        ///< (gC/gN)
@@ -635,6 +655,9 @@ struct UserData {
     double yr1_decay_rate;         ///< yr-1, Decay rate of 1-year wood product pool
     double yr10_decay_rate;         ///< yr-1, Decay rate of 10-year wood product pool
     double yr100_decay_rate;         ///< yr-1, Decay rate of 100-year wood product pool
+    //test_crop
+    double sd_mort_crop;
+    double crop_mini_nindiv;
     float gfl[N_LANDUSE_TYPES][N_LANDUSE_TYPES-1][N_LANDUSE_YEARS][360][720];
     float gfvh[N_VBH_TYPES][N_LANDUSE_YEARS][360][720];
     float gfsh[N_SBH_TYPES][N_LANDUSE_YEARS][360][720];
@@ -643,6 +666,16 @@ struct UserData {
     float **theta_max;
     float **k_sat;
     float **tau;
+    
+#if SOILGRIDS_SCHEME
+    //test_soil
+    float **MvG_soil_depth;
+    float **MvG_theta_saturated;
+    float **MvG_theta_residual;
+    float **MvG_L;
+    float **MvG_m;
+    float **MvG_k_sat;
+#endif
     
     float ***climate_temp;
     float ***climate_precip;

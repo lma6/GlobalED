@@ -103,6 +103,9 @@ void init_data (const char* cfgFile, UserData* data) {
     data->yr1_decay_rate                = get_val<double>(data, PARAMS, "", "yr1_decay_rate");
     data->yr10_decay_rate                = get_val<double>(data, PARAMS, "", "yr10_decay_rate");
     data->yr100_decay_rate                = get_val<double>(data, PARAMS, "", "yr100_decay_rate");
+    //test_crop
+    data->sd_mort_crop                            = get_val<double>(data, PARAMS, "", "sd_mort_crop");
+    data->crop_mini_nindiv                        = get_val<double>(data, PARAMS, "", "crop_mini_nindiv");
 #endif
        
    for(size_t i=0; i<NSPECIES; i++) {
@@ -178,6 +181,20 @@ void init_data (const char* cfgFile, UserData* data) {
        data->alpha[i][4]                      = get_val<double>(data, PFTS, pft, "alpha_virtual_leaves"); /* virtual leaves */
        data->alpha[i][5]                      = get_val<double>(data, PFTS, pft, "alpha_structural");     /* structural     */
        
+       
+       //       data->alpha[2][2] = 3.5;  //3.5
+       //       data->alpha[3][2] = 3.0;  //3.0
+       //       data->alpha[4][2] = 2.5;  //2.5
+       //       data->alpha[5][2] = 0.1; //0.1
+       //       data->alpha[6][2] = 0.1; //0.1
+       //
+       //       //test_mor
+       //       data->alpha[2][3] = 0.1;  //1.8
+       //       data->alpha[3][3] = 0.1;  //1.0
+       //       data->alpha[4][3] = 0.1;  //4.0
+       //       data->alpha[5][3] = 0.1; //0.08
+       //       data->alpha[6][3] = 0.1; //0.05
+       
        /* assign leaf life spans in months */
        /* This is the reference biodiversity axis parameter */
        data->title[i]                         = get_val<const char*>(data, PFTS, pft, "title");
@@ -188,6 +205,7 @@ void init_data (const char* cfgFile, UserData* data) {
        
        //test_larch
        //data->leaf_life_span[i]             = 12.0/data->alpha[i][2];
+       
        if (!strcmp(data->title[i],"cold_decid"))
            data->leaf_life_span[i]             = 6.0;
        else if (!strcmp(data->title[i],"c3_grass"))
@@ -230,20 +248,21 @@ void init_data (const char* cfgFile, UserData* data) {
       /*c2n*/
       data->c2n_leaf[i]                       = pow(10.0, (1.65 - 0.34 * log10(data->leaf_life_span[i])));
       /* convert to c2n (g C/g N) */
-      data->c2n_leaf[i]                       = 1000.0 / data->c2n_leaf[i] * (1.0 / data->c2b); 
+      data->c2n_leaf[i]                       = 1000.0 / data->c2n_leaf[i] * (1.0 / data->c2b);
+       
       /* 1/2 is carbon/biomass ratio (we need this) */
       /* SPECIFIC LEAF AREA */
       /* calculate specific leaf area (cm2/g(biomass)) */
       /* Global Raich et al 94 PNAS pp 13730-13734 */
-      data->specific_leaf_area[i]             = pow(10.0, (2.4 - 0.46 * log10(data->leaf_life_span[i])));   
+      data->specific_leaf_area[i]             = pow(10.0, (2.4 - 0.46 * log10(data->leaf_life_span[i])));
       /* Amazonian Raich et al 92 Oecologia vol 86 p 16-24 */
-      /*data->specific_leaf_area[i]           = pow(10.0, (2.37 - 0.33 * log10(data->leaf_life_span[i])));*/  
+      /*data->specific_leaf_area[i]           = pow(10.0, (2.37 - 0.33 * log10(data->leaf_life_span[i])));*/
       /* convert to (m2/kg(carbon) */
       data->specific_leaf_area[i]             = data->c2b * data->specific_leaf_area[i] * 1000.0 / 10000.0;
       printf("spp %s  sla = %f c2n= %f \n", pft, data->specific_leaf_area[i],data->c2n_leaf[i] );
       /* ratio of sapwood area (m2) leaf biomass (kg) *
        * QSW = sapwood area /leaf area ratio          */ 
-      data->qsw[i]                            = (1.0 / QSW) * data->specific_leaf_area[i]; 
+      data->qsw[i]                            = (1.0 / QSW) * data->specific_leaf_area[i];
       /* data->qsw[i]= 0.05; */
       printf("spp %d  qsw = %f \n", i, data->qsw[i]);
        
@@ -262,7 +281,8 @@ void init_data (const char* cfgFile, UserData* data) {
        //test_larch
        //Loading two different parameters set for early-, mid- and late- succ in tropical and temperate region
        // But just one set for grass and conifer
-       if((i==2) || (i==3) || (i==4)) // If PFT is early-, mid- and late succ
+//       if((i==2) || (i==3) || (i==4)) // If PFT is early-, mid- and late succ
+       if((i==2) || (i==3) || (i==4) || (i==7) || (i==8) || (i==9)) // If PFT is early-, mid- and late succ
        {
            //Read parameters for tropical reigon
            data->fraction_harvest_left_on_prim_site_tro[i]          =   get_val<double>(data, PFTS, pft, "fraction_harvest_left_on_prim_site_tro");

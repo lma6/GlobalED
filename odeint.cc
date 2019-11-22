@@ -329,24 +329,24 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
       if(data->water_competition) {
         double water_supply;
         double wilt_factor;
-//          //test_larch
-//          if(currentc->species==6)
-//              data->water1 = 20.0;
-//          else if (currentc->species==5)
-//              data->water1 = 12.0;
-//          else if (currentc->species==2)
-//              data->water1 = 80.0;
-//          else if (currentc->species==3)
-//              data->water1 = 80.0;
-//          else if (currentc->species==4)
-//              data->water1 = 80.0;
-//          else
-//              data->water1 = 80.0;
-//
-//          if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==1))
-//             data->water1 = 30.0;
-//          if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==2))
-//              data->water1 = 80.0;
+          //test_larch
+          if(currentc->species==6)
+              data->water1 = 20.0;
+          else if (currentc->species==5)
+              data->water1 = 12.0;
+          else if (currentc->species==2)
+              data->water1 = 80.0;
+          else if (currentc->species==3)
+              data->water1 = 80.0;
+          else if (currentc->species==4)
+              data->water1 = 80.0;
+          else
+              data->water1 = 80.0;
+
+          if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==1))
+             data->water1 = 30.0;
+          if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==2))
+              data->water1 = 80.0;
           
 
           //test_larch
@@ -364,16 +364,26 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
               data->water1 = 80.0; //40.0
           else if (currentc->species==1)
               data->water1 = 80.0;
-          
+
           if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==1))
               data->water1 = 30.0;  //60.0
           if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==2))
               data->water1 = 50.0;  //60.0
+//
+          //test_mor
+//          data->water1 = 50.0;  //60.0
           
+           data->water1 = 40.0;  //shoule used to address high gpp due to switch SWLAND  to SWGDN
           
 
         water_supply=data->water1*currentc->br*water*data->mass_of_water;
         currentc->fsw = (water_supply-currentc->E_shut)/(currentc->E_pot + water_supply-currentc->E_shut);
+          
+          //test_restart
+          if(currentc->fsw*0!=0)
+          {
+              currentc->fsw = 0.0;
+          }
           
 
           
@@ -435,11 +445,22 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
      
       /*printf("wnu1: fs_open %f\n",currentc->fs_open);*/
 
-      currentc->water_uptake = currentc->fs_open*currentc->E_pot + (1.0-currentc->fs_open)*currentc->E_shut; 
+      currentc->water_uptake = currentc->fs_open*currentc->E_pot + (1.0-currentc->fs_open)*currentc->E_shut;
       /*recompute n uptake with reduced npp, not simple function like evap
         because allocation in npp dependent*/
       currentc->nitrogen_uptake = currentc->nitrogen_demand_function(time,data);
       currentc->nitrogen_uptake/=currentc->patchptr->area;
+       
+       //test_restart
+       //when all cohorts of this patch has zero bl, water_uptake will be NaN, which cause total_water_uptake be NaA and following failure in integration
+       if (currentc->water_uptake*0!=0)
+       {
+           currentc->water_uptake = 0.0;
+       }
+       if (currentc->nitrogen_uptake*0!=0)
+       {
+           currentc->nitrogen_uptake = 0.0;
+       }
        
      
       /*printf("wnu2: fs_open %f\n",currentc->fs_open);*/

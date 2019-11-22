@@ -103,7 +103,6 @@ struct cohort{
    double nitrogen_uptake;     ///< kgN/(yr*m^2) per indiv averaged over whole patch
    double N_uptake_pot;        ///< kgN/(yr*m^2) per indiv averaged over whole patch
    double N_uptake_shut;       ///< kgN/(yr*m^2) per indiv averaged over whole patch
-    
   
    // linked list fields 
    cohort *taller;             ///< pointer to next tallest cohort     
@@ -152,6 +151,16 @@ void init_cohorts(patch** patchptr, UserData* data);
 void create_cohort(unsigned int spp, double nindivs, double hite, double dbh, 
                    double balive, double bdead, patch** patchptr, 
                    UserData* data);
+//test_mor
+//void create_cohort_test_mor(unsigned int spp, double nindivs, double hite, double dbh,
+//                       double balive, double bdead, double bl, double br, double blv,
+//                       double bsw, patch** patchptr, UserData* data);
+
+//test_restart
+void create_cohort_test_mor(unsigned int spp, double nindivs, double hite, double dbh,
+                            double balive, double bdead, double bl, double br, double blv,
+                            double bsw, patch** patchptr, double cb[N_CLIMATE], double cb_toc[N_CLIMATE],UserData* data);
+
 cohort* next_taller(cohort* current, double* stp);
 void terminate_cohorts(cohort** ptallest, cohort** pshortest,
                        UserData* data);

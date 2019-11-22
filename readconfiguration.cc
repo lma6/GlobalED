@@ -216,6 +216,9 @@ void initialize_model_params(UserData* data) {
     data->climate_file      = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "climate_file");
     data->climate_file_avg      = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "climate_file_avg");
     data->soil_file         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "soil_file");
+#if SOILGRIDS_SCHEME
+    data->soilgrids_file = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "soilgrids_file");
+#endif
     data->mech_c3_file      = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "mech_c3_file");
     data->mech_c4_file      = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "mech_c4_file");      
     data->lu_file           = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "lu_file");
@@ -239,6 +242,11 @@ void initialize_model_params(UserData* data) {
     data->PREMECH_avg         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH_avg");
     data->PREMECH_CO2_avg         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH_CO2_avg");
     data->PREMECH_CO2         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "PREMECH_CO2");
+    
+#if FORECAST
+    data->forecast_climate_file         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "forecast_climate_file");
+    data->forecast_PREMECH         = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "forecast_PREMECH");
+#endif
 
     data->single_year       = get_val<int>(data, MODEL_IO, data->which_mech_to_use, "single_year");   
     data->do_yearly_mech    = get_val<int>(data, MODEL_IO, data->which_mech_to_use, "do_yearly_mech");
