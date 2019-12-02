@@ -40,7 +40,7 @@ void phenology (int t, patch** patchptr, UserData* data) {
          /* if drought-deciduous or cold-deciduous species    */
          /* temp=10 degrees gives good growing season pattern */
      
-          //test_larch
+          // When if_trigger is 2, carbon in active leaf pool will be moved to virtual pool
           int if_trigger = 0;
           if((data->phenology[spp] == 1) && (currentp->theta < THETA_CRIT))
               if_trigger = 1;
@@ -57,36 +57,15 @@ void phenology (int t, patch** patchptr, UserData* data) {
           if((data->phenology[spp] == 6) && ((currentp->theta < THETA_CRIT) || (currents->sdata->temp[data->time_period] < 5.0)))
               if_trigger = 1;
           
-          //test_larch
-//          if(!strcmp(data->title[spp],"early_succ") and currents->is_frozen_early_succ)
-//          {
-//              if_trigger = 2;
-//          }
-//          if(!strcmp(data->title[spp],"mid_succ") and currents->is_frozen_mid_succ)
-//          {
-//              if_trigger = 2;
-//          }
-//          if(!strcmp(data->title[spp],"late_succ") and currents->is_frozen_late_succ)
-//          {
-//              if_trigger = 2;
-//          }
-//          if(!strcmp(data->title[spp],"cold_decid") and currents->is_frozen_cold_decid)
-//          {
-//              if_trigger = 2;
-//          }
-//          else if (!strcmp(data->title[spp],"evergreen_short") and currents->is_frozen_evergreen_short)
-//          {
-//              if_trigger = 2;
-//          }
-          
-          //test_mor
-          if(!strcmp(data->title[spp],"early_succ") or !strcmp(data->title[spp],"early_succ_temp"))
+
+          // When if_trigger is 2, virtual leaf pool will lost carbon
+          if(!strcmp(data->title[spp],"early_succ_trop") or !strcmp(data->title[spp],"early_succ_temp"))
               if(currents->is_frozen_early_succ)
                   if_trigger = 2;
-          if(!strcmp(data->title[spp],"mid_succ") or !strcmp(data->title[spp],"mid_succ_temp"))
+          if(!strcmp(data->title[spp],"mid_succ_trop") or !strcmp(data->title[spp],"mid_succ_temp"))
               if(currents->is_frozen_mid_succ)
                   if_trigger = 2;
-          if(!strcmp(data->title[spp],"late_succ") or !strcmp(data->title[spp],"late_succ_temp"))
+          if(!strcmp(data->title[spp],"late_succ_trop") or !strcmp(data->title[spp],"late_succ_temp"))
               if(currents->is_frozen_late_succ)
                   if_trigger = 2;
           if(!strcmp(data->title[spp],"evergreen_short") or !strcmp(data->title[spp],"pine"))
@@ -94,37 +73,12 @@ void phenology (int t, patch** patchptr, UserData* data) {
                   if_trigger = 2;
           
           
-          //test_larch
-//         if( ((data->phenology[spp] == 1) && (currentp->theta < THETA_CRIT))
-//            || ((data->phenology[spp] == 2)
-//                && (currents->sdata->temp[data->time_period] < 10.0)))  // 10.0
         if(if_trigger)
          {
             currentc->status = 5; /* set status to indicate leaf drop */
-             
-             //test_larch
+
              double leaf_litter = 0.0;
-             
-//            double leaf_litter = (1.0 - L_FRACT) * currentc->bl * (currentc->nindivs / currentp->area);
-//            /* add to patch litter flux terms */
-//            currentp->litter += leaf_litter;
-//
-//            /* add litter to soil pools */
-//            currentp->fast_soil_N += data->fraction_balive_2_fast * leaf_litter
-//                                   / data->c2n_leaf[currentc->species];
-//            currentp->fast_soil_C += data->fraction_balive_2_fast * leaf_litter;
-//            currentp->structural_soil_C += (1.0 - data->fraction_balive_2_fast) * leaf_litter;
-//            currentp->structural_soil_L += (1.0 - data->fraction_balive_2_fast)
-//                                         * (data->l2n_stem / data->c2n_stem) * leaf_litter;
-//
-//            /* decrement balive for leaf litterfall */
-//            currentc->balive -= (1.0 - L_FRACT) * currentc->bl;
-//            /* move retained leaf matter to virtual leaf pool */
-//            currentc->blv = L_FRACT * currentc->bl;
-//            /* reset leaf pool to zero */
-//            currentc->bl = 0.0;
-             
-             //test_larch
+
              //further reduce balive from blv when bl is zero. This is particular for cold-deciduout in leaf-droped month,if frost happen, balive should continue decreasing even if has no leaves.
              //Here I assume blv acts same function as bud, so winter frose/freezing will cause bud injury even no leaves exist
              if((if_trigger==2) and (currentc->bl<1e-10))
@@ -139,8 +93,7 @@ void phenology (int t, patch** patchptr, UserData* data) {
                  currentp->fast_soil_N += data->fraction_balive_2_fast * leaf_litter/ data->c2n_leaf[currentc->species];
                  currentp->fast_soil_C += data->fraction_balive_2_fast * leaf_litter;
                  currentp->structural_soil_C += (1.0 - data->fraction_balive_2_fast) * leaf_litter;
-                 currentp->structural_soil_L += (1.0 - data->fraction_balive_2_fast)
-                 * (data->l2n_stem / data->c2n_stem) * leaf_litter;
+                 currentp->structural_soil_L += (1.0 - data->fraction_balive_2_fast) * (data->l2n_stem / data->c2n_stem) * leaf_litter;
              }
              else
              {
@@ -153,8 +106,7 @@ void phenology (int t, patch** patchptr, UserData* data) {
                  
                  currentp->fast_soil_C += data->fraction_balive_2_fast * leaf_litter;
                  currentp->structural_soil_C += (1.0 - data->fraction_balive_2_fast) * leaf_litter;
-                 currentp->structural_soil_L += (1.0 - data->fraction_balive_2_fast)
-                 * (data->l2n_stem / data->c2n_stem) * leaf_litter;
+                 currentp->structural_soil_L += (1.0 - data->fraction_balive_2_fast) * (data->l2n_stem / data->c2n_stem) * leaf_litter;
 
                  /* decrement balive for leaf litterfall */
                  currentc->balive -= (1.0 - L_FRACT) * currentc->bl;
@@ -163,9 +115,6 @@ void phenology (int t, patch** patchptr, UserData* data) {
                  /* reset leaf pool to zero */
                  currentc->bl = 0.0;
              }
-             
-             
-             
          } /* end if */
          currentc = currentc->shorter;
       } /* end while cohort */

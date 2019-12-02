@@ -32,7 +32,7 @@ void patch::Update_Water(double time, UserData* data, double deltat){
    double starting_dwdt = dwdt; 
    double starting_water = water;
    water += dwdt*deltat;
-    //test_mor
+
 #if SNOWPACK_SCHEME == 1
     if (siteptr->sdata->temp[data->time_period]<0)
     {
@@ -61,12 +61,14 @@ void patch::Update_Water(double time, UserData* data, double deltat){
       min_guess = water - dwdt * deltat; 
       max_guess = water;
    }
+    
    //Binomial search
    while (max_guess-min_guess>water_tol){
       water = (max_guess+min_guess)/2;
       if (Dwdt(time, data)>0) min_guess = water;
       else max_guess = water;
    }
+    
    //Adjust half way to equilibrium
    water = (water + starting_water) / 2.;
 }
@@ -85,163 +87,106 @@ double patch::Dwdt (double time, UserData* data){
    //For Update_Water to work this function must be monotonically increasing w.r.t water
    site* currents = siteptr;
    
-   /* calculate water evaporation from the soil, scale by plant cover */
-//   soil_evap = (currents->sdata->soil_evap_conductivity)
-//      * (radiative_flux(data)) * water;
-    
-    //test_larch
-    soil_evap = Soil_Canopy_evap(data);
+   // Call Soil_Canopy_evap function to calculate soil evaporation rate
+   soil_evap = Soil_Canopy_evap(data);
     
 #if SOILGRIDS_SCHEME == 0
     /* calculate water loss per unit area from patch */
-    theta = water / (currents->sdata->soil_depth * currents->sdata->theta_max);
-    
-    if (water > 0.0) {
-        perc = currents->sdata->k_sat * pow(theta, 2.0 * currents->sdata->tau + 2.0);
-        
-    } else {
-        perc = 0.0;
-    }
-    dwdt = (currents->sdata->precip[(int) data->time_period]
-            - perc - total_water_uptake
-            / area) - soil_evap;
+   theta = water / (currents->sdata->soil_depth * currents->sdata->theta_max);
+   
+   if (water > 0.0) {
+      perc = currents->sdata->k_sat * pow(theta, 2.0 * currents->sdata->tau + 2.0);
+   } else {
+      perc = 0.0;
+   }
+   dwdt = (currents->sdata->precip[(int) data->time_period] - perc - total_water_uptake / area) - soil_evap;
     
 #if 1
-    //if (dwdt*data->deltat+water<0)
+   double theta_crit = 0.3;
     
-    //test_larch
-    double theta_crit = 0.3;
+   if (dwdt*data->deltat+water<theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max)) // If theta is below critical point, adjust soil_evap
+   {
+      soil_evap = water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max) - perc;
+      if (soil_evap<0) soil_evap=0;
+      dwdt=(currents->sdata->precip[(int) data->time_period] - perc - total_water_uptake / area) - soil_evap;
+   }
     
-    //test_larch
-    // change order of two below blocks, as I think perc should be adjusted for soil_evap
-    if (dwdt*data->deltat+water<theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max))
-    {
-        //printf("Start adjust dwdt perco1 %f dwdt1 %f ",perc,dwdt);
-        //soil_evap=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max);  // this line seems ignore perc and problematic
-        soil_evap=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max) - perc;
-        if (soil_evap<0) soil_evap=0;
-        dwdt=(currents->sdata->precip[(int) data->time_period]
-              - perc - total_water_uptake
-              / area) - soil_evap;
-        //printf("perco2 %f dwdt2 %f \n",perc,dwdt);
-    }
-    
-    if (dwdt*data->deltat+water < theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max))
-    {
-        //printf("Start adjust dwdt perco1 %f dwdt1 %f ",perc,dwdt);
-        //perc=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-(currents->sdata->soil_depth * currents->sdata->theta_max)-soil_evap;
+   if (dwdt*data->deltat+water < theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max))  // If theta is below critical point, adjust percolation
+   {
+      perc=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max)-soil_evap;
         
-        //test_larch
-        perc=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max)-soil_evap;
-        
-        if (perc<0) perc=0;
-        dwdt=(currents->sdata->precip[(int) data->time_period]
-              - perc - total_water_uptake
-              / area) - soil_evap;
-        //printf("perco2 %f dwdt2 %f \n",perc,dwdt);
-    }
+      if (perc<0) perc=0;
+      dwdt=(currents->sdata->precip[(int) data->time_period] - perc - total_water_uptake / area) - soil_evap;
+   }
 #endif
     
 #else
-    //test_soil uncomment above
-    theta = (water - currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->MvG_soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
-    theta = fmin(1.0,theta);
-    theta = fmax(0.0,theta);
-    if(theta>0)
-    {
-        //test_soil
-        double se = 0.0;
-        se = fmin(1.0,theta);
-        se = fmax(0.0,se);
-        perc = currents->sdata->MvG_k_sat*pow(se, currents->sdata->MvG_L)*pow(1.0-pow(1.0-pow(se,1/currents->sdata->MvG_m),currents->sdata->MvG_m),2.0);
-    }
-    else
-    {
-        perc = 0.0;
-    }
-//    dwdt = (currents->sdata->precip[(int) data->time_period]
-//            - perc - total_water_uptake
-//            / area) - soil_evap;
-    //test_mor2
+   theta = (water - currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->MvG_soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
+   theta = fmin(1.0,theta);
+   theta = fmax(0.0,theta);
+   if(theta>0)
+   {
+      double se = 0.0;
+      se = fmin(1.0,theta);
+      se = fmax(0.0,se);
+      perc = currents->sdata->MvG_k_sat*pow(se, currents->sdata->MvG_L)*pow(1.0-pow(1.0-pow(se,1/currents->sdata->MvG_m),currents->sdata->MvG_m),2.0);
+   }
+   else
+   {
+      perc = 0.0;
+   }
+
 #if SNOWPACK_SCHEME == 0
-    dwdt = (currents->sdata->precip[(int) data->time_period]
-            - perc - total_water_uptake
-            / area) - soil_evap;
+   dwdt = (currents->sdata->precip[(int) data->time_period] - perc - total_water_uptake / area) - soil_evap;
 #else
-    double precip = currents->sdata->precip[(int) data->time_period];
-    if(currents->sdata->temp[data->time_period]<0)
-    {
-        dwdt = (0.0- perc - total_water_uptake
-                / area) - soil_evap;
-        snow_melt = 0.0;
-    }
-    else
-    {
-        if(snowpack>0)
-            snow_melt = abs(currents->sdata->temp[data->time_period])*100.0;
-        else
-            snow_melt = 0.0;
+   double precip = currents->sdata->precip[(int) data->time_period];
+   if(currents->sdata->temp[data->time_period]<0) // If temperature drop below freezing point, no precipitation enters soil
+   {
+      dwdt = (0.0 - perc - total_water_uptake/ area) - soil_evap;
+      snow_melt = 0.0;
+   }
+   else
+   {
+      if(snowpack>0)
+         snow_melt = abs(currents->sdata->temp[data->time_period])*100.0;
+      else
+         snow_melt = 0.0;
 
-        dwdt = (precip + snow_melt
-                - perc - total_water_uptake
-                / area) - soil_evap;
-    }
+      dwdt = (precip + snow_melt - perc - total_water_uptake / area) - soil_evap;
+   }
 #endif
     
-    double theta_crit = 0.3, updated_theta = 0.0;
-//    updated_theta = (dwdt*data->deltat+water - currents->sdata->soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
-    updated_theta = (dwdt*data->deltat+water - currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->MvG_soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
-    if (updated_theta < theta_crit)
-    {
-        //printf("Start adjust dwdt perco1 %f dwdt1 %f ",perc,dwdt);
-        //soil_evap=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max);  // this line seems ignore perc and problematic
-//        soil_evap=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * (currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual)) - perc;
-//        soil_evap=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * currents->sdata->theta_max) - perc;
-        
-//        soil_evap = (water-currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/data->deltat + currents->sdata->precip[(int) data->time_period] - total_water_uptake/area - perc;
-        
-        double MvG_theta = currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual;
-        double dwdt_crut = (theta_crit*currents->sdata->MvG_soil_depth*MvG_theta + currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual-water)/data->deltat;
-        soil_evap = (currents->sdata->precip[(int) data->time_period] - perc - total_water_uptake / area) - dwdt_crut;
-        
-        if (soil_evap<0) soil_evap=0;
-        dwdt=(currents->sdata->precip[(int) data->time_period]
-              - perc - total_water_uptake
-              / area) - soil_evap;
-//        printf("perco2 %f dwdt2 %f \n",perc,dwdt);
-    }
+   double theta_crit = 0.3, updated_theta = 0.0;
     
-//    updated_theta = (dwdt*data->deltat+water - currents->sdata->soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
-    updated_theta = (dwdt*data->deltat+water - currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->MvG_soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
-    if (updated_theta < theta_crit)
-    {
-        //printf("Start adjust dwdt perco1 %f dwdt1 %f ",perc,dwdt);
-        //perc=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-(currents->sdata->soil_depth * currents->sdata->theta_max)-soil_evap;
+   updated_theta = (dwdt*data->deltat+water - currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->MvG_soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
+   if (updated_theta < theta_crit)  // if theta drop below critical point, adjust soil evaporation
+   {
+      double MvG_theta = currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual;
+      double dwdt_crut = (theta_crit*currents->sdata->MvG_soil_depth*MvG_theta + currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual-water)/data->deltat;
+      soil_evap = (currents->sdata->precip[(int) data->time_period] - perc - total_water_uptake / area) - dwdt_crut;
+      
+      if (soil_evap<0) soil_evap=0;
+      dwdt = (currents->sdata->precip[(int) data->time_period] - perc - total_water_uptake / area) - soil_evap;
+   }
+    
+   updated_theta = (dwdt*data->deltat+water - currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/(currents->sdata->MvG_soil_depth*(currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual));
+   if (updated_theta < theta_crit) // if theta is still below critical point, adjust percolation
+   {
+      double MvG_theta = currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual;
+      double dwdt_crut = (theta_crit*currents->sdata->MvG_soil_depth*MvG_theta + currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual-water)/data->deltat;
+      perc = (currents->sdata->precip[(int) data->time_period] - soil_evap - total_water_uptake / area) - dwdt_crut;
         
-        //test_larch
-//        perc=water+currents->sdata->precip[(int) data->time_period]-total_water_uptake/area-theta_crit*(currents->sdata->soil_depth * (currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual))-soil_evap;
-//        perc = (water-currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual)/data->deltat + currents->sdata->precip[(int) data->time_period] - total_water_uptake/area - soil_evap;
-        
-        double MvG_theta = currents->sdata->MvG_theta_saturated-currents->sdata->MvG_theta_residual;
-        double dwdt_crut = (theta_crit*currents->sdata->MvG_soil_depth*MvG_theta + currents->sdata->MvG_soil_depth*currents->sdata->MvG_theta_residual-water)/data->deltat;
-        perc = (currents->sdata->precip[(int) data->time_period] - soil_evap - total_water_uptake / area) - dwdt_crut;
-        
-        if (perc<0) perc=0;
-        dwdt=(currents->sdata->precip[(int) data->time_period]
-              - perc - total_water_uptake
-              / area) - soil_evap;
-        //printf("perco2 %f dwdt2 %f \n",perc,dwdt);
-    }
+      if (perc<0) perc=0;
+      dwdt=(currents->sdata->precip[(int) data->time_period] - perc - total_water_uptake / area) - soil_evap;
+   }
 #endif
 
-
-    //printf("dwdt %f precip %f perc %f twu %f soev %f ksat %f theta %f tau %f\n",dwdt,currents->sdata->precip[(int) data->time_period],perc,total_water_uptake,soil_evap,currents->sdata->k_sat,theta,currents->sdata->tau);
    return dwdt;
 }
 
-//test_larch
+
 ////////////////////////////////////////////////////////////////////////////////
-//! Dwdt
+//! Soil_Canopy_evap
 //!
 //!
 //! @param
@@ -249,189 +194,185 @@ double patch::Dwdt (double time, UserData* data){
 ////////////////////////////////////////////////////////////////////////////////
 double patch::Soil_Canopy_evap (UserData* data)
 {
-    double Tair_daytime = 0.0, Ea_daytime = 0.0, swdown_daytime = 0.0, daytime_hours = 0.0;
-    double Tair_nighttime = 0.0, Ea_nighttime = 0.0, swdown_nighttime = 0.0;
+    /////
+    ///// Calculate soil evaportation rate using MODIS algorithm
+
+   double Tair_daytime = 0.0, Ea_daytime = 0.0, swdown_daytime = 0.0, daytime_hours = 0.0;
+   double Tair_nighttime = 0.0, Ea_nighttime = 0.0, swdown_nighttime = 0.0;
     
-    int globY_ = siteptr->sdata->globY_, globX_ = siteptr->sdata->globX_;
-    double tmp1 = 0.0, tmp2 = 0.0, tmp3 = 0.0;
-    for(int hour=data->time_period*24;hour<data->time_period*24+24;hour++)
-    {
-        tmp1 = data->global_swd[hour][globY_][globX_];
-        tmp2 = data->global_tmp[hour][globY_][globX_];
-        tmp3 = data->global_hum[hour][globY_][globX_]*1e2; // convert to kPa from mol/mol
-        if(tmp1>0.5)
-        {
-            swdown_daytime += tmp1;
-            Tair_daytime += tmp2;
-            Ea_daytime += tmp3;
-            daytime_hours += 1.0;
-        }
-        else
-        {
-            swdown_nighttime += tmp1;
-            Tair_nighttime += tmp2;
-            Ea_nighttime += tmp3;
-        }
-    }
-    if(daytime_hours>0)
-    {
-        Tair_daytime /= daytime_hours;
-        swdown_daytime /= daytime_hours;
-        Ea_daytime /= daytime_hours;
-    }
-    else
-    {
-        Tair_daytime = 0.0;
-        swdown_daytime = 0.0;
-        Ea_daytime = 0.0;
-    }
+   int globY_ = siteptr->sdata->globY_, globX_ = siteptr->sdata->globX_;
+   double tmp1 = 0.0, tmp2 = 0.0, tmp3 = 0.0;
+   for(int hour=data->time_period*24;hour<data->time_period*24+24;hour++)
+   {
+      tmp1 = data->global_swd[hour][globY_][globX_];
+      tmp2 = data->global_tmp[hour][globY_][globX_];
+      tmp3 = data->global_hum[hour][globY_][globX_]*1e2; // convert to kPa from mol/mol
+      if(tmp1>0.5)
+      {
+         swdown_daytime += tmp1;
+         Tair_daytime += tmp2;
+         Ea_daytime += tmp3;
+         daytime_hours += 1.0;
+      }
+      else
+      {
+         swdown_nighttime += tmp1;
+         Tair_nighttime += tmp2;
+         Ea_nighttime += tmp3;
+      }
+   }
+   if(daytime_hours>0)
+   {
+      Tair_daytime /= daytime_hours;
+      swdown_daytime /= daytime_hours;
+      Ea_daytime /= daytime_hours;
+   }
+   else
+   {
+      Tair_daytime = 0.0;
+      swdown_daytime = 0.0;
+      Ea_daytime = 0.0;
+   }
     
-    if(24.0-daytime_hours>0)
-    {
-        Tair_nighttime /= (24.0-daytime_hours);
-        swdown_nighttime /= (24.0-daytime_hours);
-        Ea_nighttime /= (24.0-daytime_hours);
-    }
-    else
-    {
-        Tair_nighttime = 0.0;
-        swdown_nighttime = 0.0;
-        Ea_nighttime = 0.0;
-    }
+   if(24.0-daytime_hours>0)
+   {
+      Tair_nighttime /= (24.0-daytime_hours);
+      swdown_nighttime /= (24.0-daytime_hours);
+      Ea_nighttime /= (24.0-daytime_hours);
+   }
+   else
+   {
+      Tair_nighttime = 0.0;
+      swdown_nighttime = 0.0;
+      Ea_nighttime = 0.0;
+   }
 //    radiative_flux(data);
-    // Due to bugs somewhere,resulting in extreme LAI, has to do this -- Lei
-    double patch_lai = lai;
+   // Due to bugs somewhere,resulting in extreme LAI, has to do this -- Lei
+   double patch_lai = 0.0;
+   cohort* cc = shortest;
+   while((cc != NULL) && (cc->patchptr !=NULL))
+   {
+      patch_lai += cc->lai;
+      cc = cc->taller;
+   }
     
-    //test_larch
-    patch_lai = 0.0;
-    cohort* cc = shortest;
-    while((cc != NULL) && (cc->patchptr !=NULL))
-    {
-        patch_lai += cc->lai;
-        cc = cc->taller;
-    }
+   if(patch_lai<0)
+      patch_lai = 0;
+   else if (patch_lai>20)
+      patch_lai = 20.0;
     
-    if(patch_lai<0)
-        patch_lai = 0;
-    else if (patch_lai>20)
-        patch_lai = 20.0;
-    
-    double albedo = 0.18; // almost same for all bare soil
-    double rho = 1.225; // air density, kg/m3
-    double Pa = 101.3; // air pressure, kPa
-    double Cp = 1.013*1e-3; // Specfic air heat capacity, MJ/kg/C
-    double sigma = 5.6697*1e-8; //Stefen Boltzman constant, W/m2/K^4
-    double lamda = 2.45; //latent heat of vaporization, MJ/kg
-    double gamma = 0.067165; // Psychrometric constant, kPg/C
-    double beta = 0.5; // parameter to scale moisture constraint, kPa
-    double gl_sh = 0.01;
-    double gl_e_wv = 0.01;
-    double Fc = 1.0 - exp(-1.0 * data->Rn_extinct * patch_lai);
-    double epslon_a_daytime = 1 - 0.26*exp(-0.77*1e-4*pow(Tair_daytime, 2.0));
-    double epslon_a_nighttime = 1 - 0.26*exp(-0.77*1e-4*pow(Tair_nighttime, 2.0));
-    double epslon_s = 0.97;
-    double epslon = 0.97;
+   double albedo = 0.18; // almost same for all bare soil
+   double rho = 1.225; // air density, kg/m3
+   double Pa = 101.3; // air pressure, kPa
+   double Cp = 1.013*1e-3; // Specfic air heat capacity, MJ/kg/C
+   double sigma = 5.6697*1e-8; //Stefen Boltzman constant, W/m2/K^4
+   double lamda = 2.45; //latent heat of vaporization, MJ/kg
+   double gamma = 0.067165; // Psychrometric constant, kPg/C
+   double beta = 0.5; // parameter to scale moisture constraint, kPa
+   double gl_sh = 0.01;
+   double gl_e_wv = 0.01;
+   double Fc = 1.0 - exp(-1.0 * data->Rn_extinct * patch_lai);
+   double epslon_a_daytime = 1 - 0.26*exp(-0.77*1e-4*pow(Tair_daytime, 2.0));
+   double epslon_a_nighttime = 1 - 0.26*exp(-0.77*1e-4*pow(Tair_nighttime, 2.0));
+   double epslon_s = 0.97;
+   double epslon = 0.97;
     
     
-    double Rnet_daytime = (1.0 - albedo)*swdown_daytime + sigma*(epslon_a_daytime - epslon_s)*pow(273.15+Tair_daytime, 4.0);
-    double Rnet_nighttime = (1.0 - albedo)*swdown_nighttime + sigma*(epslon_a_nighttime - epslon_s)*pow(273.15+Tair_nighttime, 4.0);
+   double Rnet_daytime = (1.0 - albedo)*swdown_daytime + sigma*(epslon_a_daytime - epslon_s)*pow(273.15+Tair_daytime, 4.0);
+   double Rnet_nighttime = (1.0 - albedo)*swdown_nighttime + sigma*(epslon_a_nighttime - epslon_s)*pow(273.15+Tair_nighttime, 4.0);
+   
+   double Gsoil_daytime = 4.73*Tair_daytime - 20.87;
+   double Gsoil_nighttime = 4.73*Tair_nighttime - 20.87;
+   Gsoil_daytime = fminf(Gsoil_daytime, 0.39*Rnet_daytime);
+   Gsoil_nighttime = fminf(Gsoil_nighttime, 0.39*Rnet_nighttime);
     
-    double Gsoil_daytime = 4.73*Tair_daytime - 20.87;
-    double Gsoil_nighttime = 4.73*Tair_nighttime - 20.87;
-    Gsoil_daytime = fminf(Gsoil_daytime, 0.39*Rnet_daytime);
-    Gsoil_nighttime = fminf(Gsoil_nighttime, 0.39*Rnet_nighttime);
+   double G_daytime = (1.0-Fc)*Gsoil_daytime;
+   double G_nighttime = (1.0-Fc)*Gsoil_nighttime;
+   
     
-    double G_daytime = (1.0-Fc)*Gsoil_daytime;
-    double G_nighttime = (1.0-Fc)*Gsoil_nighttime;
+   double Asoil_daytime = ((1.0 - Fc)*Rnet_daytime - G_daytime)/1e6; // MJ/m2
+   double Asoil_nighttime = ((1.0 - Fc)*Rnet_nighttime - G_nighttime)/1e6; // MJ/m2
+   
+   double Acanopy_daytime = Fc*Rnet_daytime/1e6;  // MJ/m2
+   double Acanopy_nighttime = Fc*Rnet_nighttime/1e6;  // MJ/m2
+   
     
+   double Es_daytime = 0.611*exp(17.269*Tair_daytime/(Tair_daytime+237.3));  // kPa
+   double Es_nighttime = 0.611*exp(17.269*Tair_nighttime/(Tair_nighttime+237.3));  // kPa
+   double E_slope_daytime = Es_daytime*(17.269*273.3)/pow(237.3+Tair_daytime, 2.0);
+   double E_slope_nighttime = Es_nighttime*(17.269*273.3)/pow(237.3+Tair_nighttime, 2.0);
+   double VPD_daytime = Es_daytime - Ea_daytime; // kPa
+   double VPD_nighttime = Es_nighttime - Ea_nighttime; // kPa
+   double RH_daytime = Ea_daytime/Es_daytime*100.0;  // %
+   double RH_nighttime = Ea_nighttime/Es_nighttime*100.0;
     
-    double Asoil_daytime = ((1.0 - Fc)*Rnet_daytime - G_daytime)/1e6; // MJ/m2
-    double Asoil_nighttime = ((1.0 - Fc)*Rnet_nighttime - G_nighttime)/1e6; // MJ/m2
+   if(RH_daytime>95)
+   {
+      RH_daytime = 95;
+      Ea_daytime = RH_daytime/100.0*Es_daytime;
+      VPD_daytime = Es_daytime - Ea_daytime;
+   }
+   if(RH_nighttime>95)
+   {
+      RH_nighttime = 95;
+      Ea_nighttime = RH_nighttime/100.0*Es_nighttime;
+      VPD_nighttime = Es_nighttime - Ea_nighttime;
+   }
     
-    double Acanopy_daytime = Fc*Rnet_daytime/1e6;  // MJ/m2
-    double Acanopy_nighttime = Fc*Rnet_nighttime/1e6;  // MJ/m2
-    
-    
-    double Es_daytime = 0.611*exp(17.269*Tair_daytime/(Tair_daytime+237.3));  // kPa
-    double Es_nighttime = 0.611*exp(17.269*Tair_nighttime/(Tair_nighttime+237.3));  // kPa
-    double E_slope_daytime = Es_daytime*(17.269*273.3)/pow(237.3+Tair_daytime, 2.0);
-    double E_slope_nighttime = Es_nighttime*(17.269*273.3)/pow(237.3+Tair_nighttime, 2.0);
-    double VPD_daytime = Es_daytime - Ea_daytime; // kPa
-    double VPD_nighttime = Es_nighttime - Ea_nighttime; // kPa
-    double RH_daytime = Ea_daytime/Es_daytime*100.0;  // %
-    double RH_nighttime = Ea_nighttime/Es_nighttime*100.0;
-    
-    if(RH_daytime>95)
-    {
-        RH_daytime = 95;
-        Ea_daytime = RH_daytime/100.0*Es_daytime;
-        VPD_daytime = Es_daytime - Ea_daytime;
-    }
-    if(RH_nighttime>95)
-    {
-        RH_nighttime = 95;
-        Ea_nighttime = RH_nighttime/100.0*Es_nighttime;
-        VPD_nighttime = Es_nighttime - Ea_nighttime;
-    }
-    
-    double Fwet_daytime = 0.0, Fwet_nighttime = 0.0;
-    if(RH_daytime>90)
-        Fwet_daytime = pow(RH_daytime/100.0, 4.0);
-    if(RH_nighttime>90)
-        Fwet_nighttime = pow(RH_nighttime/100.0, 4.0);
+   double Fwet_daytime = 0.0, Fwet_nighttime = 0.0;
+   if(RH_daytime>90)
+      Fwet_daytime = pow(RH_daytime/100.0, 4.0);
+   if(RH_nighttime>90)
+      Fwet_nighttime = pow(RH_nighttime/100.0, 4.0);
     
     
-    double r_totc = 107.0; // s/m
-    double r_corr_daytime = 1.0/(101.300/Pa*pow((Tair_daytime+273.15)/293.15,1.75));
-    double r_corr_nighttime = 1.0/(101.300/Pa*pow((Tair_nighttime+273.15)/293.15,1.75));
-    double r_tot_daytime = r_totc*r_corr_daytime;
-    double r_tot_nighttime = r_totc*r_corr_nighttime;
-    double r_hs_daytime = r_tot_daytime;
-    double r_hs_nighttime = r_tot_nighttime;
-    double r_rs_daytime = rho*Cp/(4.0*sigma*pow(Tair_daytime+273.15,3.0));
-    double r_rs_nighttime = rho*Cp/(4.0*sigma*pow(Tair_nighttime+273.15,3.0));
-    double r_as_daytime = r_hs_daytime*r_rs_daytime/(r_hs_daytime+r_rs_daytime);
-    double r_as_nighttime = r_hs_nighttime*r_rs_nighttime/(r_hs_nighttime+r_rs_nighttime);
+   double r_totc = 107.0; // s/m
+   double r_corr_daytime = 1.0/(101.300/Pa*pow((Tair_daytime+273.15)/293.15,1.75));
+   double r_corr_nighttime = 1.0/(101.300/Pa*pow((Tair_nighttime+273.15)/293.15,1.75));
+   double r_tot_daytime = r_totc*r_corr_daytime;
+   double r_tot_nighttime = r_totc*r_corr_nighttime;
+   double r_hs_daytime = r_tot_daytime;
+   double r_hs_nighttime = r_tot_nighttime;
+   double r_rs_daytime = rho*Cp/(4.0*sigma*pow(Tair_daytime+273.15,3.0));
+   double r_rs_nighttime = rho*Cp/(4.0*sigma*pow(Tair_nighttime+273.15,3.0));
+   double r_as_daytime = r_hs_daytime*r_rs_daytime/(r_hs_daytime+r_rs_daytime);
+   double r_as_nighttime = r_hs_nighttime*r_rs_nighttime/(r_hs_nighttime+r_rs_nighttime);
     
-    double rhc_daytime = 1.0/(gl_sh*patch_lai*Fwet_daytime);
-    double rhc_nighttime = 1.0/(gl_sh*patch_lai*Fwet_nighttime);
+   double rhc_daytime = 1.0/(gl_sh*patch_lai*Fwet_daytime);
+   double rhc_nighttime = 1.0/(gl_sh*patch_lai*Fwet_nighttime);
+   
+   double rrc_daytime = rho*Cp/4.0/sigma/pow(Tair_daytime+273.15,3.0);
+   double rrc_nighttime = rho*Cp/4.0/sigma/pow(Tair_nighttime+273.15,3.0);
+   double rhrc_daytime = rhc_daytime*rrc_daytime/(rhc_daytime+rrc_daytime);
+   double rhrc_nighttime = rhc_nighttime*rrc_nighttime/(rhc_nighttime+rrc_nighttime);
+   double rvc_daytime = 1.0/(gl_e_wv*patch_lai*Fwet_daytime);
+   double rvc_nighttime = 1.0/(gl_e_wv*patch_lai*Fwet_nighttime);
     
-    double rrc_daytime = rho*Cp/4.0/sigma/pow(Tair_daytime+273.15,3.0);
-    double rrc_nighttime = rho*Cp/4.0/sigma/pow(Tair_nighttime+273.15,3.0);
-    double rhrc_daytime = rhc_daytime*rrc_daytime/(rhc_daytime+rrc_daytime);
-    double rhrc_nighttime = rhc_nighttime*rrc_nighttime/(rhc_nighttime+rrc_nighttime);
-    double rvc_daytime = 1.0/(gl_e_wv*patch_lai*Fwet_daytime);
-    double rvc_nighttime = 1.0/(gl_e_wv*patch_lai*Fwet_nighttime);
+   double E_wet_soil_pot_daytime = (E_slope_daytime*Asoil_daytime+rho*Cp*(1.0-Fc)*VPD_daytime/r_as_daytime)*Fwet_daytime/(E_slope_daytime+gamma*r_tot_daytime/r_as_daytime)/lamda;  // mm s-1
+   double E_dry_soil_pot_daytime = (E_slope_daytime*Asoil_daytime+rho*Cp*(1.0-Fc)*VPD_daytime/r_as_daytime)*(1-Fwet_daytime)/(E_slope_daytime+gamma*r_tot_daytime/r_as_daytime)/lamda; // mm s-1
+   double moisture_constraint_daytime = pow(RH_daytime/100.0, VPD_daytime/beta);
     
-    double E_wet_soil_pot_daytime = (E_slope_daytime*Asoil_daytime+rho*Cp*(1.0-Fc)*VPD_daytime/r_as_daytime)*Fwet_daytime/(E_slope_daytime+gamma*r_tot_daytime/r_as_daytime)/lamda;  // mm s-1
-    double E_dry_soil_pot_daytime = (E_slope_daytime*Asoil_daytime+rho*Cp*(1.0-Fc)*VPD_daytime/r_as_daytime)*(1-Fwet_daytime)/(E_slope_daytime+gamma*r_tot_daytime/r_as_daytime)/lamda; // mm s-1
-    double moisture_constraint_daytime = pow(RH_daytime/100.0, VPD_daytime/beta);
+   double E_wet_soil_pot_nighttime = (E_slope_nighttime*Asoil_nighttime+rho*Cp*(1.0-Fc)*VPD_nighttime/r_as_nighttime)*Fwet_nighttime/(E_slope_nighttime+gamma*r_tot_nighttime/r_as_nighttime)/lamda; // mm s-1
+   double E_dry_soil_pot_nighttime = (E_slope_nighttime*Asoil_nighttime+rho*Cp*(1.0-Fc)*VPD_nighttime/r_as_nighttime)*(1-Fwet_nighttime)/(E_slope_nighttime+gamma*r_tot_nighttime/r_as_nighttime)/lamda; // mm s-1
+   double moisture_constraint_nighttime = pow(RH_nighttime/100.0, VPD_nighttime/beta);
     
-    double E_wet_soil_pot_nighttime = (E_slope_nighttime*Asoil_nighttime+rho*Cp*(1.0-Fc)*VPD_nighttime/r_as_nighttime)*Fwet_nighttime/(E_slope_nighttime+gamma*r_tot_nighttime/r_as_nighttime)/lamda; // mm s-1
-    double E_dry_soil_pot_nighttime = (E_slope_nighttime*Asoil_nighttime+rho*Cp*(1.0-Fc)*VPD_nighttime/r_as_nighttime)*(1-Fwet_nighttime)/(E_slope_nighttime+gamma*r_tot_nighttime/r_as_nighttime)/lamda; // mm s-1
-    double moisture_constraint_nighttime = pow(RH_nighttime/100.0, VPD_nighttime/beta);
+   double E_soil_actual_daytime = E_wet_soil_pot_daytime + E_dry_soil_pot_daytime *moisture_constraint_daytime;
+   double E_soil_actual_nighttime = E_wet_soil_pot_nighttime + E_dry_soil_pot_nighttime *moisture_constraint_nighttime;
+   double E_soil_actual_total = E_soil_actual_daytime*3600.0*daytime_hours + E_soil_actual_nighttime * 3600.0*(24.0-daytime_hours); //mm day-1
+   E_soil_actual_total *= 30.5*N_CLIMATE;
     
-    double E_soil_actual_daytime = E_wet_soil_pot_daytime + E_dry_soil_pot_daytime *moisture_constraint_daytime;
-    double E_soil_actual_nighttime = E_wet_soil_pot_nighttime + E_dry_soil_pot_nighttime *moisture_constraint_nighttime;
-    double E_soil_actual_total = E_soil_actual_daytime*3600.0*daytime_hours + E_soil_actual_nighttime * 3600.0*(24.0-daytime_hours); //mm day-1
-    E_soil_actual_total *= 30.5*N_CLIMATE;
+   double E_wet_canopy_daytime = 0.0, E_wet_canopy_nighttime = 0.0;
+   
+   if((Fwet_daytime>0) && (patch_lai>0))
+      E_wet_canopy_daytime = (E_slope_daytime*Acanopy_daytime*Fc+rho*Cp*VPD_daytime*Fc/rhrc_daytime)*Fwet_daytime/(E_slope_daytime+(Pa*Cp*rvc_daytime)/(lamda*epslon*rhrc_daytime))/lamda;
     
-    double E_wet_canopy_daytime = 0.0, E_wet_canopy_nighttime = 0.0;
+   if((Fwet_nighttime>0) && (patch_lai>0))
+      E_wet_canopy_nighttime = (E_slope_nighttime*Acanopy_nighttime*Fc+rho*Cp*VPD_nighttime*Fc/rhrc_nighttime)*Fwet_nighttime/(E_slope_nighttime+(Pa*Cp*rvc_nighttime)/(lamda*epslon*rhrc_nighttime))/lamda;
     
-    if((Fwet_daytime>0) && (patch_lai>0))
-        E_wet_canopy_daytime = (E_slope_daytime*Acanopy_daytime*Fc+rho*Cp*VPD_daytime*Fc/rhrc_daytime)*Fwet_daytime/(E_slope_daytime+(Pa*Cp*rvc_daytime)/(lamda*epslon*rhrc_daytime))/lamda;
+   double E_wet_canopy_total = E_wet_canopy_daytime*3600.0*daytime_hours + E_wet_canopy_nighttime * 3600.0*(24.0-daytime_hours); //mm day-1
+   E_wet_canopy_total *= 30.5*N_CLIMATE; // convert to mm yr-1
     
-    if((Fwet_nighttime>0) && (patch_lai>0))
-        E_wet_canopy_nighttime = (E_slope_nighttime*Acanopy_nighttime*Fc+rho*Cp*VPD_nighttime*Fc/rhrc_nighttime)*Fwet_nighttime/(E_slope_nighttime+(Pa*Cp*rvc_nighttime)/(lamda*epslon*rhrc_nighttime))/lamda;
-    
-    double E_wet_canopy_total = E_wet_canopy_daytime*3600.0*daytime_hours + E_wet_canopy_nighttime * 3600.0*(24.0-daytime_hours); //mm day-1
-    E_wet_canopy_total *= 30.5*N_CLIMATE; // convert to mm yr-1
-    
-//    double test = E_soil_actual_total+E_wet_canopy_total;
-//    if(test>1500)
-//        printf("Wrong in soil eva %f lat %f lon %f\n",test,siteptr->sdata->lat_,siteptr->sdata->lon_);
-    
-    return (E_soil_actual_total+E_wet_canopy_total);
+   return (E_soil_actual_total+E_wet_canopy_total);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -468,9 +409,8 @@ void patch::Dsdt (unsigned int time_period, double time, UserData* data) {
                                                * Century pools          */
    /* K3 is high bc we wanted to added back the n immobilization story 
       without tracking the slow pool */
-    
-    //test_larch
-    K3 = 0.2;
+   
+   K3 = 0.2;
 
    /* std values= 1, .3, 1, 0 */
    double r_fsc=1.0, r_stsc=0.3, r_ssc=1.0, r_psc=0.0;
@@ -484,9 +424,9 @@ void patch::Dsdt (unsigned int time_period, double time, UserData* data) {
 
    /* Slow down of decomp due to fraction of structural material that is lignin */
    /* From CENTURY Parton et al 1993 GBC 7(4):785-809 */
-      Ls = structural_soil_L / structural_soil_C;
+   Ls = structural_soil_L / structural_soil_C;
 
-      Lc = exp(-3.0 * Ls);
+   Lc = exp(-3.0 * Ls);
 
    if(!data->n_competition) {
       total_plant_nitrogen_uptake = 0.0;
@@ -648,52 +588,10 @@ if (0)
 }
 else
 {
-//    //Compute Td for each layer and then take the average
-//    double Tmax=45.0,Topt = 35.0,tshr = 0.2,tshl = 2.63,t1=0,t2=0;
-//
-//    //Layer 1 on MERRA2 & Catchment-CN, 0.0988m
-//    t1 = (Tmax - currents->sdata->soil_temp1[time_period]) / (Tmax - Topt);
-//    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
-//    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
-//
-//    //Layer 2 on MERRA2 & Catchment-CN, 0.1952m
-//    t1 = (Tmax - currents->sdata->soil_temp2[time_period]) / (Tmax - Topt);
-//    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
-//    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
-//
-//    //Layer 3 on MERRA2 & Catchment-CN, 0.3859m
-//    t1 = (Tmax - currents->sdata->soil_temp3[time_period]) / (Tmax - Topt);
-//    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
-//    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
-    
-//    //Layer 4 on MERRA2 & Catchment-CN, 0.7626m
-//    t1 = (Tmax - currents->sdata->soil_temp4[time_period]) / (Tmax - Topt);
-//    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
-//    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
-    
-//    //Layer 5 on MERRA2 & Catchment-CN, 1.5071m
-//    t1 = (Tmax - currents->sdata->soil_temp5[time_period]) / (Tmax - Topt);
-//    t2 = exp( (tshr / tshl) * (1. - pow(t1, tshl)) );
-//    Td += pow(t1, tshr) * t2; // rate multiplier due to temp
-//
-//    Td/=5.0;
     double q10 = 1.5;
     double R0 = 0.40;
-//    // Layer 1
-//    Td += R0*pow(q10, (currents->sdata->soil_temp1[time_period]-25.0)/10.0);
-//    // Layer 2
-//    Td += R0*pow(q10, (currents->sdata->soil_temp2[time_period]-25.0)/10.0);
-//    // Layer 3
-//    Td += R0*pow(q10, (currents->sdata->soil_temp3[time_period]-25.0)/10.0);
-////    // Layer 4
-////    Td += pow(q10, (currents->sdata->soil_temp4[time_period]-25.0)/10.0);
-////    // Layer 5
-////    Td += pow(q10, (currents->sdata->soil_temp5[time_period]-25.0)/10.0);
-//
-//    Td/=3.0;
-    
-    //test_larch
-    double Rh_freezing_crit = -0.0;
+
+    double Rh_freezing_crit = 0.0;
     if(currents->sdata->soil_temp1[time_period]>Rh_freezing_crit)
         Td += R0*pow(q10, (currents->sdata->soil_temp1[time_period]-25.0)/10.0);
     else
@@ -709,21 +607,11 @@ else
     else
         Td += 0.0;
 
-    //test_larch
     if(currents->sdata->soil_temp1[time_period]<Rh_freezing_crit)
         Td = 0.0;
 
     Td/=3.0;
-    
-    
-    //test_soil_Afun
-//    Td = R0*pow(q10, (currents->sdata->temp[time_period]-25.0)/10.0);
-//    if(currents->sdata->temp[time_period]<Rh_freezing_crit)
-//        Td = 0.0;
-    
-    
-    //test_larch
-//    printf("site %s mon %d Td %f stmp1 %f stmp2 %f stmp3 %f\n",currents->sdata->name_,data->time_period,Td,currents->sdata->soil_temp1[time_period],currents->sdata->soil_temp2[time_period],currents->sdata->soil_temp3[time_period]);
+
 }
    
 
@@ -740,33 +628,20 @@ else
    } else {
       Wd = 0.6 / (1.2 * theta);
    }
-    
-//    //test_mor2
-//    if (theta <= 0.6)
-//    {
-//        Wd = exp(-pow(theta*100.0-60.0,2.0)/800.0);
+
+//#if SOILGRIDS_SCHEME == 0
+//    //test_larch
+//    //As altering water1 paramter in water limittation module, resulting in relatively high soil mosiure, then cause high repspration in boreal
+//    //Test whether change below will increase soil carbon density in boreal forest -- Lei
+//    double adjust_theta = theta/2.0;
+//    if (adjust_theta <= 0.3) {
+//        Wd = 0.2;
+//    } else if (adjust_theta <= 0.46) {
+//        Wd = adjust_theta / 0.46;
+//    } else {
+//        Wd = adjust_theta*0.5;
 //    }
-//    else
-//    {
-//        Wd = 0.000371*pow(theta*100.0, 2.0)-0.0748*theta*100.0+4.13;
-//    }
-    
-#if SOILGRIDS_SCHEME == 0
-    //test_larch
-    //As altering water1 paramter in water limittation module, resulting in relatively high soil mosiure, then cause high repspration in boreal
-    //Test whether change below will increase soil carbon density in boreal forest -- Lei
-    double adjust_theta = theta/2.0;
-    if (adjust_theta <= 0.3) {
-        Wd = 0.2;
-    } else if (adjust_theta <= 0.46) {
-        Wd = adjust_theta / 0.46;
-    } else {
-        Wd = adjust_theta*0.5;
-    }
-#endif
-    
-    //test_larch
-//    printf("                Wd %f theta %f\n",Wd,theta);
+//#endif
     
    return (Td * Wd);
 

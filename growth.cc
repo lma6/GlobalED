@@ -79,16 +79,6 @@ void cohort::Growth_Derivatives (double time, UserData* data ) {
       cb_act += cb[j];
       cb_max += cb_toc[j];
    }
-    //test_mor
-//   for(int j=4; j<9; j++)
-//   {
-//      if (cb[j]>0.0)
-//      {
-//          cb_act += cb[j];
-//          cb_max += cb_toc[j];
-//      }
-//   }
-
 
    /* calc carbon balance ratio */
    if((cb_max)>0.0) {
@@ -144,30 +134,6 @@ void cohort::Growth_Derivatives (double time, UserData* data ) {
    ddbhdt = dbdeaddt*dDbhdBd(data);
    dhdt = dbdeaddt*dHdBd(data);
     
-    //test_larch
-//    for(size_t spp=0;spp<NSPECIES;spp++)
-//    {
-//        species = spp;
-////        dbh = 2.0;
-//        hite = 1.5;
-//        dbh = Dbh(data);
-//        hite = Hite(data);
-//        balive = Bleaf(data)*(1.0 + data->q[species] + data->qsw[species]*hite);
-//        bl = Bleaf(data);
-//        bdead = Bdead(data);
-//        b = balive + bdead;
-//
-//        double salloc = (1.0 + data->qsw[species] * hite + data->q[species]);
-//        bsw = data->qsw[species] * hite * (balive) / salloc; /*TODO bsw is area, not weight. Convert OLCR. Change hite to a parameter = mass of 1m^2 of bsw*/
-//        bs = bsw + bdead;
-//        bstem = data->agf_bs * bs;
-//        babove = bstem + bl;
-//        br =data->q[species]*bl;
-//
-//        printf("spp %d dbh %f hite %f b %f ba %f bl %f bd %f br %f dDbhdBd %f dHdBd %f dDbhdBl %f LAI %f\n",species,dbh,Hite(data),b,babove,bl,bdead,br,dDbhdBd(data),dHdBd(data),dDbhdBl(data),bl*data->specific_leaf_area[species]);
-//    }
-    
-  
    /* measured above ground npp = leaf litter + repro/stem litter +      *
     *                             above ground wood production +         *
     *                             leaf production                        */
@@ -199,56 +165,7 @@ void patch::Litter (double time, UserData* data ) {
 //   /* LITTER INPUTS */
 //   /*****************/
 //   /* Inputs from litter */
-//   double fast_litter = 0.0;
-//   double fast_litter_n = 0.0;
-//   double struct_litter = 0.0;
-//
-//   cohort* cc = shortest;
-//   while ( cc != NULL ) {
-//      size_t spp = cc->species;
-//      /* plant_litter = ( (cc->md) * cc->nindivs +
-//                        cc->balive*(-1.0*cc->dndt) ) / cp->area; */
-//      /* plant litter now revised to subtract mean field fire, which goes to atm */
-//      double plant_litter = ( cc->md * cc->nindivs + cc->balive *
-//                              ( -1.0 * cc->dndt ) - cc->balive *
-//                              cc->patchptr->siteptr->sdata->loss_fraction[1] *
-//                              ( 1.0 - cc->survivorship_from_disturbance(1, data) ) *
-//                              cc->patchptr->fire_dndt_factor *
-//                              cc->nindivs ) / area;
-//      fast_litter += data->fraction_balive_2_fast * plant_litter;
-//      fast_litter_n +=  data->fraction_balive_2_fast *
-//         ( 1.0 / data->c2n_leaf[spp] ) * plant_litter;
-//      double seed_litter = ( (cc->p[0] * data->sd_mort) * cc->nindivs ) / area;
-//      double seed_litter_n = ( 1.0 / data->c2n_recruit[spp] ) * seed_litter;
-//      fast_litter +=  data->fraction_balive_2_fast * seed_litter;
-//      fast_litter_n +=  data->fraction_balive_2_fast * seed_litter_n;
-//
-//      /* payment to N fixers */
-//      if ( data->Nfixer[cc->species] == 1 )
-//         fast_litter += cc->nindivs * cc->payment_to_Nfixers / area;
-//
-//      /*struct_litter += cc->bdead * ( -1.0 * cc->dndt ) /
-//         cp->area + ( 1.0 - data->fraction_balive_2_fast ) *
-//         ( plant_litter + seed_litter );*/
-//      /* now revised to include fire dndt loading */
-//      struct_litter += cc->bdead *
-//         ( -1.0 * cc->dndt - cc->siteptr->sdata->loss_fraction[1] *
-//           ( 1.0 - cc->survivorship_from_disturbance(1, data) ) *
-//           cc->patchptr->fire_dndt_factor * cc->nindivs ) /
-//         area + ( 1.0 - data->fraction_balive_2_fast ) *
-//         ( plant_litter + seed_litter );
-//      cc = cc->taller;
-//
-//
-//   }  /* end loop over cohorts */
-//
-//   litter = fast_litter + struct_litter;
-//   /* Calc Pool Inputs */
-//   fsc_in = fast_litter;
-//   ssc_in = struct_litter;     /*from stem*/
-//   ssl_in = (data->l2n_stem/data->c2n_stem) * struct_litter;
-//   fsn_in = fast_litter_n;
-    
+
     /// CarbonConserve  --- Lei Ma
     /// If not working, delete the all below, and uncomment the above which is original version
     /// Here, I assume cohort die before accumulation before, that means this dead part won't participate photosynthesis
@@ -262,44 +179,40 @@ void patch::Litter (double time, UserData* data ) {
     cohort* cc = shortest;
     while ( cc != NULL ) {
         size_t spp = cc->species;
-        /* plant_litter = ( (cc->md) * cc->nindivs +
-         cc->balive*(-1.0*cc->dndt) ) / cp->area; */
+
         /* plant litter now revised to subtract mean field fire, which goes to atm */
-        double plant_litter = ( cc->md * cc->nindivs + cc->old_balive *
-                               ( -1.0 * cc->dndt ) - cc->old_balive *
+        double plant_litter = (cc->md * cc->nindivs + cc->old_balive *
+                               (-1.0 * cc->dndt) - cc->old_balive *
                                cc->patchptr->siteptr->sdata->loss_fraction[1] *
-                               ( 1.0 - cc->survivorship_from_disturbance(1, data) ) *
+                               (1.0 - cc->survivorship_from_disturbance(1, data)) *
                                cc->patchptr->fire_dndt_factor *
-                               cc->nindivs ) / area;
+                               cc->nindivs) / area;
         if (cc->patchptr->fire_dndt_factor>0.0)
         {
             /// when fire disturbance rate is smaller than treefall, dndt calculate will include contribution of fire
             /// Therefore, when the original ED code calculate compute liter, part of dead biomass due to fire will be partially deducted and lose as smoke.
             /// The above line collect this part biomass  -- Lei
             fire_c_loss += cc->siteptr->sdata->loss_fraction[1]*(cc->old_balive+cc->old_bdead)*(1.0-cc->survivorship_from_disturbance(1, data))*cc->patchptr->fire_dndt_factor*cc->nindivs/area;
-            //printf("check fire emission %.15f %.15f %.15f\n",cc->old_balive*cc->patchptr->siteptr->sdata->loss_fraction[1]*(1.0-cc->survivorship_from_disturbance(1, data))*cc->patchptr->fire_dndt_factor*cc->nindivs/area,(1.0-cc->survivorship_from_disturbance(1, data)),cc->patchptr->fire_dndt_factor);
         }
         fast_litter += data->fraction_balive_2_fast * plant_litter;
-        fast_litter_n +=  data->fraction_balive_2_fast *
-        ( 1.0 / data->c2n_leaf[spp] ) * plant_litter;
+        fast_litter_n += data->fraction_balive_2_fast * (1.0 / data->c2n_leaf[spp]) * plant_litter;
         
-//        double seed_litter = ( (cc->p[0] * data->sd_mort) * cc->nindivs ) / area;
-        //test_crop, should uncomment the above line
+
         double seed_litter = 0.0;
 #if LANDUSE
         if(landuse==LU_CROP)
         {
-            seed_litter = ( (cc->p[0] * data->sd_mort_crop) * cc->nindivs ) / area;
+            seed_litter = ((cc->p[0] * data->sd_mort_crop) * cc->nindivs)/area;
         }
         else
         {
-            seed_litter = ( (cc->p[0] * data->sd_mort) * cc->nindivs ) / area;
+            seed_litter = ((cc->p[0] * data->sd_mort) * cc->nindivs)/area;
         }
 #else
-        seed_litter = ( (cc->p[0] * data->sd_mort) * cc->nindivs ) / area;
+        seed_litter = ((cc->p[0] * data->sd_mort) * cc->nindivs)/area;
 #endif
         
-        double seed_litter_n = ( 1.0 / data->c2n_recruit[spp] ) * seed_litter;
+        double seed_litter_n = (1.0/data->c2n_recruit[spp]) * seed_litter;
         
         fast_litter +=  data->fraction_balive_2_fast * seed_litter;
         fast_litter_n +=  data->fraction_balive_2_fast * seed_litter_n;
@@ -308,16 +221,9 @@ void patch::Litter (double time, UserData* data ) {
         if ( data->Nfixer[cc->species] == 1 )
             fast_litter += cc->nindivs * cc->payment_to_Nfixers / area;
         
-        /*struct_litter += cc->bdead * ( -1.0 * cc->dndt ) /
-         cp->area + ( 1.0 - data->fraction_balive_2_fast ) *
-         ( plant_litter + seed_litter );*/
+
         /* now revised to include fire dndt loading */
-        struct_litter += cc->old_bdead *
-        ( -1.0 * cc->dndt - cc->siteptr->sdata->loss_fraction[1] *
-         ( 1.0 - cc->survivorship_from_disturbance(1, data) ) *
-         cc->patchptr->fire_dndt_factor * cc->nindivs ) /
-        area + ( 1.0 - data->fraction_balive_2_fast ) *
-        ( plant_litter + seed_litter );
+        struct_litter += cc->old_bdead * (-1.0 * cc->dndt - cc->siteptr->sdata->loss_fraction[1] * (1.0 - cc->survivorship_from_disturbance(1, data)) * cc->patchptr->fire_dndt_factor * cc->nindivs)/area + (1.0 - data->fraction_balive_2_fast) * (plant_litter + seed_litter);
         cc = cc->taller;
         
         
@@ -355,16 +261,6 @@ double cohort::nitrogen_demand_function (double time, UserData* data ) {
    n_demand += p[1] / data->c2n_recruit[species];
    n_demand += md / data->c2n_leaf[species];
     
-
-   /* printf("h %f l %f n %f An_pot %f bl %f npp %f dbalivedt %f dbdeaddt %f N_demand %f\n",
-           currentc->hite, currentc->lite, currentc->nindivs, currentc->An_pot, 
-           currentc->bl, currentc->npp, currentc->dbalivedt, currentc->dbdeaddt, n_demand);*/
-
-   /*if(n_demand < 0.0){ 
-        printf("ndf: p0 %f dbddt %f dbadt %f\n",currentc->p[0],currentc->dbdeaddt,currentc->dbalivedt);
-        printf("ndf: p1 %f dbddt %f dbadt %f\n",currentc->p[1],currentc->dbdeaddt,currentc->dbalivedt);
-   } */
-
    return (n_demand);
 } 
 

@@ -26,7 +26,6 @@ struct patch {
    double perc;                        ///< Rate of percolation mm/yr
    double soil_evap;                   ///< Rate of evapotation mm/yr
     
-//test_mor2
 #if SNOWPACK_SCHEME == 1
     double snowpack;
     double snow_melt;

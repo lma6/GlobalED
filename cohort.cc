@@ -51,43 +51,6 @@ void cohort::get_cohort_vm0(UserData *data) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-//! get_cohort_vm0_bin
-//! Get the mechanism bin corresponding to the cohort's Vm0
-//!
-//! @param  Vm0 Carboxylation rate for current cohort
-//! @param  data Userdata structure
-//! @return Integer specifying the mechanism bin
-////////////////////////////////////////////////////////////////////////////////
-int cohort::get_cohort_vm0_bin(double Vm0, UserData* data) {
-   unsigned int index = 0;
-   double high, low;
-    
-
-   // Only execute if number of Vm0 bins is > 1
-   if (data->num_Vm0 > 1) {
-      // Find the index corresponding to the bin above 
-      for(index = 0; index < data->num_Vm0; index++) {
-        high = data->Vm0_bins.at(index);
-        if(high > Vm0) {
-           break;
-        }
-      }
-           
-      if(index > 0) {
-         low =  data->Vm0_bins.at(index-1);
-         // Find distance of Vm0 from lower and higher bin
-         if( abs(Vm0 - low) <= abs(high - Vm0)) {
-            // If closer to lower bin then adjust index
-            index--;
-         }
-      }
-   }
-
-   // Result is the closest bin to current Vm0
-   return index;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 //! Cohort dynamics
 //! 
 //!
@@ -148,55 +111,7 @@ void cohort_dynamics(unsigned int t, double t1, double t2,
       }
 
       if ( (currentp->tallest != NULL) && (currentp->shortest != NULL) ) {
-#if CHECK_C_CONSERVE
-          ///CarbonConserve
-          cohort* mlcc = NULL;
-          double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0, all_repro_before = 0.0, all_fire_emission_before = 0.0;
-          double all_tb_after = 0.0, all_sc_after =0.0, all_tc_after =0.0, all_repro_after = 0.0;
-          double actual_dt_tc = 0.0, esti_dt_tc = 0.0, all_npp_avg_after = 0.0, all_rh_avg_after = 0.0, all_fire_emission_after = 0.0;
-          mlcc = currentp->shortest;
-          while (mlcc!=NULL) {
-              all_tb_before += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-              all_repro_before += (mlcc->p[0]+mlcc->p[1])*(1-data->sd_mort)*(data->deltat*COHORT_FREQ)*mlcc->nindivs/currentp->area;
-              //printf("ck cohort_bf spp %d nin %.15f ba %.15f bd %.15f tb %.15f\n",mlcc->species,mlcc->nindivs,mlcc->balive,mlcc->bdead,all_tb_before);
-              mlcc = mlcc->taller;
-          }
-          all_sc_before = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-          all_fire_emission_before = 0.0;
-          all_tc_before = all_tb_before + all_sc_before;
-#endif
-          
          currentp->okint = cm_sodeint(&currentp,t, t1, t2, data); /* call ode intgrtr */
-         //printf("ck cohort_cm_sodeint\n");
-#if CHECK_C_CONSERVE
-          ///CarbonConserve
-          mlcc = currentp->shortest;
-          while (mlcc!=NULL) {
-              all_tb_after += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-              //all_repro_after += (mlcc->p[0]+mlcc->p[1])*mlcc->nindivs/currentp->area;
-              //printf("ck cohort_af spp %d nin %.15f ba %.15f bd %.15f tb %.15f\n",mlcc->species,mlcc->nindivs,mlcc->balive,mlcc->bdead,all_tb_after);
-              all_repro_after += (mlcc->p[0]+mlcc->p[1])*(1.0-data->sd_mort)*(data->deltat*COHORT_FREQ)*mlcc->nindivs/currentp->area;
-              mlcc = mlcc->taller;
-          }
-          all_sc_after = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-          all_fire_emission_after = currentp->fire_emission;
-          all_tc_after = all_tb_after + all_sc_after+all_repro_after;
-          
-          actual_dt_tc = all_tc_after-all_tc_before;
-          //esti_dt_tc = (currentp->npp_avg-currentp->rh_avg-(1.0-data->sd_mort)*all_repro_after)*data->deltat;
-          //esti_dt_tc = (currentp->npp_avg-currentp->rh_avg-all_fire_emission_after+all_fire_emission_before)*(data->deltat*COHORT_FREQ);
-          esti_dt_tc = (currentp->npp_avg-currentp->rh_avg-all_fire_emission_after+all_fire_emission_before)*(data->deltat*COHORT_FREQ);
-          
-          if (abs(actual_dt_tc - esti_dt_tc)>1e-9)
-          {
-              printf("Carbon leakage in cm_sodeint : imbalance    %.15f actual_dt_tc %.15f esti_dt_tc     %.15f\n",actual_dt_tc-esti_dt_tc,actual_dt_tc,esti_dt_tc);
-              printf("                             : patch_tc_bf  %.15f patch_sc_bf  %.15f patch_tb_bf    %.15f\n",all_tc_before,all_sc_before,all_tb_before);
-              printf("                             : patch_tc_af  %.15f patch_sc_af  %.15f patch_tb_af    %.15f  patch_fire_emi_bf  %.15f\n",all_tc_after,all_sc_after,all_tb_after,all_fire_emission_before);
-              printf("                             : patch_npp_af %.15f patch_rh_af  %.15f patch_repro_af %.15f  patch_fire_emi_af %.15f\n",currentp->npp_avg,currentp->rh_avg,all_repro_after,all_fire_emission_after);
-              printf("                             : site_lat %.3f site_lon %.3f area %.6f\n",currentp->siteptr->sdata->lat_,currentp->siteptr->sdata->lon_,currentp->area);
-              printf(" --------------------------------------------------------------------------------------\n");
-          }
-#endif
          if (currentp->okint) {
             printf("Fatal error integrating site %s. Site skipped okint No is %d\n", currents->sdata->name_,currentp->okint);
 #if 0
@@ -223,9 +138,6 @@ void cohort_dynamics(unsigned int t, double t1, double t2,
 #if LANDUSE
           currentp->forest_harvested_c = 0.0;
           currentp->product_emission = 0.0;
-//          currentp->yr1_decay_product_pool = 0.0;
-//          currentp->yr10_decay_product_pool = 0.0;
-//          currentp->yr100_decay_product_pool = 0.0;
           currentp->crop_harvested_c = 0.0;
           currentp->past_harvested_c = 0.0;
 #endif
@@ -244,45 +156,8 @@ void cohort_dynamics(unsigned int t, double t1, double t2,
          /***  drop cohorts  ***/      
          currentp = *patchptr;
          while (currentp != NULL) {
-#if CHECK_C_CONSERVE
-             ///CarbonConserve
-             cohort* mlcc = NULL;
-             double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0, all_repro_before = 0.0;
-             double all_tb_after = 0.0, all_sc_after =0.0, all_tc_after =0.0, all_repro_after = 0.0;
-             double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
-             mlcc = currentp->shortest;
-             while (mlcc!=NULL) {
-                 all_tb_before += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-                 all_repro_before += (mlcc->p[0]+mlcc->p[1])*(1-data->sd_mort)*(data->deltat*COHORT_FREQ)*mlcc->nindivs/currentp->area;
-                 //printf("ck chort before spp %d ba %.15f bd %.15f nin %.15f\n",mlcc->species,mlcc->balive,mlcc->bdead,mlcc->nindivs);
-                 mlcc = mlcc->taller;
-             }
-             all_sc_before = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-             all_tc_before = all_tb_before + all_sc_before + all_repro_before;
-#endif
-             
              terminate_cohorts(&currentp->tallest,&currentp->shortest,data);
             /* following termination check for empty linked list */
-#if CHECK_C_CONSERVE
-             ///CarbonConserve
-             mlcc = currentp->shortest;
-             while (mlcc!=NULL) {
-                 all_tb_after += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-                 all_repro_after += (mlcc->p[0]+mlcc->p[1])*(1-data->sd_mort)*(data->deltat*COHORT_FREQ)*mlcc->nindivs/currentp->area;
-                 //printf("ck chort after spp %d ba %.15f bd %.15f nin %.15f\n",mlcc->species,mlcc->balive,mlcc->bdead,mlcc->nindivs);
-                 mlcc = mlcc->taller;
-             }
-             all_sc_after = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-             all_tc_after = all_tb_after + all_sc_after + all_repro_after;
-             
-             if (abs(all_tc_after-all_tc_before)>1e-9)
-             {
-                 printf("Carbon leakage in terminate_cohorts : imbalance   %.15f patch_tc_af %.15f patch_tc_bf %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-                 printf("                                    : patch_sc_bf %.15f patch_tb_bf %.15f patch_repro_bf %.15f\n",all_sc_before,all_tb_before,all_repro_before);
-                 printf("                                    : patch_sc_af %.15f patch_tb_af %.15f patch_repro_af %.15f\n",all_sc_after,all_tb_after,all_repro_after);
-                 printf(" --------------------------------------------------------------------------------------\n");
-             }
-#endif
             if(data->cd_file)
                if((currentp->tallest == NULL)&&(currentp->shortest == NULL)) 
                   fprintf(outfile,"**** warning: no cohorts left in patch %p age %f area %f !\n",currentp,currentp->age,currentp->area); 
@@ -296,45 +171,7 @@ void cohort_dynamics(unsigned int t, double t1, double t2,
 
       currentp=*patchptr;
       while (currentp != NULL){
-#if CHECK_C_CONSERVE
-          ///CarbonConserve
-          cohort* mlcc = NULL;
-          double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0;
-          double all_tb_after = 0.0, all_sc_after =0.0, all_tc_after =0.0, all_repro = 0.0;
-          double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
-          mlcc = currentp->shortest;
-          while (mlcc!=NULL) {
-              all_tb_before += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-              all_repro += (mlcc->p[0]+mlcc->p[1])*(1-data->sd_mort)*(data->deltat*COHORT_FREQ)*mlcc->nindivs/currentp->area;
-              mlcc = mlcc->taller;
-          }
-          all_sc_before = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-          all_tc_before = all_tb_before + all_sc_before;
-#endif
-          
          sort_cohorts(&currentp, data);
-          
-#if CHECK_C_CONSERVE
-          ///CarbonConserve
-          mlcc = currentp->shortest;
-          while (mlcc!=NULL) {
-              all_tb_after += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-              mlcc = mlcc->taller;
-          }
-          all_sc_after = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-          all_tc_after = all_tb_after + all_sc_after;
-
-          actual_dt_tc = all_tc_after - all_tc_before;
-          esti_dt_tc = (currentp->npp_avg-currentp->rh_avg-(1.0-data->sd_mort)*all_repro)/12.0;
-
-          if (abs(all_tc_after-all_tc_before)>1e-9)
-          {
-              printf("Carbon leakage in sort_cohorts : imbalance   %.15f patch_tc_af %.15f patch_tc_bf %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-              printf("                               : patch_sc_bf %.15f patch_tb_bf %.15f\n",all_sc_before,all_tb_before);
-              printf("                               : patch_sc_af %.15f patch_tb_af %.15f\n",all_sc_after,all_tb_after);
-              printf(" --------------------------------------------------------------------------------------\n");
-          }
-#endif
          currentp = currentp->older;
       }    
 
@@ -346,60 +183,8 @@ void cohort_dynamics(unsigned int t, double t1, double t2,
    if((t)%(COHORT_FREQ) == 0){ 
    if(data->cd_file)
       fprintf(outfile,"repro...  \n");
-    
       currentp=*patchptr;
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       patch* mlcp = NULL;
-       double all_tb_before = 0.0, all_sc_before = 0.0, all_tc_before = 0.0, total_p_before = 0.0;
-       double all_tb_after = 0.0, all_sc_after = 0.0, all_tc_after = 0.0, total_repro_after = 0.0;
-       mlcp = *patchptr;
-       while (mlcp!=NULL) {
-           cohort* mlcc = mlcp->shortest;
-           double tmp_tb = 0.0, tmp_p = 0.0;
-           while (mlcc!=NULL) {
-               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
-               tmp_p += ((mlcc->p[0]+mlcc->p[1])*(1.0-data->sd_mort)*(data->deltat*COHORT_FREQ))*mlcc->nindivs/mlcp->area;  ///Here account p as biomass of p have been save in to repro variables, after reproduction, all p will be reset as zero --Lei
-               mlcc=mlcc->taller;
-           }
-           all_tb_before +=tmp_tb*mlcp->area/data->area;
-           total_p_before += tmp_p * mlcp->area/data->area;
-           all_sc_before += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
-           mlcp = mlcp->older;
-       }
-       all_tc_before = all_tb_before + all_sc_before + total_p_before;
-#endif
-       
       reproduction(t,&currentp,data);
-       
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       mlcp = *patchptr;
-       while (mlcp!=NULL) {
-           cohort* mlcc = mlcp->shortest;
-           double tmp_tb = 0.0;
-           while (mlcc!=NULL) {
-               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
-               mlcc=mlcc->taller;
-           }
-           all_tb_after += tmp_tb*mlcp->area/data->area;
-           for (int spp=0;spp<NSPECIES;spp++)
-           {
-                total_repro_after +=mlcp->repro[spp]*mlcp->area/data->area;;
-           }
-           all_sc_after += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
-           mlcp = mlcp->older;
-       }
-       all_tc_after = all_tb_after + all_sc_after + total_repro_after;
-
-       if (abs(all_tc_after-all_tc_before)>1e-9)
-       {
-           printf("Carbon leakage in reproduction : imbalance  %.15f site_tc_af %.15f site_tc_bf %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-           printf("                               : site_sc_bf %.15f site_tb_bf %.15f\n",all_sc_before,all_tb_before);
-           printf("                               : site_sc_af %.15f site_tb_af %.15f\n",all_sc_after,all_tb_after);
-           printf(" --------------------------------------------------------------------------------------\n");
-       }
-#endif
    }
   
 
@@ -409,68 +194,15 @@ void cohort_dynamics(unsigned int t, double t1, double t2,
       fprintf(outfile,"spawn...\n");
 
       currentp = *patchptr;
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       patch* mlcp = NULL;
-       double all_tb_before = 0.0, all_sc_before = 0.0, all_tc_before = 0.0, all_repro_before = 0.0;
-       double all_tb_after = 0.0, all_sc_after = 0.0, all_tc_after = 0.0, all_repro_after = 0.0;
-       
-       mlcp = *patchptr;
-       while (mlcp!=NULL) {
-           cohort* mlcc = mlcp->shortest;
-           double tmp_tb = 0.0;
-           while (mlcc!=NULL) {
-               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
-               mlcc=mlcc->taller;
-           }
-           all_tb_before +=tmp_tb*mlcp->area/data->area;
-           for (int spp=0;spp<NSPECIES;spp++)
-           {
-               all_repro_before +=mlcp->repro[spp]*mlcp->area/data->area;;
-           }
-           all_sc_before +=(mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
-           mlcp = mlcp->older;
-       }
-       all_tc_before = all_tb_before + all_sc_before + all_repro_before;
-#endif
-//      while (currentp != NULL){
-//          spawn_cohorts(t,&currentp,data);
-//         currentp = currentp->older;
-//      }
-       //test_crop, should uncomment above lines
        while (currentp != NULL)
        {
+           // Only spawn cohorts of non-crop, crop cohorts will be planted at a function plant_croplands()
            if(currentp->landuse != LU_CROP)
            {
                spawn_cohorts(t,&currentp,data);
            }
            currentp = currentp->older;
        }
-       
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       mlcp = *patchptr;
-       while (mlcp!=NULL) {
-           cohort* mlcc = mlcp->shortest;
-           double tmp_tb = 0.0;
-           while (mlcc!=NULL) {
-               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
-               mlcc=mlcc->taller;
-           }
-           all_tb_after += tmp_tb*mlcp->area/data->area;
-           all_sc_after += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
-           mlcp = mlcp->older;
-       }
-       all_tc_after = all_tb_after + all_sc_after;
-
-       if (abs(all_tc_after-all_tc_before)>1e-9)
-       {
-           printf("Carbon leakage in spawn_cohorts : imbalance  %.15f site_tc_af %.15f site_tc_bf %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-           printf("                                : site_sc_bf %.15f site_tb_bf %.15f\n",all_sc_before,all_tb_before);
-           printf("                                : site_sc_af %.15f site_tb_af %.15f\n",all_sc_after,all_tb_after);
-           printf(" --------------------------------------------------------------------------------------\n");
-       }
-#endif
        
       if(data->cohort_fusion) {
          /*fuse cohorts*/
@@ -508,9 +240,7 @@ void init_cohorts(patch** patchptr, UserData* data){
    patch* cp = *patchptr;
    site* cs = cp->siteptr;
     
-    //test_mor
-//    if(cs->climate_zone == 0)
-    //test_chunk
+    //Determine which climate zone the site is
     if((abs(cs->climate_zone) == 0) || abs(cs->climate_zone)>3)
     {
         double annual_minimum_temperature = 100000.0;
@@ -532,7 +262,6 @@ void init_cohorts(patch** patchptr, UserData* data){
             cs->climate_zone = 3;
     }
     
-    //test_chunk
     int climate_zone = cs->climate_zone;
 
    /* add new cohorts to linked list of cohorts */
@@ -540,26 +269,7 @@ void init_cohorts(patch** patchptr, UserData* data){
       /*initial number of seedlings of each spp in patch */
       double nindivs = data->initial_density[spp] * (*patchptr)->area; 
 
-       //test_larch
-//      double lat = cs->sdata->lat_;
-//      /* rule out tropical spp out of tropics */
-//      if ( ((lat > data->tropic_n_limit) || (lat < data->tropic_s_limit))   && (data->is_tropical[spp])) {
-//         nindivs = 0.000001;
-//      }
-//      /* rule out temp spp in tropics */
-//      else if ( ((lat <= data->tropic_n_limit) && (lat >= data->tropic_s_limit)) && (!data->is_tropical[spp] and !data->is_grass[spp]) ) {
-//         nindivs = 0.000001;
-//      }
-
-       //test_larch
-//       if ((!is_tropical_climate) && (data->is_tropical[spp]))
-//           nindivs = 0.000001;
-//       if ((is_tropical_climate) && (!data->is_tropical[spp]) &&(!data->is_grass[spp]))
-//           nindivs = 0.000001;
-       
-       //test_mor, should delete this block
-//       if((*patchptr)->siteptr->climate_zone==1)
-       //test_chunk
+       // Avoid co-existence of early_succ_temp and early_succ_trop, same to mid_succ_ and late_succ
        if(climate_zone == 1)
        {
            if (!strcmp(data->title[spp],"early_succ_temp"))
@@ -571,22 +281,18 @@ void init_cohorts(patch** patchptr, UserData* data){
        }
        else
        {
-           if (!strcmp(data->title[spp],"early_succ"))
+           if (!strcmp(data->title[spp],"early_succ_trop"))
                continue;
-           if (!strcmp(data->title[spp],"mid_succ"))
+           if (!strcmp(data->title[spp],"mid_succ_trop"))
                continue;
-           if (!strcmp(data->title[spp],"late_succ"))
+           if (!strcmp(data->title[spp],"late_succ_trop"))
                continue;
        }
        
     
 #if LANDUSE
       /* plant gasses only cropland, and at much higher density */
-      if (cp->landuse == LU_CROP) { 
-//         if (spp < 2) {
-//            nindivs *= 100.0;
-//         }
-          //test_crop
+      if (cp->landuse == LU_CROP) {
           if (spp < 2) {
               nindivs *= 20.0;  // 10.0
           }
@@ -595,8 +301,7 @@ void init_cohorts(patch** patchptr, UserData* data){
          }
       }
        
-       //test_larch
-       // may cause carbon leakage
+       // Increase seed density of secondary land
        if (cp->landuse == LU_SCND) {
            if (spp > 1) {
                nindivs *= 10.0;
@@ -655,10 +360,9 @@ void create_cohort (unsigned int spp, double nindivs, double hite, double dbh,
    newcohort->pt       = data->pt[spp];
    newcohort->gpp      = 0.0;
    newcohort->npp      = 0.0;
-    //checkstep
-    newcohort->gpp_avg = 0.0;
-    newcohort->npp_avg = 0.0;
-    newcohort->md_avg = 0.0;
+   newcohort->gpp_avg  = 0.0;
+   newcohort->npp_avg  = 0.0;
+   newcohort->md_avg   = 0.0;
    newcohort->npp2     = 0.0;
    newcohort->md       = 0.0;
    newcohort->fs_open  = 1.0;
@@ -688,17 +392,6 @@ void create_cohort (unsigned int spp, double nindivs, double hite, double dbh,
    newcohort->bdead = bdead;
    newcohort->balive = balive;
    
-   // if(data->restart) {
-   //   if(data->allometry_type == 0) {
-   //      newcohort->hite = (data->hgt_min[spp]); 
-   //   } else {
-   //      newcohort->hite = (data->min_hgt[spp]);
-   //   }             
-   //   newcohort->dbh = newcohort->Dbh(data);
-   //   newcohort->bdead = newcohort->Bdead(data);
-   //   newcohort->balive= newcohort->Bleaf(data)*(1.0 + data->q[spp] + data->qsw[spp]*newcohort->hite);
-   // }
-
    newcohort->b = newcohort->balive + newcohort->bdead;
    newcohort->bl = (1.0 / (1.0 + data->q[spp] + data->qsw[newcohort->species] * newcohort->hite) ) * newcohort->balive;
    newcohort->blv = 0.0;
@@ -739,21 +432,8 @@ void create_cohort (unsigned int spp, double nindivs, double hite, double dbh,
     
 
    insert_cohort(&newcohort, &(*patchptr)->tallest, &(*patchptr)->shortest,data);
-   if(data->num_Vm0  > 1) {
-      // Multiple mechanism file case
-      newcohort->get_cohort_vm0(data);      
-      newcohort->Vm0_bin = newcohort->get_cohort_vm0_bin(newcohort->Vm0, data);
-   } else {
-      // Single mechanism file case
-      newcohort->Vm0_bin = 0;
-   }
 }
 
-//test_mor
-//void create_cohort_test_mor(unsigned int spp, double nindivs, double hite, double dbh,
-//                            double balive, double bdead, double bl, double br, double blv,
-//                            double bsw, patch** patchptr, UserData* data) {
-//test_restart
 void create_cohort_test_mor(unsigned int spp, double nindivs, double hite, double dbh,
                             double balive, double bdead, double bl, double br, double blv,
                             double bsw, patch** patchptr, double cb[N_CLIMATE], double cb_toc[N_CLIMATE],UserData* data) {
@@ -781,15 +461,10 @@ void create_cohort_test_mor(unsigned int spp, double nindivs, double hite, doubl
     newcohort->fs_open  = 1.0;
     newcohort->fsn      = 1.0;
     newcohort->fsw      = 1.0;
-//    for(size_t i=0; i<N_CLIMATE; i++) {
-//        newcohort->cbr[i]    = 1.0;
-//        newcohort->cb[i]     = 1.0;
-//        newcohort->cb_toc[i] = 1.0;
-//    }
-    //test_restart
+
     for(size_t i=0; i<N_CLIMATE; i++) {
         newcohort->cbr[i]    = 1.0;
-        newcohort->cb[i]     =cb[i];
+        newcohort->cb[i]     = cb[i];
         newcohort->cb_toc[i] = cb_toc[i];
     }
     
@@ -811,18 +486,6 @@ void create_cohort_test_mor(unsigned int spp, double nindivs, double hite, doubl
     /* calculate size of biomass compartments */
     newcohort->bdead = bdead;
     newcohort->balive = balive;
-    
-    // if(data->restart) {
-    //   if(data->allometry_type == 0) {
-    //      newcohort->hite = (data->hgt_min[spp]);
-    //   } else {
-    //      newcohort->hite = (data->min_hgt[spp]);
-    //   }
-    //   newcohort->dbh = newcohort->Dbh(data);
-    //   newcohort->bdead = newcohort->Bdead(data);
-    //   newcohort->balive= newcohort->Bleaf(data)*(1.0 + data->q[spp] + data->qsw[spp]*newcohort->hite);
-    // }
-    
     newcohort->b = newcohort->balive + newcohort->bdead;
     
     newcohort->bl = bl;
@@ -864,14 +527,6 @@ void create_cohort_test_mor(unsigned int spp, double nindivs, double hite, doubl
     
     
     insert_cohort(&newcohort, &(*patchptr)->tallest, &(*patchptr)->shortest,data);
-    if(data->num_Vm0  > 1) {
-        // Multiple mechanism file case
-        newcohort->get_cohort_vm0(data);
-        newcohort->Vm0_bin = newcohort->get_cohort_vm0_bin(newcohort->Vm0, data);
-    } else {
-        // Single mechanism file case
-        newcohort->Vm0_bin = 0;
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -903,95 +558,25 @@ void terminate_cohorts(cohort** ptallest, cohort** pshortest, UserData* data){
     ///CarbonConserve
     patch* currentp = NULL;
     double fast_litter = 0.0,fast_litter_n=0.0,struct_litter=0.0;
-    
-    //test_larch
-    data->btol = 0.0001;  // 0.0001
-    
+
     if(currentc!=NULL)
     {
         currentp= currentc->patchptr;
-
-        //test_larch
-//        if(!currentp->siteptr->is_tropical_site)
-//        {
-//            //data->btol = 0.000001;   //0.00000001
-//            data->btol = currentp->siteptr->site_total_biomass * 1e-5;
-//            data->btol   = (data->btol > 0.00000001)? data->btol : 0.00000001;
-//        }
-//        else
-//            data->btol = 0.0001;  // 0.0001
-        
-        if(currentp->siteptr->climate_zone==1)
-            data->btol = 0.0001;
-        else if (currentp->siteptr->climate_zone==2)
-        {
-//            data->btol = 0.000001; //0.000001
-            data->btol = currentp->siteptr->site_total_biomass * 1e-5;
-            data->btol   = (data->btol > 0.00000001)? data->btol : 0.00000001;
-        }
-        else
-        {
-            data->btol = currentp->siteptr->site_total_biomass * 1e-5;
-            data->btol   = (data->btol > 0.00000001)? data->btol : 0.00000001;
-        }
-        //test_mor
-//        if(currentp->total_biomass<1e-10)
-//            data->btol = 1e-7;  // 1e-5
-//        else
-//            data->btol = currentp->total_biomass*5e-5;
-        
-        data->btol = 1e-5;
-
-//        data->btol = currentp->siteptr->site_total_biomass * 1e-5;
-//        data->btol   = (data->btol > 0.00000001)? data->btol : 0.00000001;
     }
-//    double btol_backup = data->btol;
+    
    while (currentc != NULL){
       cohort* nextc = currentc->shorter;
       /***  cohort size is below threshold   ***/
       /***  remove & adjust size relations among remaining cohorts  ***/
-       //test_larch
-//       if(currentc->species==1)
-//           data->btol = 1e-9;
-//       else
-//           data->btol = btol_backup;
-       
-//      if(((currentc->nindivs/currentc->patchptr->area)*currentc->b) < data->btol){
-       //test_mor
+
        bool terminate_cc = false;
-       if(currentc->siteptr->climate_zone==1)
-       {
-           //test_mor2
-//           data->btol = 0.0001;
-           data->btol = 1e-5;
-           if(((currentc->nindivs/currentc->patchptr->area)*currentc->b) < data->btol)
-               terminate_cc = true;
-       }
-       else
-       {
-           //test_mor2
-//           data->btol = 1e-5;
-//           if(currentc->nindivs<1e-10)
-//               terminate_cc = true;
-//           if((((currentc->nindivs/currentc->patchptr->area)*currentc->b) < data->btol) && (currentc->hite>data->repro_ht_thresh[currentc->species]))
-//               terminate_cc = true;
-//
-//
-           if(((currentc->nindivs/currentc->patchptr->area)*currentc->b) < data->btol)
-               terminate_cc = true;
-       }
+       
+       if(((currentc->nindivs/currentc->patchptr->area)*currentc->b) < data->btol)
+           terminate_cc = true;
        
        
        if(terminate_cc){
           /// Collect carbon back to soil when cohort is terminating
-//          fast_litter += data->fraction_balive_2_fast*currentc->balive*currentc->nindivs/currentp->area;
-//          fast_litter += (currentc->p[0]+currentc->p[1])*(1-data->sd_mort)*(data->deltat*COHORT_FREQ)*currentc->nindivs/currentp->area;
-//          fast_litter_n += data->fraction_balive_2_fast*(1.0/data->c2n_leaf[currentc->species])*currentc->balive*currentc->nindivs/currentp->area;
-//          fast_litter_n +=(1.0/data->c2n_leaf[currentc->species])*(currentc->p[0]+currentc->p[1])*(1-data->sd_mort)*(data->deltat*COHORT_FREQ)*currentc->nindivs/currentp->area;
-//          struct_litter += currentc->bdead*currentc->nindivs/currentp->area;
-//          struct_litter +=(1.0-data->fraction_balive_2_fast)*currentc->balive*currentc->nindivs/currentp->area;
-           
-           //test_crop, should uncomment the above lines
            double tmp_sd_mort = 0.0;
 #if LANDUSE
            if(currentp->landuse==LU_CROP)
@@ -1009,8 +594,7 @@ void terminate_cohorts(cohort** ptallest, cohort** pshortest, UserData* data){
            struct_litter += currentc->bdead*currentc->nindivs/currentp->area;
            struct_litter +=(1.0-data->fraction_balive_2_fast)*currentc->balive*currentc->nindivs/currentp->area;
            
-           
-               
+        
          if (currentc->taller == NULL) *ptallest = currentc->shorter;
          else (currentc->taller)->shorter = currentc->shorter;
          if (currentc->shorter == NULL) *pshortest = currentc->taller;
@@ -1088,22 +672,6 @@ void split_cohorts (patch** patchptr, UserData* data) {
 
    patch* currentp = *patchptr;
    while(currentp != NULL){
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       cohort* mlcc = NULL;
-       double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0;
-       double all_tb_after = 0.0, all_sc_after =0.0, all_tc_after =0.0, all_repro = 0.0;
-       double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
-       mlcc = currentp->shortest;
-       while (mlcc!=NULL) {
-           all_tb_before += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-           all_repro += (mlcc->p[0]+mlcc->p[1])*mlcc->nindivs/currentp->area;
-           mlcc = mlcc->taller;
-       }
-       all_sc_before = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-       all_tc_before = all_tb_before + all_sc_before;
-#endif
-       
       cohort* currentc=currentp->tallest;
       while(currentc != NULL){
          if((currentc->lai > data->lai_tol)){           
@@ -1137,29 +705,6 @@ void split_cohorts (patch** patchptr, UserData* data) {
          } /* end if on lai */
          currentc=currentc->shorter;
       }  /*  end loop over cohorts */
-       
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       mlcc = currentp->shortest;
-       while (mlcc!=NULL) {
-           all_tb_after += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-           mlcc = mlcc->taller;
-       }
-       all_sc_after = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-       all_tc_after = all_tb_after + all_sc_after;
-
-       actual_dt_tc = all_tc_after-all_tc_before;
-       esti_dt_tc = (currentp->npp_avg-currentp->rh_avg-(1.0-data->sd_mort)*all_repro)*data->deltat;
-       
-       if (abs(all_tc_after-all_tc_before)>1e-9)
-       {
-           printf("Carbon leakage in split_cohorts : imbalance    %.15f patch_tc_af %.15f patch_tc_bf %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-           printf("                                : patch_sc_bf  %.15f patch_tb_bf %.15f\n",all_sc_before,all_tb_before);
-           printf("                                : patch_sc_af  %.15f patch_tb_af %.15f\n",all_sc_after,all_tb_after);
-           printf("                                : actual_dt_tc %.15f esti_dt_tc  %.15f\n",actual_dt_tc,esti_dt_tc);
-           printf(" --------------------------------------------------------------------------------------\n");
-       }
-#endif
       currentp=currentp->older;
    }   /* end loop over patches */
 }
@@ -1270,22 +815,6 @@ void fuse_cohorts (patch** patchptr, UserData* data) {
    patch* cp = *patchptr;
    /* loop over all cohorts */
    while (cp != NULL) {
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       cohort* mlcc = NULL;
-       double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0;
-       double all_tb_after = 0.0, all_sc_after =0.0, all_tc_after =0.0, all_repro = 0.0;
-       double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
-       mlcc = cp->shortest;
-       while (mlcc!=NULL) {
-           all_tb_before += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/cp->area;
-           all_repro += (mlcc->p[0]+mlcc->p[1])*mlcc->nindivs/cp->area;
-           mlcc = mlcc->taller;
-       }
-       all_sc_before = cp->fast_soil_C+cp->slow_soil_C+cp->structural_soil_C+cp->passive_soil_C;
-       all_tc_before = all_tb_before + all_sc_before;
-#endif
-    
       cohort* cc = cp->tallest;
       while (cc != cp->shortest) {
          cohort* nextc = cc->shorter;
@@ -1386,30 +915,6 @@ void fuse_cohorts (patch** patchptr, UserData* data) {
          }
 
       } /* end cohort loop */
-       
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       mlcc = cp->shortest;
-       while (mlcc!=NULL) {
-           all_tb_after += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/cp->area;
-           mlcc = mlcc->taller;
-       }
-       all_sc_after = cp->fast_soil_C+cp->slow_soil_C+cp->structural_soil_C+cp->passive_soil_C;
-       all_tc_after = all_tb_after + all_sc_after;
-       
-       actual_dt_tc = all_tc_after-all_tc_before;
-       esti_dt_tc = (cp->npp_avg-cp->rh_avg-(1.0-data->sd_mort)*all_repro)/12.0;
-       
-       if (abs(all_tc_after-all_tc_before)>1e-9)
-       {
-           printf("Carbon leakage in fuse_cohorts  : imbalance    %.15f patch_tc_af %.15f patch_tc_bf %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-           printf("                                : patch_sc_bf  %.15f patch_tb_bf %.15f\n",all_sc_before,all_tb_before);
-           printf("                                : patch_sc_af  %.15f patch_tb_af %.15f\n",all_sc_after,all_tb_after);
-           printf("                                : actual_dt_tc %.15f esti_dt_tc  %.15f\n",actual_dt_tc,esti_dt_tc);
-           printf(" --------------------------------------------------------------------------------------\n");
-       }
-#endif
-
       cp = cp->older;
    } /* ends patch loop */
 
@@ -1519,74 +1024,11 @@ void insert_cohort (cohort** pcurrentc, cohort** ptallest,
 //! @return 
 ////////////////////////////////////////////////////////////////////////////////
 void reproduction (unsigned int t, patch** patchptr, UserData* data) {
-
-//   patch* cp = *patchptr;
-//#if LANDUSE
-//   site* cs = cp->siteptr;
-//#endif
-//
-//
-//   /* for each target patch */
-//   patch* target = cp;
-//   while (target != NULL) {
-//      /* goto every other patch */
-//      patch* source = cp;
-//      while (source !=NULL) {
-//         /* add in repro from all cohorts weighted by the fraction of total area that is the focal patch */
-//         cohort* cc = source->tallest;
-//         while (cc != NULL) {
-//            /* global dispersal */
-//            size_t spp = cc->species;
-//
-//#if LANDUSE
-//            /* this says dispersal stays within landuse type      */
-//            /* first term is abs amount produced                  */
-//            /* second term is fraction that lands on target site  */
-//            /* last term converts xamount to amount per unit area */
-//            target->repro[spp] += ((data->m[spp] * cc->nindivs
-//                                    * (1.0 - data->sd_mort) * cc->p[0])
-//                                   * (target->area / (cs->area_fraction[target->landuse] * data->area))
-//                                   / (target->area)) * (data->deltat*COHORT_FREQ);
-//#else
-//            /* this assumes only one landuse type */
-//            target->repro[spp] += ((data->m[spp] * cc->nindivs
-//                                    * (1.0 - data->sd_mort) * cc->p[0])
-//                                   * (target->area / (data->area)) / (target->area)) * (data->deltat*COHORT_FREQ);
-//#endif
-//            if(source==target) /* if source = target add in local dispersal */
-//               target->repro[spp] += (cc->nindivs * ((1.0 - data->m[spp])
-//                                                     * (1.0 - data->sd_mort)
-//                                                     * cc->p[0] + cc->p[1])
-//                                      / (target->area)) * (data->deltat*COHORT_FREQ);
-//
-//            cc = cc->shorter;
-//         }
-//         source = source->older;
-//      }
-//      target = target->older;
-//   }  /* end loop over targets */
-//
-//    ///CarbonConserve
-//    /// Reset p biomass as zero as all have been put into repro.
-//    /// If not reset here, problem will occur in terminate_cohort in patct_dynamic as cohorts still carry biomass for reproduction
-//    cp = *patchptr;
-//    while (cp!=NULL) {
-//        cohort* cc = cp->shortest;
-//        while (cc!=NULL) {
-//            cc->p[0] = 0.0;
-//            cc->p[1] = 0.0;
-//            cc = cc->taller;
-//        }
-//        cp = cp->older;
-//    }
-    
-    //test_crop
     patch* cp = *patchptr;
 #if LANDUSE
     site* cs = cp->siteptr;
 #endif
     
-    //test_crop
     double tmp_sd_mort = 0.0;
     tmp_sd_mort = data->sd_mort;
 #if LANDUSE
@@ -1613,21 +1055,13 @@ void reproduction (unsigned int t, patch** patchptr, UserData* data) {
                 /* first term is abs amount produced                  */
                 /* second term is fraction that lands on target site  */
                 /* last term converts xamount to amount per unit area */
-                target->repro[spp] += ((data->m[spp] * cc->nindivs
-                                        * (1.0 - tmp_sd_mort) * cc->p[0])
-                                       * (target->area / (cs->area_fraction[target->landuse] * data->area))
-                                       / (target->area)) * (data->deltat*COHORT_FREQ);
+                target->repro[spp] += ((data->m[spp] * cc->nindivs * (1.0 - tmp_sd_mort) * cc->p[0]) * (target->area / (cs->area_fraction[target->landuse] * data->area)) / (target->area)) * (data->deltat*COHORT_FREQ);
 #else
                 /* this assumes only one landuse type */
-                target->repro[spp] += ((data->m[spp] * cc->nindivs
-                                        * (1.0 - tmp_sd_mort) * cc->p[0])
-                                       * (target->area / (data->area)) / (target->area)) * (data->deltat*COHORT_FREQ);
+                target->repro[spp] += ((data->m[spp] * cc->nindivs * (1.0 - tmp_sd_mort) * cc->p[0]) * (target->area / (data->area)) / (target->area)) * (data->deltat*COHORT_FREQ);
 #endif
                 if(source==target) /* if source = target add in local dispersal */
-                    target->repro[spp] += (cc->nindivs * ((1.0 - data->m[spp])
-                                                          * (1.0 - tmp_sd_mort)
-                                                          * cc->p[0] + cc->p[1])
-                                           / (target->area)) * (data->deltat*COHORT_FREQ);
+                    target->repro[spp] += (cc->nindivs * ((1.0 - data->m[spp]) * (1.0 - tmp_sd_mort) * cc->p[0] + cc->p[1]) / (target->area)) * (data->deltat*COHORT_FREQ);
                 
                 cc = cc->shorter;
             }

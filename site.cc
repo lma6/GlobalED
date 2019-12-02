@@ -129,205 +129,77 @@ double compute_dyl_factor (double lat, double day) {
    return factor;
 }
 
-bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_period, int light_index, UserData* data)
+bool SiteData::compute_mech(int pt, int spp, double Vm0, int time_period, int light_index, UserData* data)
 {
-    double farquhar_results[6];
-    double shade=0;
-    double Vcmax25=Vm0;
-    double tmp=0,hum=0,swd=0,windspeed=0,CO2=0,Pa=101.3,Tg=25.0,Ts=0;
+   double farquhar_results[6];
+   double shade=0;
+   double Vcmax25=Vm0;
+   double tmp=0,hum=0,swd=0,windspeed=0,CO2=0,Pa=101.3,Tg=25.0,Ts=0;
     
-    if (data->light_reg)
-        Vcmax25 *= pow(dyl_factor[time_period],2.0);
+   if (data->light_reg)
+      Vcmax25 *= pow(dyl_factor[time_period],2.0);
     
-    shade=light_levels[spp][light_index];
-    tf_air[spp][time_period]=0;
-    tf_soil[spp][time_period]=0;
-    An[spp][time_period][light_index]=0;
-    E[spp][time_period][light_index]=0;
-    Anb[spp][time_period][light_index]=0;
-    Eb[spp][time_period][light_index]=0;
-    
-//    double tmp1=25.0,Ts1=25.0,hum1=0.02,swd1=100,Tg1=30.0,CO21=400,windspeed1=2.0,shade1=1.0;
-//
-//    for (double Vcmax25=6;Vcmax25<=100;Vcmax25+=2)
-//    {
-//        Farquhar_couple(0,1,data,tmp1,Ts1,hum1,swd1,Tg1,CO21,windspeed1,Pa,shade1,Vcmax25,farquhar_results);
-//        tf_air[spp][time_period]/=24.0;
-//        tf_soil[spp][time_period]/=24.0;
-//        double An1 =farquhar_results[1]*3600.0*360.0*24/1e3;
-//        double E1=farquhar_results[2]*3600.0*540.0*24/1e3;
-//        double Anb1=farquhar_results[3]*3600.0*360.0*24/1e3;
-//        double Eb1=farquhar_results[4]*3600.0*540.0*24/1e3;
-//        printf("Vcmax %f An %f E %f Anb %f Eb %f \n",Vcmax25,An1,E1,Anb1,Eb1);
-//    }
-//    exit(0);
-    
-    
+   shade=light_levels[spp][light_index];
+   tf_air[spp][time_period]=0;
+   tf_soil[spp][time_period]=0;
+   An[spp][time_period][light_index]=0;
+   E[spp][time_period][light_index]=0;
+   Anb[spp][time_period][light_index]=0;
+   Eb[spp][time_period][light_index]=0;
+   
 
-#if CPOUPLE_VcmaxDownreg
-//    double cumuLAI=log(shade)/(-1.0/(data->cohort_shading*data->L_extinct));   //Derive cumulative LAI that results in the light level
-//    double Kn = exp(0.00963*data->Vm0_max[spp]* - 2.43);        //Lloyd et al 2011
-//    cumuLAI/=2.0;    //Suggestion from get_cohort_vm0 function in cohort.cc that only half LAI contributes to shading. --Lei
-//    Vcmax25=data->Vm0_max[spp]*exp(-Kn*cumuLAI);   //Downregulation from original defined vcmax of each species
-//    if (shade<1e-5) Vcmax25=0;
-//    printf("Dwonregulate Vcmax cumuLAI %f lite %f Vcmax25 %f %f %d\n",cumuLAI,shade,data->Vm0_max[spp],Vcmax25,light_index);
-#endif
-    
-//#if COUPLE_MERRA2_LUT
-    if(data->MERRA2_LUT)
-    {
-//    if (1-is_filled_LUT[data->MERRA2_timestamp-1][spp][time_period])  ////if MECH LUT has not been computed before
-//    {
-//        //Compute for all co2 and light combination
-//        double tmp_airtemp=0,tmp_soiltemp=0,tmp_hum=0,tmp_swd=0,tmp_windspeed=0,tmp_co2=0,tmp_shade=0;
-//        for (size_t lite_i=0;lite_i<N_bins_LUT_LITE;lite_i++)
-//        {
-//            double tmp_An=0,tmp_Anb=0,tmp_E=0,tmp_Eb=0,tmp_tf_air=0,tmp_tf_soil=0;
-//            for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
-//            {
-//                tmp_airtemp=data->global_tmp[mon][globY_][globX_];
-//                tmp_hum=data->global_hum[mon][globY_][globX_];
-//                tmp_swd=data->global_swd[mon][globY_][globX_];
-//                tmp_windspeed=data->global_windspeed[mon][globY_][globX_];
-//                tmp_soiltemp=data->global_soiltmp[mon][globY_][globX_];
-//                if(data->mechanism_year<1850)
-//                    tmp_co2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
-//                else if(data->mechanism_year>=1850 and data->mechanism_year<1950)
-//                    tmp_co2=(280.0+0.314*(data->mechanism_year-1850))/390.0*data->global_CO2[mon][globY_][globX_];
-//                else if(data->mechanism_year>=1950 and data->mechanism_year<2001)
-//                    tmp_co2=(311+1.290*(data->mechanism_year-1950))/390.0*data->global_CO2[mon][globY_][globX_];
-//                else
-//                    tmp_co2=data->global_CO2[mon][globY_][globX_];
-//
-//                tmp_shade=light_levels[spp][LITE_IDX[lite_i]];
-//
-//                double tmp_Tg=0;
-//                for (size_t mon1=time_period*24;mon1<time_period*24+24;mon1++)
-//                {
-//                    tmp_Tg+=data->global_tmp[mon1][globY_][globX_];
-//                }
-//                tmp_Tg/=24.0;
-//
-//                Farquhar_couple(pt,spp,data,tmp_airtemp,tmp_soiltemp,tmp_hum,tmp_swd,tmp_Tg,tmp_co2,tmp_windspeed,Pa,tmp_shade,Vcmax25,farquhar_results);
-//
-//                tmp_tf_air+=farquhar_results[0];
-//                tmp_tf_soil+=farquhar_results[5];
-//                tmp_An+=farquhar_results[1];
-//                tmp_E+=farquhar_results[2];
-//                tmp_Anb+=farquhar_results[3];
-//                tmp_Eb+=farquhar_results[4];
-//            }
-//            tf_LUT_air[data->MERRA2_timestamp-1][spp][time_period]=tmp_tf_air/24.0;
-//            tf_LUT_soil[data->MERRA2_timestamp-1][spp][time_period]=tmp_tf_soil/24.0;
-//            An_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_An*3600.0*360.0;
-//            E_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_E*3600.0*540.0;
-//            Anb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_Anb*3600.0*360.0;
-//            Eb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i]=tmp_Eb*3600.0*540.0;
-//        }
-//        //flag for this spp at MERRA2_timestamp and time_period, avoid repeating computation
-//        is_filled_LUT[data->MERRA2_timestamp-1][spp][time_period]=1;
-//        //printf("Finished computing of LUT lat %d lon %d mechyear %d timestamp %d mon %d spp %d co2 %f \n",globY_,globX_,data->mechanism_year,data->MERRA2_timestamp-1,time_period,spp,tmp_co2);
-//        //exit(0);
-//    }
-//    if (An_LUT[data->MERRA2_timestamp-1][spp][time_period][0]<-1000)
-//    {
-//        printf("Error in An_LUT initilization\n");
-//        exit(0);
-//    }
-//    int lite_i=0,lite_i_1=0; //co2_i_1 and co2_i are left and right points for linear interpolation, same to lite_i and lite_i_1
-//    while (LITE_IDX[lite_i]<=light_index and lite_i<N_bins_LUT_LITE)
-//    {
-//        lite_i++;
-//    }
-//    if (lite_i==0) lite_i_1=0;  else    lite_i_1=lite_i-1;
-//    double weight_lite=(LITE_IDX[lite_i]-light_index)/(LITE_IDX[lite_i]-LITE_IDX[lite_i-1]);
-//    An[spp][time_period][light_index]=weight_lite*An_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
-//                                    +(1-weight_lite)*An_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
-//
-//    Anb[spp][time_period][light_index]=weight_lite*Anb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
-//                                        +(1-weight_lite)*Anb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
-//
-//    E[spp][time_period][light_index]=weight_lite*E_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
-//                                    +(1-weight_lite)*E_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
-//
-//    Eb[spp][time_period][light_index]=weight_lite*Eb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i_1]
-//                                    +(1-weight_lite)*Eb_LUT[data->MERRA2_timestamp-1][spp][time_period][lite_i];
-//
-//    tf_air[spp][time_period]=tf_LUT_air[data->MERRA2_timestamp-1][spp][time_period];
-//    tf_soil[spp][time_period]=tf_LUT_soil[data->MERRA2_timestamp-1][spp][time_period];
+   for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
+   {
+      tmp=data->global_tmp[mon][globY_][globX_];
+      hum=data->global_hum[mon][globY_][globX_];
+      swd=data->global_swd[mon][globY_][globX_];
+      windspeed=data->global_windspeed[mon][globY_][globX_];
+      Ts=data->global_soiltmp[mon][globY_][globX_];
+        
+      if (data->do_yearly_mech)
+      {
+         if(data->mechanism_year<1850)
+            CO2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
+         else if(data->mechanism_year>=1850 and data->mechanism_year<1950)
+            CO2=(280.0+0.314*(data->mechanism_year-1850))/390.0*data->global_CO2[mon][globY_][globX_];
+         else if(data->mechanism_year>=1950 and data->mechanism_year<2001)
+            CO2=(311+1.290*(data->mechanism_year-1950))/390.0*data->global_CO2[mon][globY_][globX_];
+         else
+            CO2=data->global_CO2[mon][globY_][globX_];
+      }
+      else if (data->single_year)
+      {
+          CO2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
+      }
+        
+      //As growth temperature defined in Lombardozzi et all 2015 and Atkin et al 2008 is the preceding 10 days running mean of air temperature, here for simplicity, use mean temperature of current month
+      Tg=0;
+      for (size_t mon1=time_period*24;mon1<time_period*24+24;mon1++)
+      {
+          Tg+=data->global_tmp[mon1][globY_][globX_];
+      }
+      Tg/=24.0;
+     
 
-//#else  //COUPLE_MERRA2_LUT
-    }
-    else
-    {
-        for (size_t mon=time_period*24;mon<time_period*24+24;mon++)
-        {
-            tmp=data->global_tmp[mon][globY_][globX_];
-            hum=data->global_hum[mon][globY_][globX_];
-            swd=data->global_swd[mon][globY_][globX_];
-            windspeed=data->global_windspeed[mon][globY_][globX_];
-            Ts=data->global_soiltmp[mon][globY_][globX_];
-            
-            if (data->do_yearly_mech)
-            {
-                if(data->mechanism_year<1850)
-                    CO2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
-                else if(data->mechanism_year>=1850 and data->mechanism_year<1950)
-                    CO2=(280.0+0.314*(data->mechanism_year-1850))/390.0*data->global_CO2[mon][globY_][globX_];
-                else if(data->mechanism_year>=1950 and data->mechanism_year<2001)
-                    CO2=(311+1.290*(data->mechanism_year-1950))/390.0*data->global_CO2[mon][globY_][globX_];
-                else
-                    CO2=data->global_CO2[mon][globY_][globX_];
-            }
-            else if (data->single_year)
-            {
-                CO2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
-            }
-            
-            //As growth temperature defined in Lombardozzi et all 2015 and Atkin et al 2008 is the preceding 10 days running mean of air temperature, here for simplicity, use mean temperature of current month
-            Tg=0;
-            for (size_t mon1=time_period*24;mon1<time_period*24+24;mon1++)
-            {
-                Tg+=data->global_tmp[mon1][globY_][globX_];
-            }
-            Tg/=24.0;
-            
-            ////Currently, ambient CO2 concentration is 350 umol
-            //farquhar(Vcmax25,CO2,tmp,Ts,hum,swd,shade,pt,farquhar_results);
-            
-//            for(float tmp1=-10.0;tmp1<50.0;tmp1+=1.0)
-//            {
-//                pt = 0;
-//                swd = 600;
-//                double farquhar_results_c3[6];
-//                double farquhar_results_c4[6];
-//                double Vcmax25_c3 = 80.0;
-//                double Vcmax25_c4 = 40.0;
-////                tmp1 = 34.0;
-//                Farquhar_couple(0,spp,data,tmp1,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25_c3,farquhar_results_c3);
-//                Farquhar_couple(1,spp,data,tmp1,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25_c4,farquhar_results_c4);
-//                printf("tmp %.2f Ao_c3 %2.3f Ac_c3 %.3f Ao_c4 %.3f Ac_c4 %.3f\n",tmp1,farquhar_results_c3[1]*1e6,farquhar_results_c3[3]*1e6,farquhar_results_c4[1]*1e6,farquhar_results_c4[3]*1e6);
-//            }
-            
-            Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
+      Farquhar_couple(pt,spp,data,tmp,Ts,hum,swd,Tg,CO2,windspeed,Pa,shade,Vcmax25,farquhar_results);
 
-            tf_air[spp][time_period]+=farquhar_results[0];
-            tf_soil[spp][time_period]+=farquhar_results[5];
-            An[spp][time_period][light_index]+=farquhar_results[1];
-            E[spp][time_period][light_index]+=farquhar_results[2];
-            Anb[spp][time_period][light_index]+=farquhar_results[3];
-            Eb[spp][time_period][light_index]+=farquhar_results[4];
-            
-        }
-        tf_air[spp][time_period]/=24.0;
-        tf_soil[spp][time_period]/=24.0;
-        An[spp][time_period][light_index]*=3600.0*360.0;
-        E[spp][time_period][light_index]*=3600.0*540.0;
-        Anb[spp][time_period][light_index]*=3600.0*360.0;
-        Eb[spp][time_period][light_index]*=3600.0*540.0;
-    }
-    
-    return 1;
+      tf_air[spp][time_period]+=farquhar_results[0];
+      tf_soil[spp][time_period]+=farquhar_results[5];
+      An[spp][time_period][light_index]+=farquhar_results[1];
+      E[spp][time_period][light_index]+=farquhar_results[2];
+      Anb[spp][time_period][light_index]+=farquhar_results[3];
+      Eb[spp][time_period][light_index]+=farquhar_results[4];
+        
+   }
+  tf_air[spp][time_period]/=24.0;
+  tf_soil[spp][time_period]/=24.0;
+  An[spp][time_period][light_index]*=3600.0*360.0;
+  E[spp][time_period][light_index]*=3600.0*540.0;
+  Anb[spp][time_period][light_index]*=3600.0*360.0;
+  Eb[spp][time_period][light_index]*=3600.0*540.0;
+
+   return 1;
+   
 }
 ////////////////////////////////////////////////////////////////////////////////
 //! farquhar
@@ -337,6 +209,10 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int Vm0_bin, int time_p
 //! @return
 ////////////////////////////////////////////////////////////////////////////////
 bool SiteData::farquhar (double Vmax,double CA, double ta, double ts,double ea, double q, double shade, int C4, double outputs[6]) {
+   ////////////////
+   //The funtion is the one used Moorcroft et al 2001. Now it is deactived, all photosynthesis is call by compute_mech() and photosynthesis.cc
+   /////////////////
+   
     //printf("Cal farquhar V %f Ca %f ta %f ea %f q %f shade %f C4 %f\n",Vmax,CA,ta,ea,q,shade,C4);
     double shade_thresh, shade_thresh2;
     /* Scalers for turning boundary resitance */
@@ -813,66 +689,9 @@ void community_dynamics (unsigned int t, double t1, double t2,
    /*****************************/
    for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++) {
       patch* currentp = currents->youngest_patch[lu];
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       patch* mlcp = NULL;
-       double all_tb_before=0.0, all_sc_before=0.0, all_tc_before = 0.0, all_fire_emission_before = 0.0;
-       double all_tb_after =0.0, all_sc_after=0.0, all_tc_after = 0.0, all_fire_emission_after = 0.0;
-       double esti_dt_tc = 0.0, actual_dt_tc = 0.0;
-       double all_npp_avg = 0.0, all_rh_avg = 0.0;
-       mlcp =currents->youngest_patch[lu];
-       while (mlcp!=NULL) {
-           double tmp_tb = 0.0;
-           cohort* mlcc = mlcp->shortest;
-           while (mlcc!=NULL) {
-               tmp_tb+=(mlcc->balive+mlcc->bdead)*mlcc->nindivs;
-               mlcc=mlcc->taller;
-           }
-           tmp_tb /= mlcp->area;
-           all_tb_before += tmp_tb*mlcp->area/data->area;
-           all_sc_before += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
-           mlcp=mlcp->older;
-       }
-       all_fire_emission_before = 0.0;
-       all_tc_before = all_tb_before+all_sc_before;
-#endif
        
       if (currentp != NULL)
          cohort_dynamics(t, t1, t2, &currentp, outfile, data);
-       
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       mlcp =currents->youngest_patch[lu];
-       while (mlcp!=NULL) {
-           double tmp_tb = 0.0;
-           cohort* mlcc = mlcp->shortest;
-           while (mlcc!=NULL) {
-               tmp_tb+=(mlcc->balive+mlcc->bdead)*mlcc->nindivs;
-               //printf("Ck cohort_dynamics: cc_spp %d cc_b %.15f cc_n %.15f cp_b %.15f\n",mlcc->species,mlcc->balive+mlcc->bdead,mlcc->nindivs,tmp_tb);
-               mlcc=mlcc->taller;
-           }
-           tmp_tb /=mlcp->area;
-           all_tb_after += tmp_tb*mlcp->area/data->area;
-           all_sc_after += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
-           esti_dt_tc += (mlcp->npp_avg-mlcp->rh_avg)*data->deltat*mlcp->area/data->area;
-           all_npp_avg += mlcp->npp_avg*mlcp->area/data->area;
-           all_rh_avg += mlcp->rh_avg*mlcp->area/data->area;
-           all_fire_emission_after += mlcp->fire_emission*mlcp->area/data->area;
-           mlcp=mlcp->older;
-       }
-       all_tc_after = all_tb_after+all_sc_after;
-       actual_dt_tc = all_tc_after - all_tc_before;
-       esti_dt_tc = (all_npp_avg-all_rh_avg-all_fire_emission_after+all_fire_emission_before)*data->deltat;
-
-       if (abs(actual_dt_tc-esti_dt_tc)>1e-9)
-       {
-           printf("Carbon leakage in cohort_dynamics: imbalance  %.15f actual_dt_tc %.15f esti_dt_tc %.15f\n",actual_dt_tc-esti_dt_tc,actual_dt_tc,esti_dt_tc);
-           printf("                                 : site_tc_bf %.15f site_sc_bf   %.15f site_tb_bf %.15f\n",all_tc_before,all_sc_before,all_tb_before);
-           printf("                                 : site_tc_af %.15f site_sc_af   %.15f site_tb_af %.15f\n",all_tc_after,all_sc_after,all_tb_after);
-           printf("                                 : site_npp  %.15f site_rh   %.15f \n",all_npp_avg,all_rh_avg);
-           printf(" --------------------------------------------------------------------------------------\n");
-       }
-#endif
        
       if (currents->skip_site)
          return;
@@ -894,64 +713,7 @@ void community_dynamics (unsigned int t, double t1, double t2,
 
        for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++) {
           if ( (lu != LU_CROP) && (currents->youngest_patch[lu] != NULL) ) {
-#if CHECK_C_CONSERVE
-              ///CarbonConserve
-              patch* mlcp = NULL;
-              mlcp = currents->youngest_patch[lu];
-              double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before = 0.0, all_npp_avg_before = 0.0, all_rh_avg_before = 0.0, all_fire_emission_before = 0.0, all_area_before = 0.0;
-              double all_tb_after = 0.0, all_sc_after = 0.0, all_tc_after = 0.0, all_npp_avg_after = 0.0, all_rh_avg_after = 0.0, all_fire_emission_after = 0.0, all_area_after = 0.0;
-              double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
-              while (mlcp!=NULL) {
-                  cohort* mlcc = mlcp->shortest;
-                  double tmp_tb = 0.0;
-                  while (mlcc!=NULL) {
-                      tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
-                      mlcc = mlcc->taller;
-                  }
-                  all_tb_before +=tmp_tb*mlcp->area/data->area;
-                  all_sc_before += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
-                  all_npp_avg_before += mlcp->npp_avg*mlcp->area/data->area;
-                  all_rh_avg_before += mlcp->rh_avg*mlcp->area/data->area;
-                  all_fire_emission_before += mlcp->fire_emission*mlcp->area/data->area;
-                  all_area_before += mlcp->area;
-                  mlcp=mlcp->older;
-              }
-              all_tc_before = all_tb_before + all_sc_before;
-#endif
-              
              patch_dynamics(t, &(currents->youngest_patch[lu]), outfile, data);
-
-#if CHECK_C_CONSERVE
-              ///CarbonConserve
-              mlcp =currents->youngest_patch[lu];
-              while (mlcp!=NULL) {
-                  cohort* mlcc = mlcp->shortest;
-                  double tmp_tb = 0.0;
-                  while (mlcc!=NULL) {
-                      tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
-                      mlcc=mlcc->taller;
-                  }
-                  all_tb_after += tmp_tb*mlcp->area/data->area;
-                  all_sc_after += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
-                  esti_dt_tc += (mlcp->npp_avg-mlcp->rh_avg)*data->deltat*mlcp->area/data->area;
-                  all_npp_avg_after += mlcp->npp_avg*mlcp->area/data->area;
-                  all_rh_avg_after += mlcp->rh_avg*mlcp->area/data->area;
-                  all_fire_emission_after += mlcp->fire_emission*mlcp->area/data->area;
-                  all_area_after += mlcp->area;
-                  mlcp = mlcp->older;
-              }
-              all_tc_after = all_tb_after + all_sc_after + (all_fire_emission_after-all_fire_emission_before)*data->deltat*COHORT_FREQ;
-              actual_dt_tc = all_tc_after - all_tc_before;
-              
-              if (abs(all_tc_after-all_tc_before)>1e-9)
-              {
-                  printf("Carbon leakage in patch_dynamics : imbalance  %.15f site_tc_af %.15f site_tc_bf  %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-                  printf("                                 : site_sc_bf %.15f site_tb_bf %.15f site_npp_bf %.15f site_rh_bf %.15f site_fire_bf %.15f\n",all_sc_before,all_tb_before,all_npp_avg_before,all_rh_avg_before,all_fire_emission_before);
-                  printf("                                 : site_sc_af %.15f site_tb_af %.15f site_npp_af %.15f site_rh_af %.15f site_fire_af %.15f\n",all_sc_after,all_tb_after,all_npp_avg_after,all_rh_avg_after,all_fire_emission_after);
-                  printf("                                 : site_lat %.3f site_lon %.3f LU %d\n",currents->sdata->lat_,currents->sdata->lon_,lu);
-                  printf(" --------------------------------------------------------------------------------------\n");
-              }
-#endif
           }
        }
    } /*PATCH_DYNAMICS*/
@@ -960,86 +722,7 @@ void community_dynamics (unsigned int t, double t1, double t2,
    /************************************/
    /******* LANDUSE DYNAMICS ***********/
    /************************************/
-#if CHECK_C_CONSERVE
-    ///CarbonConserve
-    double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before = 0.0, all_npp_avg_before = 0.0, all_rh_avg_before = 0.0, all_fire_emission_before = 0.0;
-    double all_tb_after = 0.0, all_sc_after = 0.0, all_tc_after = 0.0, all_npp_avg_after = 0.0, all_rh_avg_after = 0.0, all_fire_emission_after = 0.0;
-    double all_forest_harv_c_before = 0.0, all_crop_harv_c_before = 0.0, all_past_harv_c_before = 0.0;
-    double all_forest_harv_c_after = 0.0, all_crop_harv_c_after = 0.0, all_past_harv_c_after = 0.0;
-    double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
-    for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++)
-    {
-        double tmp_all_tb = 0.0, tmp_all_sc = 0.0, tmp_all_tc = 0.0;
-        if (currents->youngest_patch[lu] != NULL)
-        {
-            patch* mlcp = currents->youngest_patch[lu];
-            while (mlcp!=NULL) {
-                cohort* mlcc = mlcp->shortest;
-                double tmp_tb = 0.0;
-                while (mlcc!=NULL) {
-                    tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
-                    mlcc = mlcc->taller;
-                }
-                all_tb_before +=tmp_tb*mlcp->area/data->area;
-                all_sc_before += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
-                all_npp_avg_before += mlcp->npp_avg*mlcp->area/data->area;
-                all_rh_avg_before += mlcp->rh_avg*mlcp->area/data->area;
-                all_fire_emission_before += mlcp->fire_emission*mlcp->area/data->area;
-                all_forest_harv_c_before += mlcp->forest_harvested_c * mlcp->area/data->area;
-                all_past_harv_c_before += mlcp->past_harvested_c * mlcp->area/data->area;
-                all_crop_harv_c_before += mlcp->crop_harvested_c * mlcp->area/ data->area;
-                tmp_all_tb += tmp_tb * mlcp->area/data->area;
-                tmp_all_sc +=(mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
-                mlcp=mlcp->older;
-            }
-            //printf("ck lu patches_bf LU %2d tb %.15f sc %.15f tc %.15f\n",lu,tmp_all_tb,tmp_all_sc,tmp_all_tb+tmp_all_sc);
-        }
-    }
-    all_tc_before = all_tb_before + all_sc_before + all_fire_emission_before*data->deltat;
-#endif
-    
    landuse_dynamics(t, &currents, data);
-    
-#if CHECK_C_CONSERVE
-    for (size_t lu=0; lu<N_LANDUSE_TYPES; lu++)
-    {
-        double tmp_all_tb = 0.0, tmp_all_sc = 0.0, tmp_all_tc = 0.0;
-        if (currents->youngest_patch[lu] != NULL)
-        {
-            patch* mlcp = currents->youngest_patch[lu];
-            while (mlcp!=NULL) {
-                cohort* mlcc = mlcp->shortest;
-                double tmp_tb = 0.0;
-                while (mlcc!=NULL) {
-                    tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/mlcp->area;
-                    mlcc = mlcc->taller;
-                }
-                all_tb_after +=tmp_tb*mlcp->area/data->area;
-                all_sc_after += (mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
-                all_npp_avg_after += mlcp->npp_avg*mlcp->area/data->area;
-                all_rh_avg_after += mlcp->rh_avg*mlcp->area/data->area;
-                all_fire_emission_after += mlcp->fire_emission*mlcp->area/data->area;
-                all_forest_harv_c_after += mlcp->forest_harvested_c * mlcp->area/data->area;
-                all_past_harv_c_after += mlcp->past_harvested_c * mlcp->area/data->area;
-                all_crop_harv_c_after += mlcp->crop_harvested_c * mlcp->area/ data->area;
-                tmp_all_tb += tmp_tb * mlcp->area/data->area;
-                tmp_all_sc +=(mlcp->fast_soil_C+mlcp->slow_soil_C+mlcp->structural_soil_C+mlcp->passive_soil_C)*mlcp->area/data->area;
-                mlcp=mlcp->older;
-            }
-        }
-        //printf("ck lu patches_af LU %2d tb %.15f sc %.15f tc %.15f\n",lu,tmp_all_tb,tmp_all_sc,tmp_all_tb+tmp_all_sc);
-    }
-    all_tc_after = all_tb_after + all_sc_after + (all_fire_emission_after + all_forest_harv_c_after-all_forest_harv_c_before + all_crop_harv_c_after-all_crop_harv_c_before + all_past_harv_c_after-all_past_harv_c_before)*data->deltat;
-    if (abs(all_tc_after-all_tc_before)>1e-9)
-    {
-        printf("Carbon leakage in landuse_dynamics : imbalance  %.15f site_tc_af %.15f site_tc_bf  %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-        printf("                                   : site_sc_bf %.15f site_tb_bf %.15f site_npp_bf %.15f site_rh_bf %.15f site_fr_bf %.15f site_f_hrC_bf %.15f site_p_hrC_bf %.15f site_c_hrC_bf %.15f\n",all_sc_before,all_tb_before,all_npp_avg_before,all_rh_avg_before,all_fire_emission_before,all_forest_harv_c_before,all_past_harv_c_before,all_crop_harv_c_before);
-        printf("                                   : site_sc_af %.15f site_tb_af %.15f site_npp_af %.15f site_rh_af %.15f site_fr_af %.15f site_f_hrC_af %.15f site_p_hrC_af %.15f site_c_hrC_af %.15f\n",all_sc_after,all_tb_after,all_npp_avg_after,all_rh_avg_after,all_fire_emission_after,all_forest_harv_c_after,all_past_harv_c_after,all_crop_harv_c_after);
-        printf("                                   : site_lat %.3f site_lon %.3f\n",currents->sdata->lat_,currents->sdata->lon_);
-        printf(" --------------------------------------------------------------------------------------\n");
-    }
-#endif
-    
 #endif
 
    if(data->cd_file) {
@@ -1141,7 +824,6 @@ void site::Update_FTS(unsigned int t){
       }
    }
    
-   
 }
 #endif
 
@@ -1201,22 +883,22 @@ void update_site (site** current_site, UserData* data) {
    cs->site_total_c                 = 0.0;
    /* c fluxes */
    cs->site_npp                     = 0.0;
-    cs->site_npp_avg                = 0.0;
+   cs->site_npp_avg                = 0.0;
    cs->site_nep                     = 0.0;
    cs->site_rh                      = 0.0;
-    cs->site_rh_avg                 =  0.0;
-    ///CarbonConserve
-    cs->site_fire_emission          = 0.0;
+   cs->site_rh_avg                 =  0.0;
+   ///CarbonConserve
+   cs->site_fire_emission          = 0.0;
 #ifdef LANDUSE
-    cs->site_product_emission       = 0.0;
-    cs->site_forest_harvest         = 0.0;
-    cs->site_yr1_decay_product_pool = 0.0;
-    cs->site_yr10_decay_product_pool = 0.0;
-    cs->site_yr100_decay_product_pool = 0.0;
-    cs->site_pasture_harvest        = 0.0;
-    cs->site_crop_harvest           = 0.0;
-    //test_crop
-    cs->site_total_repro_pool       = 0.0;
+   cs->site_product_emission       = 0.0;
+   cs->site_forest_harvest         = 0.0;
+   cs->site_yr1_decay_product_pool = 0.0;
+   cs->site_yr10_decay_product_pool = 0.0;
+   cs->site_yr100_decay_product_pool = 0.0;
+   cs->site_pasture_harvest        = 0.0;
+   cs->site_crop_harvest           = 0.0;
+   //test_crop
+   cs->site_total_repro_pool       = 0.0;
 #endif
    cs->site_dndt                    = 0.0;
    cs->site_aa_lai                  = 0.0;
@@ -1229,8 +911,8 @@ void update_site (site** current_site, UserData* data) {
    cs->site_aa_rh                   = 0.0;
 #ifdef ED
    cs->site_gpp                     = 0.0;
-    cs->site_gpp_avg                = 0.0;
-    cs->site_fs_open                 = 0.0;
+   cs->site_gpp_avg                = 0.0;
+   cs->site_fs_open                 = 0.0;
    cs->site_npp2                    = 0.0;
    cs->site_aa_gpp                  = 0.0;
    cs->site_aa_npp2                 = 0.0;
@@ -1244,25 +926,26 @@ void update_site (site** current_site, UserData* data) {
     
     //test_mor2
 #if SNOWPACK_SCHEME == 1
-    cs->site_total_snowpack = 0.0;
+   cs->site_total_snowpack = 0.0;
 #endif
    /* height */
    cs->site_avg_height              = 0.0;
+   cs->site_loreys_height           = 0.0;
 #endif
     
     for (size_t spp =0;spp<NSPECIES;spp++)
     {
-        int pt=0,light_index=0,Vm0_bin=0,sepcies=(int)spp;
+        int pt=0,light_index=0,sepcies=(int)spp;
         double Vm0=data->Vm0_max[spp];
         if (spp==0)
             pt = 1;
         else
             pt = 0;
         if (cs->sdata->An[spp][data->time_period][0]<-1000)
-            cs->sdata->compute_mech(pt,sepcies,Vm0,Vm0_bin,data->time_period,light_index,data);
+            cs->sdata->compute_mech(pt,sepcies,Vm0,data->time_period,light_index,data);
         
         if (cs->sdata->E[spp][data->time_period][0]<-1000)
-            cs->sdata->compute_mech(pt,sepcies,Vm0,0,data->time_period,light_index,data);
+            cs->sdata->compute_mech(pt,sepcies,Vm0,data->time_period,light_index,data);
             
         cs->Leaf_An_pot[spp] = 0.001*cs->sdata->An[spp][data->time_period][0]*12.0;  /// unit is kg C/m2/yr
         cs->Leaf_An_shut[spp] = 0.001*cs->sdata->Anb[spp][data->time_period][0]*12.0;
@@ -1295,19 +978,7 @@ void update_site (site** current_site, UserData* data) {
             break;
         }
     }
-    
-//    for (size_t mon=data->time_period*24;mon<data->time_period*24+24;mon++)
-//    {
-//        if(data->global_tmp[mon][cs->sdata->globY_][cs->sdata->globX_]<-20.0)
-//        {
-//            cs->is_frozen_early_succ = 1;
-//            cs->is_frozen_mid_succ = 1;
-//            cs->is_frozen_late_succ = 1;
-//            break;
-//        }
-//    }
-    
-    //test_mor should uncomment above block
+   
     for (size_t mon=data->time_period*24;mon<data->time_period*24+24;mon++)
     {
         if(data->global_tmp[mon][cs->sdata->globY_][cs->sdata->globX_]<-15.0)
@@ -1318,9 +989,7 @@ void update_site (site** current_site, UserData* data) {
             break;
         }
     }
-    
-    
-    //test_larch
+   
     //use climate to define tropical zone. where twelve months have mean temperature of at least 18 degree
     cs->is_tropical_site = 1;
     double annual_minimum_temperature = 100000.0;
@@ -1333,8 +1002,7 @@ void update_site (site** current_site, UserData* data) {
         if(cs->sdata->temp[mon] < annual_minimum_temperature)
             annual_minimum_temperature = cs->sdata->temp[mon];
     }
-    
-    //test_larch
+   
     cs->climate_zone = 0;
     //classify site climate zone based on Köppen climate classification scheme
     if(annual_minimum_temperature>18.0)  // tropical climate
@@ -1388,33 +1056,32 @@ void update_site (site** current_site, UserData* data) {
       cs->site_total_c            += cs->total_c[lu] * cs->area_fraction[lu];         
       /* c fluxes */
       cs->site_npp                += cs->npp[lu] * cs->area_fraction[lu];
-       cs->site_npp_avg             += cs->npp_avg[lu] * cs->area_fraction[lu];
+      cs->site_npp_avg             += cs->npp_avg[lu] * cs->area_fraction[lu];
       cs->site_nep                += cs->nep[lu] * cs->area_fraction[lu];
       cs->site_rh                 += cs->rh[lu] * cs->area_fraction[lu];
-       cs->site_rh_avg              += cs->rh_avg[lu] * cs->area_fraction[lu];
+      cs->site_rh_avg              += cs->rh_avg[lu] * cs->area_fraction[lu];
       cs->site_aa_npp             += cs->aa_npp[lu] * cs->area_fraction[lu];
       cs->site_aa_nep             += cs->aa_nep[lu] * cs->area_fraction[lu];
       cs->site_aa_rh              += cs->aa_rh[lu] * cs->area_fraction[lu];
       cs->site_dndt               += cs->dndt[lu]*cs->area_fraction[lu];
        
        ///CarbonConserve
-       cs->site_fire_emission       += cs->fire_emission[lu]*cs->area_fraction[lu];
+      cs->site_fire_emission       += cs->fire_emission[lu]*cs->area_fraction[lu];
 #ifdef LANDUSE
-       cs->site_product_emission    += cs->product_emission[lu]*cs->area_fraction[lu];
-       cs->site_forest_harvest      += cs->forest_harvest[lu]*cs->area_fraction[lu];
-       cs->site_yr1_decay_product_pool += cs->yr1_decay_product_pool[lu]*cs->area_fraction[lu];
-       cs->site_yr10_decay_product_pool += cs->yr10_decay_product_pool[lu]*cs->area_fraction[lu];
-       cs->site_yr100_decay_product_pool += cs->yr100_decay_product_pool[lu]*cs->area_fraction[lu];
-       cs->site_pasture_harvest     += cs->pasture_harvest[lu]*cs->area_fraction[lu];
-       cs->site_crop_harvest        += cs->crop_harvest[lu]*cs->area_fraction[lu];
-       //test_crop
-       cs->site_total_repro_pool    += cs->site_repro_pool[lu]*cs->area_fraction[lu];
+      cs->site_product_emission    += cs->product_emission[lu]*cs->area_fraction[lu];
+      cs->site_forest_harvest      += cs->forest_harvest[lu]*cs->area_fraction[lu];
+      cs->site_yr1_decay_product_pool += cs->yr1_decay_product_pool[lu]*cs->area_fraction[lu];
+      cs->site_yr10_decay_product_pool += cs->yr10_decay_product_pool[lu]*cs->area_fraction[lu];
+      cs->site_yr100_decay_product_pool += cs->yr100_decay_product_pool[lu]*cs->area_fraction[lu];
+      cs->site_pasture_harvest     += cs->pasture_harvest[lu]*cs->area_fraction[lu];
+      cs->site_crop_harvest        += cs->crop_harvest[lu]*cs->area_fraction[lu];
+      cs->site_total_repro_pool    += cs->site_repro_pool[lu]*cs->area_fraction[lu];
 #endif
        
 #ifdef ED
       cs->site_gpp                += cs->gpp[lu] * cs->area_fraction[lu];
-       cs->site_gpp_avg             += cs->gpp_avg[lu] * cs->area_fraction[lu];
-       cs->site_fs_open             += cs->fs_open[lu] * cs->area_fraction[lu];
+      cs->site_gpp_avg             += cs->gpp_avg[lu] * cs->area_fraction[lu];
+      cs->site_fs_open             += cs->fs_open[lu] * cs->area_fraction[lu];
       cs->site_npp2               += cs->npp2[lu] * cs->area_fraction[lu];
       cs->site_aa_gpp             += cs->aa_gpp[lu] * cs->area_fraction[lu];
       cs->site_aa_npp2            += cs->aa_npp2[lu] * cs->area_fraction[lu];
@@ -1422,8 +1089,8 @@ void update_site (site** current_site, UserData* data) {
          cs->nep2[lu] = cs->total_c[lu] - cs->last_total_c[lu];
          cs->last_total_c[lu] = cs->total_c[lu];
       }
-       cs->nep3[lu]=(cs->total_c[lu] - cs->last_total_c_last_month[lu])*N_CLIMATE;   /// Here multiply by N_CLIMATE as in npp_function, all fluxes is yearly based than monthly
-       cs->last_total_c_last_month[lu]=cs->total_c[lu];
+      cs->nep3[lu]=(cs->total_c[lu] - cs->last_total_c_last_month[lu])*N_CLIMATE;   /// Here multiply by N_CLIMATE as in npp_function, all fluxes is yearly based than monthly
+      cs->last_total_c_last_month[lu]=cs->total_c[lu];
       /* water */
       cs->site_total_water        += cs->water[lu] * cs->area_fraction[lu]; 
       cs->site_total_theta        += cs->theta[lu] * cs->area_fraction[lu];
@@ -1434,40 +1101,31 @@ void update_site (site** current_site, UserData* data) {
       cs->site_total_soil_evap    += cs->soil_evap[lu] * cs->area_fraction[lu];
  //test_mor2
 #if SNOWPACK_SCHEME == 1
-       cs->site_total_snowpack += cs->snowpack[lu] * cs->area_fraction[lu];
+      cs->site_total_snowpack += cs->snowpack[lu] * cs->area_fraction[lu];
 #endif
        
       /* height */
       cs->site_avg_height         += cs->lu_avg_height[lu] * cs->area_fraction[lu];
+      cs->site_loreys_height      += cs->lu_loreys_height[lu] * cs->area_fraction[lu];
 #endif
    }
    if (data->time_period == 0) {
       cs->site_nep2 = cs->site_total_c - cs->last_site_total_c;
       cs->last_site_total_c = cs->site_total_c;
    }
-    cs->site_nep3 = (cs->site_total_c- cs->last_site_total_c_last_month)*N_CLIMATE;   /// Here multiply by N_CLIMATE as in npp_function, all fluxes is yearly based than monthly
+   cs->site_nep3 = (cs->site_total_c- cs->last_site_total_c_last_month)*N_CLIMATE;   /// Here multiply by N_CLIMATE as in npp_function, all fluxes is yearly based than monthly
     
 #if LANDUSE
-//    // move this block to where is before refershing last_site_total_c_last_month
-//    cs->site_nep3_product = cs->site_total_c + cs->site_yr1_decay_product_pool+cs->site_yr10_decay_product_pool+cs->site_yr100_decay_product_pool;
-//    cs->site_nep3_product -= cs->last_site_total_c_last_month + cs->last_site_yr1_decay_product_pool + cs->last_site_yr10_decay_product_pool + cs->last_site_yr100_decay_product_pool;
-//    cs->site_nep3_product *= N_CLIMATE;
-//    cs->last_site_yr1_decay_product_pool = cs->site_yr1_decay_product_pool;
-//    cs->last_site_yr10_decay_product_pool = cs->site_yr10_decay_product_pool;
-//    cs->last_site_yr100_decay_product_pool = cs->site_yr100_decay_product_pool;
-    
-    //test_crop, should recommment the above lines
-    // move this block to where is before refershing last_site_total_c_last_month
-    cs->site_nep3_product = cs->site_total_c + cs->site_yr1_decay_product_pool+cs->site_yr10_decay_product_pool+cs->site_yr100_decay_product_pool+cs->site_total_repro_pool;
-    cs->site_nep3_product -= cs->last_site_total_c_last_month + cs->last_site_yr1_decay_product_pool + cs->last_site_yr10_decay_product_pool + cs->last_site_yr100_decay_product_pool+cs->last_site_total_repro_pool;
-    cs->site_nep3_product *= N_CLIMATE;
-    cs->last_site_yr1_decay_product_pool = cs->site_yr1_decay_product_pool;
-    cs->last_site_yr10_decay_product_pool = cs->site_yr10_decay_product_pool;
-    cs->last_site_yr100_decay_product_pool = cs->site_yr100_decay_product_pool;
-    cs->last_site_total_repro_pool = cs->site_total_repro_pool;
+   cs->site_nep3_product = cs->site_total_c + cs->site_yr1_decay_product_pool+cs->site_yr10_decay_product_pool+cs->site_yr100_decay_product_pool+cs->site_total_repro_pool;
+   cs->site_nep3_product -= cs->last_site_total_c_last_month + cs->last_site_yr1_decay_product_pool + cs->last_site_yr10_decay_product_pool + cs->last_site_yr100_decay_product_pool+cs->last_site_total_repro_pool;
+   cs->site_nep3_product *= N_CLIMATE;
+   cs->last_site_yr1_decay_product_pool = cs->site_yr1_decay_product_pool;
+   cs->last_site_yr10_decay_product_pool = cs->site_yr10_decay_product_pool;
+   cs->last_site_yr100_decay_product_pool = cs->site_yr100_decay_product_pool;
+   cs->last_site_total_repro_pool = cs->site_total_repro_pool;
 #endif
     
-    cs->last_site_total_c_last_month=cs->site_total_c;
+   cs->last_site_total_c_last_month=cs->site_total_c;
     
     
 #ifdef ED
@@ -1522,33 +1180,33 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
    cs->structural_soil_L[lu]       = 0.0;
 #endif
    cs->aa_lai[lu]                  = 0.0;
-    for (size_t i=0;i<N_LAI;i++)
-    {
-        cs->aa_lai_profile[i]=0;
-    }
+   for (size_t i=0;i<N_LAI;i++)
+   {
+      cs->aa_lai_profile[i]=0;
+   }
    /* total c */
    cs->total_c[lu]                 = 0.0;
    /* c fluxes */
    cs->npp[lu]                     = 0.0;
-    cs->npp_avg[lu]                 = 0.0;
+   cs->npp_avg[lu]                 = 0.0;
    cs->nep[lu]                     = 0.0;
    cs->rh[lu]                      = 0.0;
-    cs->rh_avg[lu]                  = 0.0;
-    ///CarbonConserve
-    cs->fire_emission[lu]           = 0.0;
+   cs->rh_avg[lu]                  = 0.0;
+   ///CarbonConserve
+   cs->fire_emission[lu]           = 0.0;
 #ifdef LANDUSE
-    cs->product_emission[lu]        = 0.0;
-    cs->forest_harvest[lu]          = 0.0;
-    cs->yr1_decay_product_pool[lu]  = 0.0;
-    cs->yr10_decay_product_pool[lu] = 0.0;
-    cs->yr100_decay_product_pool[lu] = 0.0;
-    cs->crop_harvest[lu]            = 0.0;
-    cs->pasture_harvest[lu]         = 0.0;
-    //test_crop
-    for(size_t i=0;i<NSPECIES;i++)
-    {
-        cs->site_repro_pool[lu]       = 0.0;
-    }
+   cs->product_emission[lu]        = 0.0;
+   cs->forest_harvest[lu]          = 0.0;
+   cs->yr1_decay_product_pool[lu]  = 0.0;
+   cs->yr10_decay_product_pool[lu] = 0.0;
+   cs->yr100_decay_product_pool[lu] = 0.0;
+   cs->crop_harvest[lu]            = 0.0;
+   cs->pasture_harvest[lu]         = 0.0;
+   //test_crop
+   for(size_t i=0;i<NSPECIES;i++)
+   {
+      cs->site_repro_pool[lu]      = 0.0;
+   }
 #endif
    cs->aa_npp[lu]                  = 0.0; 
    cs->aa_nep[lu]                  = 0.0; 
@@ -1557,8 +1215,8 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
 #ifdef ED
    cs->npp2[lu]                    = 0.0;
    cs->gpp[lu]                     = 0.0;
-    cs->gpp_avg[lu]                 = 0.0;
-    cs->fs_open[lu]                 = 0.0;
+   cs->gpp_avg[lu]                 = 0.0;
+   cs->fs_open[lu]                 = 0.0;
    cs->aa_gpp[lu]                  = 0.0;
    cs->aa_npp2[lu]                 = 0.0;
    /* water */
@@ -1568,26 +1226,28 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
    cs->total_water_demand[lu]      = 0.0;
    cs->perc[lu]                    = 0.0;
    cs->soil_evap[lu]               = 0.0;
-    
-    //test_mor2
+   
 #if SNOWPACK_SCHEME == 1
-    cs->snowpack[lu] = 0.0;
+   cs->snowpack[lu] = 0.0;
 #endif
     
    /* height */
    cs->lu_avg_height[lu]           = 0.0;
+   cs->lu_loreys_height[lu]        = 0.0;
    cs->basal_area[lu]              = 0.0;
    cs->lai[lu]                     = 0.0;
-    for (size_t i=0;i<N_LAI;i++)
-    {
-        cs->lai_profile[lu][i]=0;
-    }
+   for (size_t i=0;i<N_LAI;i++)
+   {
+      cs->lai_profile[lu][i]=0;
+   }
    for (size_t i=0; i<NSPECIES; i++) {
       cs->total_spp_biomass[i][lu] = 0.0;
       cs->total_spp_babove[i][lu]  = 0.0;
       cs->basal_area_spp[i][lu]    = 0.0;
    }
 #endif
+   
+   double tmp_height_weight = 0.0; // To cumulate weight of each cohort for computing Lorey's height
     
    patch* cp = cs->youngest_patch[lu];
    while (cp != NULL) {
@@ -1617,44 +1277,44 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
          cs->structural_soil_L[lu]  += cp->structural_soil_L * frac;
 #endif
          cs->aa_lai[lu]             += cp->aa_lai * frac;
-          for (size_t i=0;i<N_LAI;i++)
-          {
-              cs->aa_lai_profile[i]+=cp->aa_lai_profile[i]*frac;
-          }
+         for (size_t i=0;i<N_LAI;i++)
+         {
+            cs->aa_lai_profile[i]+=cp->aa_lai_profile[i]*frac;
+         }
          /* total_c */
          cs->total_c[lu]            += cp->total_c * frac;
          /* c fluxes */
          cs->npp[lu]                += cp->npp * frac;
-          cs->npp_avg[lu]               += cp->npp_avg * frac;
+         cs->npp_avg[lu]               += cp->npp_avg * frac;
          cs->nep[lu]                += cp->nep * frac;
          cs->rh[lu]                 += cp->rh * frac;
-          cs->rh_avg[lu]            += cp->rh_avg * frac;
+         cs->rh_avg[lu]            += cp->rh_avg * frac;
          cs->aa_npp[lu]             += cp->aa_npp * frac;
          cs->aa_nep[lu]             += cp->aa_nep * frac;
          cs->aa_rh[lu]              += cp->aa_rh * frac;
          cs->dndt[lu]               += cp->dndt * frac;
           
           ///CarbonConserve
-          cs->fire_emission[lu]         += cp->fire_emission*frac;
+         cs->fire_emission[lu]         += cp->fire_emission*frac;
 #if LANDUSE
-          cs->forest_harvest[lu]        += cp->forest_harvested_c*frac;
-          cs->product_emission[lu]      += cp->product_emission*frac;
-          cs->yr1_decay_product_pool[lu]    += cp->yr1_decay_product_pool*frac;
-          cs->yr10_decay_product_pool[lu]    += cp->yr10_decay_product_pool*frac;
-          cs->yr100_decay_product_pool[lu]    += cp->yr100_decay_product_pool*frac;
-          cs->pasture_harvest[lu]       += cp->past_harvested_c*frac;
-          cs->crop_harvest[lu]          += cp->crop_harvested_c*frac;
-          //test_crop
-          for(int spp=0;spp<NSPECIES;spp++)
-          {
-              cs->site_repro_pool[lu]       += cp->repro[spp]*frac;
-          }
+         cs->forest_harvest[lu]        += cp->forest_harvested_c*frac;
+         cs->product_emission[lu]      += cp->product_emission*frac;
+         cs->yr1_decay_product_pool[lu]    += cp->yr1_decay_product_pool*frac;
+         cs->yr10_decay_product_pool[lu]    += cp->yr10_decay_product_pool*frac;
+         cs->yr100_decay_product_pool[lu]    += cp->yr100_decay_product_pool*frac;
+         cs->pasture_harvest[lu]       += cp->past_harvested_c*frac;
+         cs->crop_harvest[lu]          += cp->crop_harvested_c*frac;
+ 
+         for(int spp=0;spp<NSPECIES;spp++)
+         {
+            cs->site_repro_pool[lu]       += cp->repro[spp]*frac;
+         }
 #endif
           
 #ifdef ED
          cs->gpp[lu]                += cp->gpp * frac;
-          cs->gpp_avg[lu]           += cp->gpp_avg * frac;
-          cs->fs_open[lu]           += cp->fs_open * frac;
+         cs->gpp_avg[lu]           += cp->gpp_avg * frac;
+         cs->fs_open[lu]           += cp->fs_open * frac;
          cs->npp2[lu]               += cp->npp2 * frac;
          cs->aa_gpp[lu]             += cp->aa_gpp * frac;
          cs->aa_npp2[lu]            += cp->aa_npp2 * frac;
@@ -1663,33 +1323,37 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
          cs->theta[lu]              += cp->theta * frac;
          /* TODO: why are these different? -justin */
          cs->total_water_uptake[lu] += cp->total_water_uptake / (cs->area_fraction[lu]*data->area);
-          //test_larch
-          cs->total_water_demand[lu] += cp->total_water_demand / (cs->area_fraction[lu]*data->area);
+         cs->total_water_demand[lu] += cp->total_water_demand / (cs->area_fraction[lu]*data->area);
          cs->perc[lu]               += cp->perc * frac;
-          //CHANGE-ML
-          if (cp->perc>1e18)
-          {
-              printf("Wrong in perc 1: lat-%f lon-%f perc-%f lu-%d frac-%f\n",cs->sdata->lat_,cs->sdata->lon_,cp->perc,lu,frac);
-              //exit(1);
-          }
+
+         if (cp->perc>1e18) {
+            printf("Wrong in perc 1: lat-%f lon-%f perc-%f lu-%d frac-%f\n",cs->sdata->lat_,cs->sdata->lon_,cp->perc,lu,frac);
+         }
          cs->soil_evap[lu]          += cp->soil_evap * frac;
-          
-          //test_mor2
+         
 #if SNOWPACK_SCHEME == 1
-          cs->snowpack[lu] += cp->snowpack * frac;
+         cs->snowpack[lu] += cp->snowpack * frac;
 #endif
           
          /* height */
          /* insulate against empty patches */
          if (cp->tallest != NULL)
             cs->lu_avg_height[lu]   += cp->tallest->hite * frac;
+         
+         
+         cohort* cc = cp->shortest;
+         while (cc != NULL) {
+            cs->lu_loreys_height[lu]   += cc->hite * cc->dbh * cc->dbh * cc->nindivs / data->area;
+            tmp_height_weight += cc->dbh * cc->dbh * cc->nindivs / data->area;
+            cc = cc->taller;
+         }
 
          cs->basal_area[lu]         += cp->basal_area * frac;
          cs->lai[lu]                += cp->lai * frac;
-          for (size_t i=0;i<N_LAI;i++)
-          {
-              cs->lai_profile[lu][i]+=cp->lai_profile[i]*frac;
-          }
+         for (size_t i=0;i<N_LAI;i++)
+         {
+            cs->lai_profile[lu][i]+=cp->lai_profile[i]*frac;
+         }
          for (size_t i=0; i<NSPECIES; i++) {
             cs->total_spp_biomass[i][lu] += cp->total_spp_biomass[i] * frac;
             cs->total_spp_babove[i][lu]  += cp->total_spp_babove[i] * frac;
@@ -1699,6 +1363,11 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
       }
       cp = cp->older;
    }
+   
+   if(abs(tmp_height_weight) > 1e-3)
+      cs->lu_loreys_height[lu]   /= tmp_height_weight;
+   else
+      cs->lu_loreys_height[lu]   = 0.0;
 }
 
 

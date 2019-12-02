@@ -70,22 +70,6 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
          f(t1, currentp);
          currentp->copy_derivatives();
           
-#if CHECK_C_CONSERVE
-          ///CarbonConserve
-          cohort* mlcc= NULL;
-          double all_tb_before=0.0, all_sc_before=0.0, all_tc_before=0.0, all_fire_emission_before = 0.0;
-          double all_tb_after=0.0, all_sc_after = 0.0, all_tc_after=0.0, all_repro=0.0, all_npp_after = 0.0, all_rh_after = 0.0, all_fire_emission_after = 0.0;
-          double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
-          mlcc = currentp->shortest;
-          while (mlcc!=NULL) {
-              all_tb_before += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-              mlcc = mlcc->taller;
-          }
-          all_fire_emission_before = currentp->fire_emission;
-          all_sc_before = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-          all_tc_before = all_tb_before + all_sc_before;
-#endif
-          
          do {//Repeat until compare_derivatives returns true, halving dt each time
             deltat = data->deltat * 1. / (data->substeps*split_factor);
             currentp->Update_Water(t1, currentp->siteptr->data, deltat/2.);
@@ -122,22 +106,6 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
             currentp->load_derivatives();
          } while (true);
           
-          ///CarbonConserve -- Lei Ma
-          /// Here, the oder of updating soil carbon pool and cohort attribures are reversed because Litter() should be called after update of all cohorts.
-          /// Because the above do_while for loop just check whether deriative in current substep are valid. If yes, then update cohorts using the checked deriatives. If not, make more substep.
-          /// However, calculation of litter should use final cohort density after deltat rather than ones in deltat/2.0. Therefore, we need to update cohorts first, then call Listter() and Dsdt() again.
-          
-          /// This block is original
-//         currentp->Update_Water(t1, currentp->siteptr->data, deltat/2.);
-//         currentp->fast_soil_C = currentp->old_fast_soil_C + currentp->dfsc * deltat;
-//         currentp->structural_soil_C = currentp->old_structural_soil_C + currentp->dstsc * deltat;
-//         currentp->slow_soil_C = currentp->old_slow_soil_C + currentp->dssc * deltat;
-//         currentp->mineralized_soil_N = currentp->old_mineralized_soil_N + currentp->dmsn * deltat;
-//         currentp->fast_soil_N = currentp->old_fast_soil_N + currentp->dfsn * deltat;
-//         currentp->passive_soil_C = currentp->old_passive_soil_C + currentp->dpsc * deltat;
-//         currentp->structural_soil_L = currentp->old_structural_soil_L + currentp->dstsl * deltat;
-          /// The above is original
-          
          cohort* currentc = currentp->shortest;
           double tmp_gpp_avg = 0.0, tmp_npp_avg = 0.0, tmp_repro_avg = 0.0;
          while (currentc != NULL) {
@@ -147,10 +115,7 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
             currentc->bdead = currentc->old_bdead + currentc->dbdeaddt * deltat;
              ///CarbonConserve
              currentc->Allocate_Biomass(data);
-             //checkstep
-             //currentc->gpp_avg += currentc->gpp*1./(data->substeps*split_factor);
-             //currentc->npp_avg += currentc->npp*1./(data->substeps*split_factor);
-             //currentc->md_avg += currentc->md*1./(data->substeps*split_factor);
+
              /// Here, cohorts die before photosynthesis, there updated cohort density is used than old_nindivs
              tmp_gpp_avg += currentc->gpp * currentc->nindivs/currentp->area;
              tmp_npp_avg += currentc->npp * currentc->nindivs/currentp->area;
@@ -159,7 +124,7 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
              currentc->p_avg[1] += currentc->p[1]*currentc->nindivs*1./(data->substeps*split_factor);
             currentc = currentc->taller;
          }
-          /// This block is added by Lei, should delelte if it does not work
+
           ///CarbonConserve
           currentp->Litter(t1+deltat, data);
           currentp->Dsdt(data->time_period, t1+deltat, data);
@@ -171,43 +136,13 @@ int cm_sodeint (patch** patchptr, int time_step, double t1, double t2,
           currentp->fast_soil_N = currentp->old_fast_soil_N + currentp->dfsn * deltat;
           currentp->passive_soil_C = currentp->old_passive_soil_C + currentp->dpsc * deltat;
           currentp->structural_soil_L = currentp->old_structural_soil_L + currentp->dstsl * deltat;
-          /// The above is added by Lei.
-          
+
           //CarbonConserve
           currentp->gpp_avg +=tmp_gpp_avg*1./(data->substeps*split_factor);
           currentp->npp_avg +=tmp_npp_avg*1./(data->substeps*split_factor);
           currentp->rh_avg +=currentp->rh*1./(data->substeps*split_factor);
           currentp->fire_emission += currentp->fire_c_loss*1./(data->substeps*split_factor);
-//          total_litter += currentp->litter *1./(data->substeps*split_factor);
-//          total_repro += tmp_repro_avg*1./(data->substeps*split_factor);
          iout2++;
-
-#if CHECK_C_CONSERVE
-          ///CarbonConserve
-          mlcc = currentp->shortest;
-          while (mlcc != NULL) {
-              all_tb_after += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-              all_npp_after += mlcc->npp*mlcc->nindivs/currentp->area;
-              all_repro += (mlcc->p[0]+mlcc->p[1])*mlcc->nindivs/currentp->area;
-              mlcc = mlcc->taller;
-          }
-          all_fire_emission_after = currentp->fire_emission;
-          all_rh_after = currentp->rh;
-          all_sc_after = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-          all_tc_after = all_tb_after + all_sc_after;
-          actual_dt_tc = all_tc_after - all_tc_before;
-          esti_dt_tc = (all_npp_after-all_rh_after-all_repro*(1-data->sd_mort)-currentp->fire_c_loss)*deltat;
-          
-          if (abs(actual_dt_tc - esti_dt_tc)>1e-9)
-          {
-              printf("Carbon leakage in substep_integ%d : imbalance    %.15f actual_dt_tc %.15f esti_dt_tc  %.15f\n",iout,actual_dt_tc-esti_dt_tc,actual_dt_tc,esti_dt_tc);
-              printf("                                 : patch_tc_bf  %.15f patch_sc_bf  %.15f patch_tb_bf %.15f\n",all_tc_before,all_sc_before,all_tb_before);
-              printf("                                 : patch_tc_af  %.15f patch_sc_af  %.15f patch_tb_af %.15f patch_fire_emi_bf %.15f\n",all_tc_after,all_sc_after,all_tb_after,all_fire_emission_before);
-              printf("                                 : patch_npp_af %.15f patch_rh_af  %.15f patch_repro %.15f patch_fire_emi_af %.15f\n",all_npp_after,all_rh_after,all_repro,all_fire_emission_after);
-              printf("                                    : site_lat %.3f site_lon %.3f area %.6f\n",currentp->siteptr->sdata->lat_,currentp->siteptr->sdata->lon_,currentp->area);
-              printf(" --------------------------------------------------------------------------------------\n");
-          }
-#endif
       }
       iout++;
    }
@@ -289,169 +224,107 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
    /*TRANSPIRATION****************************/
    cohort* currentc=shortest;
    while(currentc != NULL){
-      size_t spp = currentc->species;
-      size_t pt = currentc->pt;
-      currentc->get_cohort_vm0(data);
-      currentc->Vm0_bin= currentc->get_cohort_vm0_bin(currentc->Vm0, data);
-      currentc->leaf_area = currentc->bl*data->specific_leaf_area[spp];
+       size_t spp = currentc->species;
+       size_t pt = currentc->pt;
+       currentc->get_cohort_vm0(data);
+       currentc->leaf_area = currentc->bl*data->specific_leaf_area[spp];
       
-      size_t time_index = data->time_period;
-      size_t light_index = 0; /*calc light index*/
+       size_t time_index = data->time_period;
+       size_t light_index = 0; /*calc light index*/
        while(currents->sdata->light_levels[spp][light_index] > currentc->lite){
            light_index++;
        }
 
        if (currents->sdata->E[spp][time_index][light_index]<-1000)
        {
-           currents->sdata->compute_mech(pt,spp,currentc->Vm0,currentc->Vm0_bin,time_index,light_index,data);
+           currents->sdata->compute_mech(pt,spp,currentc->Vm0,time_index,light_index,data);
        }
        if (currents->sdata->Eb[spp][time_index][N_LIGHT-1]<-1000)
        {
-           currents->sdata->compute_mech(pt,spp,currentc->Vm0,currentc->Vm0_bin,time_index,N_LIGHT-1,data);
+           currents->sdata->compute_mech(pt,spp,currentc->Vm0,time_index,N_LIGHT-1,data);
        }
        currentc->E_pot = currents->sdata->E[spp][time_index][light_index];
        currentc->E_pot *= currentc->leaf_area*N_CLIMATE/1000.0;
        currentc->E_shut = currents->sdata->Eb[spp][time_index][N_LIGHT-1];
        currentc->E_shut *= currentc->leaf_area*N_CLIMATE/1000.0;
  
-      /*NITROGEN UPTAKE**************************/
-      /* set fs_open to 1 and */
-      /* calc implied nitrogen uptake (kgN/yr) per plant*/
-      currentc->fs_open=1.0;
-      currentc->N_uptake_pot= currentc->nitrogen_demand_function(time,data);
-      /*convert to kgN/m2/yr per plant*/
-      currentc->N_uptake_pot /= currentc->patchptr->area;
+       /*NITROGEN UPTAKE**************************/
+       /* set fs_open to 1 and */
+       /* calc implied nitrogen uptake (kgN/yr) per plant*/
+       currentc->fs_open=1.0;
+       currentc->N_uptake_pot= currentc->nitrogen_demand_function(time,data);
+       /*convert to kgN/m2/yr per plant*/
+       currentc->N_uptake_pot /= currentc->patchptr->area;
 
-      /*nitrogen uptake with stomates shut*/
-      currentc->N_uptake_shut = 0.0;
+       /*nitrogen uptake with stomates shut*/
+       currentc->N_uptake_shut = 0.0;
        
+       
+       if(data->water_competition) {
+           double water_supply;
+           double wilt_factor;
 
-      if(data->water_competition) {
-        double water_supply;
-        double wilt_factor;
-          //test_larch
-          if(currentc->species==6)
-              data->water1 = 20.0;
-          else if (currentc->species==5)
-              data->water1 = 12.0;
-          else if (currentc->species==2)
-              data->water1 = 80.0;
-          else if (currentc->species==3)
-              data->water1 = 80.0;
-          else if (currentc->species==4)
-              data->water1 = 80.0;
-          else
-              data->water1 = 80.0;
-
-          if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==1))
-             data->water1 = 30.0;
-          if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==2))
-              data->water1 = 80.0;
+           water_supply=data->water1*currentc->br*water*data->mass_of_water;
+           currentc->fsw = (water_supply-currentc->E_shut)/(currentc->E_pot + water_supply-currentc->E_shut);
           
 
-          //test_larch
-          if(currentc->species==6)
-              data->water1 = 40.0; //50.0
-          else if (currentc->species==5)
-              data->water1 = 40.0; //50.0
-          else if (currentc->species==2)
-              data->water1 = 50.0; //60.0
-          else if (currentc->species==3)
-              data->water1 = 50.0; //60.0
-          else if (currentc->species==4)
-              data->water1 = 50.0; //60.0
-          else if (currentc->species==0)
-              data->water1 = 80.0; //40.0
-          else if (currentc->species==1)
-              data->water1 = 80.0;
-
-          if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==1))
-              data->water1 = 30.0;  //60.0
-          if ((currentc->species>1) && (currentc->species<5) && (currents->climate_zone==2))
-              data->water1 = 50.0;  //60.0
-//
-          //test_mor
-//          data->water1 = 50.0;  //60.0
-          
-           data->water1 = 40.0;  //shoule used to address high gpp due to switch SWLAND  to SWGDN
-          
-
-        water_supply=data->water1*currentc->br*water*data->mass_of_water;
-        currentc->fsw = (water_supply-currentc->E_shut)/(currentc->E_pot + water_supply-currentc->E_shut);
-          
-          //test_restart
-          if(currentc->fsw*0!=0)
-          {
-              currentc->fsw = 0.0;
-          }
-          
-
-          
-          //test_larch
-//          if(currentc->species==7 and currentc->hite>0.5 and theta<0.5 and currentc->bl>1e-7)
-//          {
-//              double an = currents->sdata->An[currentc->species][data->time_period][0];
-//              double e = currents->sdata->E[currentc->species][data->time_period][0];
-//              if(currents->sdata->lat_<5.0)
-//                  printf("site=%s time=%d An=%f E=%f E/An=%f supply=%f Epot=%f Eshut=%f water=%f theta=%f fsw=%f bl=%f br=%f\n",currents->sdata->name_,data->time_period,e,an,e/an,water_supply,currentc->E_pot,currentc->E_shut,water,theta,currentc->fsw,currentc->bl,currentc->br);
-//              else
-//                   printf("site=%s time=%d An=%f E=%f E/An=%f supply=%f Epot=%f Eshut=%f water=%f theta=%f fsw=%f bl=%f br=%f\n",currents->sdata->name_,data->time_period,e,an,e/an,water_supply,currentc->E_pot,currentc->E_shut,water,theta,currentc->fsw,currentc->bl,currentc->br);
-//          }
+           if(currentc->fsw*0!=0) {
+               currentc->fsw = 0.0;
+           }
           
           
-        if (currentc->fsw<0) {
+           if (currentc->fsw<0) {
            //If demand>supply, stomates shut and leaves wilt to the extent that supply := demand
            //printf("1: %f, %f\n", water_supply, currentc->E_shut);
-           currentc->fsw = 0.; 
-           wilt_factor = water_supply*1./currentc->E_shut;
-           currentc->blv = currentc->blv + (1-wilt_factor)*currentc->bl;
-           currentc->bl *= wilt_factor;
-           currentc->leaf_area = currentc->bl*data->specific_leaf_area[spp];
+               currentc->fsw = 0.;
+               wilt_factor = water_supply*1./currentc->E_shut;
+               currentc->blv = currentc->blv + (1-wilt_factor)*currentc->bl;
+               currentc->bl *= wilt_factor;
+               currentc->leaf_area = currentc->bl*data->specific_leaf_area[spp];
         
-            if (currents->sdata->E[spp][time_index][light_index]<-1000)
-            {
-                currents->sdata->compute_mech(pt,spp,currentc->Vm0,currentc->Vm0_bin,time_index,light_index,data);
-            }
-            if (currents->sdata->Eb[spp][time_index][N_LIGHT-1]<-1000)
-            {
-                currents->sdata->compute_mech(pt,spp,currentc->Vm0,currentc->Vm0_bin,time_index,N_LIGHT-1,data);
-            }
-            currentc->E_pot = currents->sdata->E[spp][time_index][light_index];
-            currentc->E_shut = currents->sdata->Eb[spp][time_index][N_LIGHT-1];
+                if (currents->sdata->E[spp][time_index][light_index]<-1000)
+                {
+                    currents->sdata->compute_mech(pt,spp,currentc->Vm0,time_index,light_index,data);
+                }
+                if (currents->sdata->Eb[spp][time_index][N_LIGHT-1]<-1000)
+                {
+                    currents->sdata->compute_mech(pt,spp,currentc->Vm0,time_index,N_LIGHT-1,data);
+                }
+                currentc->E_pot = currents->sdata->E[spp][time_index][light_index];
+                currentc->E_shut = currents->sdata->Eb[spp][time_index][N_LIGHT-1];
 
-           currentc->E_pot *= currentc->leaf_area*12/1000.0;
-           currentc->E_shut *= currentc->leaf_area*12/1000.0;
-        } //Water_supply<E_shut
+               currentc->E_pot *= currentc->leaf_area*12/1000.0;
+               currentc->E_shut *= currentc->leaf_area*12/1000.0;
+           } //Water_supply<E_shut
 
-      }
-      else
-        currentc->fsw = 1.0;
+       }
+       else
+           currentc->fsw = 1.0;
        
 
-      if(data->n_competition) {
-        double nitrogen_supply;
-        nitrogen_supply=data->nitrogen1*currentc->br*mineralized_soil_N;
-        if(currentc->N_uptake_pot >0.00)
-           currentc->fsn = nitrogen_supply/(currentc->N_uptake_pot+nitrogen_supply);
-        else
-           currentc->fsn = 1.00;
-           /*so that fsn !> 1.0 when plant n demand is < 0*/
+       if(data->n_competition) {
+           double nitrogen_supply;
+           nitrogen_supply=data->nitrogen1*currentc->br*mineralized_soil_N;
+           if(currentc->N_uptake_pot >0.00)
+               currentc->fsn = nitrogen_supply/(currentc->N_uptake_pot+nitrogen_supply);
+           else
+               currentc->fsn = 1.00;
+                /*so that fsn !> 1.0 when plant n demand is < 0*/
         }
-      else
-         currentc->fsn = 1.0;
+       else
+           currentc->fsn = 1.0;
 
-      currentc->fs_open = currentc->fsw*currentc->fsn;
+       currentc->fs_open = currentc->fsw*currentc->fsn;
        
      
-      /*printf("wnu1: fs_open %f\n",currentc->fs_open);*/
+       /*printf("wnu1: fs_open %f\n",currentc->fs_open);*/
 
-      currentc->water_uptake = currentc->fs_open*currentc->E_pot + (1.0-currentc->fs_open)*currentc->E_shut;
-      /*recompute n uptake with reduced npp, not simple function like evap
+       currentc->water_uptake = currentc->fs_open*currentc->E_pot + (1.0-currentc->fs_open)*currentc->E_shut;
+       /*recompute n uptake with reduced npp, not simple function like evap
         because allocation in npp dependent*/
-      currentc->nitrogen_uptake = currentc->nitrogen_demand_function(time,data);
-      currentc->nitrogen_uptake/=currentc->patchptr->area;
+       currentc->nitrogen_uptake = currentc->nitrogen_demand_function(time,data);
+       currentc->nitrogen_uptake/=currentc->patchptr->area;
        
-       //test_restart
        //when all cohorts of this patch has zero bl, water_uptake will be NaN, which cause total_water_uptake be NaA and following failure in integration
        if (currentc->water_uptake*0!=0)
        {
@@ -461,12 +334,7 @@ void patch::Water_and_Nitrogen_Uptake (unsigned int time_period, double time, Us
        {
            currentc->nitrogen_uptake = 0.0;
        }
-       
-     
-      /*printf("wnu2: fs_open %f\n",currentc->fs_open);*/
-     
-      /*printf("%f\n",currentc->nitrogen_uptake);*/
-     
+
       currentc=currentc->taller;
    } /* end loop over cohorts */
   
@@ -613,8 +481,6 @@ bool patch::compare_derivatives(double dt){
           (abs(cc->ddbhdt1-cc->ddbhdt)>max(0.5*abs(cc->ddbhdt), 0.05*cc->dbh/dt))|
           (abs(cc->dbalivedt1-cc->dbalivedt)>max(0.5*abs(cc->dbalivedt), 0.05*cc->balive/dt))|
           (abs(cc->dbdeaddt1-cc->dbdeaddt)>max(0.5*abs(cc->dbdeaddt), 0.05*cc->bdead/dt))) {
-         //printf("%f, %f, %f, %f\n", cc->dbalivedt, cc->dbalivedt1, cc->balive, dt);
-         //printf("%d, %d, %d, %d\n", abs(cc->dndt1-cc->dndt)>max(0.1*abs(cc->dndt), 0.001*cc->nindivs/dt), abs(cc->ddbhdt1-cc->ddbhdt)>max(0.1*abs(cc->ddbhdt), 0.001*cc->dbh/dt), abs(cc->dbalivedt1-cc->dbalivedt)>max(0.1*abs(cc->dbalivedt), 0.001*cc->balive/dt), abs(cc->dbdeaddt1-cc->dbdeaddt)>max(0.1*abs(cc->dbdeaddt), 0.001*cc->bdead/dt));
          return false;  
       }
       
@@ -747,11 +613,9 @@ void patch::load_derivatives(){
 //! @return 
 ////////////////////////////////////////////////////////////////////////////////
 int patch::check_quantities(){
-   //printf("%f, %f, %f, %f, %f, %f, %f\n", water, fast_soil_C, structural_soil_C, slow_soil_C, mineralized_soil_N, fast_soil_N ,structural_soil_L<0);
    if (!((water>=0)&(fast_soil_C>=0)&(structural_soil_C>=0)&(slow_soil_C>=0)&(mineralized_soil_N>=0)&(fast_soil_N>=0)&(passive_soil_C>=0)&(structural_soil_L>=0))) return 1;
    cohort* cc = shortest;
    while (cc!=NULL){
-      //printf("%f, %f, %f, %f\n", cc->nindivs, cc->dbh, cc->balive, cc->bdead);
       if (!((cc->nindivs>=0)&(cc->dbh>=0)&(cc->balive>=0)&(cc->bdead>=0))) return 2;
       cc = cc->taller;
    }

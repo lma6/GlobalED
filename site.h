@@ -26,15 +26,14 @@ struct site {
    unsigned int finished;  ///< if=1, then site is equilibrated
    unsigned int forest_harvest_flag;
    unsigned int maintain_pasture_flag;
-    
-    //test_larch
-    int is_tropical_site;
-    int climate_zone;
-    int is_frozen_cold_decid;
-    int is_frozen_evergreen_short;
-    int is_frozen_early_succ;
-    int is_frozen_mid_succ;
-    int is_frozen_late_succ;
+   
+   int is_tropical_site;
+   int climate_zone;
+   int is_frozen_cold_decid;
+   int is_frozen_evergreen_short;
+   int is_frozen_early_succ;
+   int is_frozen_mid_succ;
+   int is_frozen_late_succ;
 
    // above ground properties
    double site_total_ag_biomass;             ///< total above gnd biomass (kgC/m2)
@@ -60,7 +59,9 @@ struct site {
    double total_spp_babove[NSPECIES][N_LANDUSE_TYPES];  ///<  spp above-gnd biomass (kgC/m2)
 
    double site_avg_height;
+   double site_loreys_height;
    double lu_avg_height[N_LANDUSE_TYPES];
+   double lu_loreys_height[N_LANDUSE_TYPES];
    double site_basal_area;               ///< site-level total stem basal area (cm2/m2)
    double basal_area[N_LANDUSE_TYPES];   ///< site-level total stem basal area (cm2/m2)
    double site_basal_area_spp[NSPECIES]; ///< site-level total stem basal area by spp (cm2/m2)
@@ -79,10 +80,10 @@ struct site {
   
    // cfluxes
    double site_npp;                ///< total npp (kgC/m2/yr)
-    double site_npp_avg;
+   double site_npp_avg;
    double site_aa_npp;             ///< annual average npp
    double npp[N_LANDUSE_TYPES];    ///< total npp (kgC/m2/yr)
-    double npp_avg[N_LANDUSE_TYPES];    ///< total npp (kgC/m2/yr)
+   double npp_avg[N_LANDUSE_TYPES];    ///< total npp (kgC/m2/yr)
    double aa_npp[N_LANDUSE_TYPES]; ///< annual average npp
    double site_nep;                ///< total nep (kgC/m2/yr)
    double site_aa_nep;             ///< annual average nep
@@ -94,19 +95,19 @@ struct site {
    double nep2[N_LANDUSE_TYPES];
    double nep3[N_LANDUSE_TYPES];
    double site_rh;                 ///< carbon loss to atmosphere
-    double site_rh_avg;                 ///< carbon loss to atmosphere
+   double site_rh_avg;                 ///< carbon loss to atmosphere
    double site_aa_rh;              ///< annual average carbon loss to atmosphere
    double rh[N_LANDUSE_TYPES];     ///< carbon loss to atmosphere
-    double rh_avg[N_LANDUSE_TYPES];     ///< carbon loss to atmosphere
+   double rh_avg[N_LANDUSE_TYPES];     ///< carbon loss to atmosphere
    double aa_rh[N_LANDUSE_TYPES];  ///< annual average carbon loss to atmosphere
 #ifdef ED
    double site_gpp;
-    double site_gpp_avg;
-    double site_fs_open;             /// CHANGE-ML
+   double site_gpp_avg;
+   double site_fs_open;
    double site_aa_gpp;
    double gpp[N_LANDUSE_TYPES];
-    double gpp_avg[N_LANDUSE_TYPES];
-    double fs_open[N_LANDUSE_TYPES];            /// CHANGE-ML
+   double gpp_avg[N_LANDUSE_TYPES];
+   double fs_open[N_LANDUSE_TYPES];            /// CHANGE-ML
    double aa_gpp[N_LANDUSE_TYPES];
    double site_npp2;                ///< integrated npp over the timestep
    double site_aa_npp2;             ///< annual average npp
@@ -118,30 +119,29 @@ struct site {
    double litter[N_LANDUSE_TYPES];  ///< annual average carbon loss to atmosphere
    double hurricane_litter;
     ///CarbonConserve
-    double site_fire_emission;          ///(kgC/m2/yr)
-    double fire_emission[N_LANDUSE_TYPES];   /// (kgC/m2/yr), Carbon loss to atmosphere from fire
+   double site_fire_emission;          ///(kgC/m2/yr)
+   double fire_emission[N_LANDUSE_TYPES];   /// (kgC/m2/yr), Carbon loss to atmosphere from fire
 #ifdef LANDUSE
-    double site_forest_harvest;   /// (kgC/m2/yr), carbon from wood harvest and clearing forest for cropland, pasture and others
-    double site_product_emission;  /// (kgC/m2/yr), carbon emitted from 1-year, 10-year, 100-year wood product pools
-    double site_yr1_decay_product_pool;
-    double site_yr10_decay_product_pool;
-    double site_yr100_decay_product_pool;
-    double last_site_yr1_decay_product_pool;
-    double last_site_yr10_decay_product_pool;
-    double last_site_yr100_decay_product_pool;
-    double site_pasture_harvest;
-    double site_crop_harvest;
-    double forest_harvest[N_LANDUSE_TYPES];  /// (kgC/m2/yr), harvested carbon from forest
-    double pasture_harvest[N_LANDUSE_TYPES]; /// (kgC/m2/yr), harvested carbon from pasture
-    double crop_harvest[N_LANDUSE_TYPES];  /// (kgC/m2/yr), harvested carbon from cropland
-    double product_emission[N_LANDUSE_TYPES];   //// (kgC/m2/yr), emission from 1-year, 10-year, 100-year wood product pool
-    double yr1_decay_product_pool[N_LANDUSE_TYPES];  /// (kgC/m2/yr), product pool of harvested wood with 1-year decay rate
-    double yr10_decay_product_pool[N_LANDUSE_TYPES];  /// (kgC/m2/yr), product pool of harvested wood with 10-year decay rate
-    double yr100_decay_product_pool[N_LANDUSE_TYPES];  /// (kgC/m2/yr), product pool of harvested wood with 100-year decay rate
-    //test_crop
-    double site_repro_pool[N_LANDUSE_TYPES];
-    double site_total_repro_pool;
-    double last_site_total_repro_pool;
+   double site_forest_harvest;   /// (kgC/m2/yr), carbon from wood harvest and clearing forest for cropland, pasture and others
+   double site_product_emission;  /// (kgC/m2/yr), carbon emitted from 1-year, 10-year, 100-year wood product pools
+   double site_yr1_decay_product_pool;
+   double site_yr10_decay_product_pool;
+   double site_yr100_decay_product_pool;
+   double last_site_yr1_decay_product_pool;
+   double last_site_yr10_decay_product_pool;
+   double last_site_yr100_decay_product_pool;
+   double site_pasture_harvest;
+   double site_crop_harvest;
+   double forest_harvest[N_LANDUSE_TYPES];  /// (kgC/m2/yr), harvested carbon from forest
+   double pasture_harvest[N_LANDUSE_TYPES]; /// (kgC/m2/yr), harvested carbon from pasture
+   double crop_harvest[N_LANDUSE_TYPES];  /// (kgC/m2/yr), harvested carbon from cropland
+   double product_emission[N_LANDUSE_TYPES];   //// (kgC/m2/yr), emission from 1-year, 10-year, 100-year wood product pool
+   double yr1_decay_product_pool[N_LANDUSE_TYPES];  /// (kgC/m2/yr), product pool of harvested wood with 1-year decay rate
+   double yr10_decay_product_pool[N_LANDUSE_TYPES];  /// (kgC/m2/yr), product pool of harvested wood with 10-year decay rate
+   double yr100_decay_product_pool[N_LANDUSE_TYPES];  /// (kgC/m2/yr), product pool of harvested wood with 100-year decay rate
+   double site_repro_pool[N_LANDUSE_TYPES];
+   double site_total_repro_pool;
+   double last_site_total_repro_pool;
 #endif
 
 
@@ -160,11 +160,10 @@ struct site {
    double site_total_water_demand;
    double site_total_perc;
    double site_total_soil_evap;
-    
-    //test_mor2
+   
 #if SNOWPACK_SCHEME == 1
-    double snowpack[N_LANDUSE_TYPES];              ///< snowpack, mm
-    double site_total_snowpack;
+   double snowpack[N_LANDUSE_TYPES];              ///< snowpack, mm
+   double site_total_snowpack;
 #endif
     
 #endif
@@ -236,11 +235,10 @@ struct site {
    double E_shut[2][101];
    double tf[2];
     
-    double Leaf_An_pot[NSPECIES];
-    double Leaf_An_shut[NSPECIES];
-    double Leaf_E_pot[NSPECIES];
-    double Leaf_E_shut[NSPECIES];
-
+   double Leaf_An_pot[NSPECIES];
+   double Leaf_An_shut[NSPECIES];
+   double Leaf_E_pot[NSPECIES];
+   double Leaf_E_shut[NSPECIES];
    
    double ave_temp[24];
    double dyl_factor[N_CLIMATE];

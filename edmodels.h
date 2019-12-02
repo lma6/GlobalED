@@ -17,8 +17,8 @@
 /// Lei - All changes from original ED model are flaged as "CHANGE-ML". Search this keyword to locate them
 
 /// CHANGE-ML
-#define LOCAL_MACHINE 1  ///change it to 0 when copy to cluster.
-#define NUMBER_THREADS 20
+#define LOCAL_MACHINE 0  ///change it to 0 when copy to cluster.
+#define NUMBER_THREADS 41
 // THREADING: CHOOSE ONE OR NEITHER OF THE FOLLOWING TWO
 // Buggy with landuse
 
@@ -33,7 +33,6 @@
 #define MODEL_CONFIG_FILE "models.cfg"
 #define TBB 1 ///< Intel Thread Building Blocks
 #define GCD 0 ///< Grand Central Dispatch. Works on Mac only
-#define CHECK_C_CONSERVE 0
 #endif
 
 #if LOCAL_MACHINE
@@ -44,7 +43,6 @@
 #define GCD 0 ///< Grand Central Dispatch. Works on Mac only
 #define ED 1
 #define MAIN 1
-#define CHECK_C_CONSERVE 0
 #endif
 
 
@@ -55,11 +53,9 @@
 #define LANDUSE 1 ///< Flag to turn on land use dynamics
 #define FASTLOAD 2
 #define COUPLE_FAR 1
-#define COUPLE_PFTspecific 1
+//#define COUPLE_PFTspecific 1
 #define COUPLE_MERRA2 1
 #define COUPLE_MERRA2_LUT 0
-#define COUPLE_TemAccm 0
-#define CPOUPLE_VcmaxDownreg 0
 #define SOILGRIDS_SCHEME 1 // 0 using MSTMIP soil paramrters. 1 using soilGrids data from Montzka et al 2014
 #define SNOWPACK_SCHEME 1
 #define INI_Year 851  //In LANDUSE, it should be 1501; For spin-up. it is 791;  With LUH2, it should be 851, and running years should be 1165  ## 851  826
@@ -79,7 +75,6 @@ const float LAI_INTERVAL[]={0,1.5,5, 10, 20, 30}; //The elements number should b
 #define N_bins_LUT_CO2 1
 #define N_MERRA2 MERRA2_END-MERRA2_START+1
 const int LITE_IDX[]={0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120};  //indexes of light level in initial LUT, the number of elements should be equal to N_bins_LUT_LITE
-const float CO2_VALUE[]={280}; //co2 concentration in nittial LUT, the number of elements should be equal to N_bins_LUT_CO2
 //#endif
 
 
@@ -213,8 +208,6 @@ struct UserData {
    size_t nspecies;                        ///< Number of PFTs, can be changed by user
    size_t num_Vm0;                         ///< Number of Vm0 bins (>= 1)
    double Vm0_max[NSPECIES];               ///< Maximum Vm0 corresponding to each PFT
-   std::vector<double> Vm0_bins;           ///< List of Vm0s
-   const char *Vm0_basepath;               ///< Path containing multiple mech files
    std::vector<std::string> list_c3_files; ///< C3 mech file corresponding to each Vm0 bin
    std::vector<std::string> list_c4_files; ///< C4 mech file corresponding to each Vm0 bin
    const char *title[NSPECIES];            ///< Name of PFT 
@@ -224,6 +217,9 @@ struct UserData {
    int is_drought_deciduous[NSPECIES];    ///< Is the PFT drought deciduous?
    int is_cold_deciduous[NSPECIES];       ///< Is the PFT cold deciduous?
    double initial_density[NSPECIES];      ///< Initial plant density (indivs/m2)
+    
+   //test_clean
+   int allometry_types[NSPECIES];
    
    double ref_hgt[NSPECIES];
    double min_hgt[NSPECIES];
@@ -267,10 +263,6 @@ struct UserData {
    const char *which_mech_to_use;
    const char *climate_file;
    const char *climate_file_avg;
-   const char *mech_c3_file;
-   const char *mech_c4_file;
-   std::vector<std::string> mech_c3_file_avg;  ///< C3 mech file corresponding to each Vm0 bin when no yearly mech available
-   std::vector<std::string> mech_c4_file_avg;  //< C4 mech file corresponding to each Vm0 bin when no yearly mech available
 #if FTS
    const char *QAIR_FILE;
    const char *TAIR_FILE;
@@ -426,8 +418,6 @@ struct UserData {
    int tair_file_ncid;
 
    // These are ED only
-   int mech_c3_file_ncid[NUM_Vm0s];
-   int mech_c4_file_ncid[NUM_Vm0s];
    int mechanism_year;           ///<stores the mechanism year to use
    int MERRA2_timestamp;       ///<stores timestamp in cyclically MERRA2 forcing from MERRA2_START-MERRA2_END, it indicates which year of MERRA2 should be used in given mechanism_year
    char mech_year_string[256];
@@ -549,18 +539,6 @@ struct UserData {
    double c2n_passive;           ///< (gC/gN)
     
     
-    // Landuse emission
-//    double  fraction_harvest_left_on_prim_site[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on primary land
-//    double  fraction_harvest_left_on_secd_site[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on secondary land
-//    double  fraction_harvest_to_1yr_pool[NSPECIES];                ///< Fraction of vegetation biomass assigned to 1-year decay product pool at havesting
-//    double  fraction_harvest_to_10yr_pool[NSPECIES];                ///< Fraction of vegetation biomass assigned to 10-year decay product pool at havesting
-//    double  fraction_harvest_to_100yr_pool[NSPECIES];                ///< Fraction of vegetation biomass assigned to 100-year decay product pool at havesting
-//
-//    double  fraction_clearing_left_on_site[NSPECIES];         ///< Fraction of vegetation biomass left to soil at clearing for crop, pasture and others
-//    double  fraction_clearing_to_1yr_pool[NSPECIES];          ///< Fraction of vegetation biomass assigned to 1-year decay product pool at clearing
-//    double  fraction_clearing_to_10yr_pool[NSPECIES];          ///< Fraction of vegetation biomass assigned to 10-year decay product pool at clearing
-//    double  fraction_clearing_to_100yr_pool[NSPECIES];          ///< Fraction of vegetation biomass assigned to 100-year decay product pool at clearing
-    
     //test_larch
     double  fraction_harvest_left_on_prim_site_tro[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on primary land
     double  fraction_harvest_left_on_secd_site_tro[NSPECIES];         ///< Fraction of vegetation biomass left to soil at havrvesting on secondary land
@@ -644,13 +622,7 @@ struct UserData {
     double global_windspeed[288][360][720];
     double global_CO2[288][360][720];
     double global_soiltmp[288][360][720]; //1st layer in MERRA2 soil tempetature
-    //double global_soiltmp2[288][360][720]; //2nd layer in MERRA2 soil tempetature
-    //double global_soiltmp3[288][360][720]; //3rd layer in MERRA2 soil tempetature
-    //double global_soiltmp4[288][360][720]; //4th layer in MERRA2 soil tempetature
-    //double global_soiltmp5[288][360][720]; //5th layer in MERRA2 soil tempetature
-    //double global_soiltmp6[288][360][720]; //6th layer in MERRA2 soil tempetature
-    
-    
+
 #if LANDUSE
     double yr1_decay_rate;         ///< yr-1, Decay rate of 1-year wood product pool
     double yr10_decay_rate;         ///< yr-1, Decay rate of 10-year wood product pool

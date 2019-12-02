@@ -208,9 +208,6 @@ int read_transition_rates (site** current_site, UserData* data) {
     for (dlu=0; dlu<N_VBH_TYPES; dlu++) {
         for (ylu=0;ylu<N_LANDUSE_YEARS;ylu++)
         {
-//            cs->sdata->vbh[dlu][0]=data->gfvh[dlu][ylu][cs->sdata->globY_][cs->sdata->globX_];
-            
-            //test_larch
             cs->sdata->vbh[dlu][ylu]=data->gfvh[dlu][ylu][cs->sdata->globY_][cs->sdata->globX_];
         }
     }
@@ -427,30 +424,19 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
 
    site* currents = *siteptr;
 
-//   if (t == 0) {
-//      if (currents->total_ag_biomass[0] > data->forest_definition) {
-//         currents->maintain_pasture_flag = 1;
-//      } else {
-//         currents->maintain_pasture_flag = 0;
-//      }
-//   }
-    
-   if ( (t % LANDUSE_FREQ == 0) && (t > 0) )
-    {
-      if ( (currents->total_ag_biomass[0] > data->forest_definition) )
-        {
+   if ((t % LANDUSE_FREQ == 0) && (t > 0)) {
+      if ((currents->total_ag_biomass[0] > data->forest_definition)) {
          currents->forest_harvest_flag = 1;
       } else {
          currents->forest_harvest_flag = 0;
       }
-        
-        //test_mor.
-        //Above code line 430-436 where use t=0 to determine maintain_pasture_flag is a bug. As when restart from midpoint of a run, t is usually not zero, resulting fail to determine maintain_pasture_flag and fail to clear trees in pasture pataches
-        if (currents->total_ag_biomass[0] > data->forest_definition) {
-            currents->maintain_pasture_flag = 1;
-        } else {
-            currents->maintain_pasture_flag = 0;
-        }
+      
+      //Above code line 430-436 where use t=0 to determine maintain_pasture_flag is a bug. As when restart from midpoint of a run, t is usually not zero, resulting fail to determine maintain_pasture_flag and fail to clear trees in pasture pataches
+      if (currents->total_ag_biomass[0] > data->forest_definition) {
+         currents->maintain_pasture_flag = 1;
+      } else {
+         currents->maintain_pasture_flag = 0;
+      }
 
       /************************************************/
       /****            aging of crops              ****/
@@ -462,24 +448,21 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
          currentp = currentp->younger;
       }
        
-       ///CarbonConserve
-       /// Reset carbon emission variables in patches as zero
-       for (int lu=0; lu<N_LANDUSE_TYPES; lu++)
-       {
-           currents->new_patch[lu] = NULL; ///Here, reset new_patch as NULL since the landuse type of newpath of primary forest is 3, there may be bug in patch_dynamic when creating new patch --Lei
-           currentp = currents->youngest_patch[lu];
-           while (currentp != NULL)
-           {
-               currentp->forest_harvested_c = 0.0;
-//               currentp->yr1_decay_product_pool = 0.0;
-//               currentp->yr10_decay_product_pool = 0.0;
-//               currentp->yr100_decay_product_pool = 0.0;
-               currentp->past_harvested_c = 0.0;
-               currentp->crop_harvested_c = 0.0;
-               currentp->product_emission = 0.0;
-               currentp = currentp->older;
-           }
-       }
+      ///CarbonConserve
+      /// Reset carbon emission variables in patches as zero
+      for (int lu=0; lu<N_LANDUSE_TYPES; lu++)
+      {
+         currents->new_patch[lu] = NULL; ///Here, reset new_patch as NULL since the landuse type of newpath of primary forest is 3, there may be bug in patch_dynamic when creating new patch --Lei
+         currentp = currents->youngest_patch[lu];
+         while (currentp != NULL)
+         {
+            currentp->forest_harvested_c = 0.0;
+            currentp->past_harvested_c = 0.0;
+            currentp->crop_harvested_c = 0.0;
+            currentp->product_emission = 0.0;
+            currentp = currentp->older;
+         }
+      }
       /************************************************/
       /*****         create new patches           *****/
       /************************************************/
@@ -500,9 +483,6 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
          lu_year = data->mechanism_year-LANDUSE_START-1;
       } else {
          /* TODO: probably not the right assumption for all transitions. -justin */
-          ///Carbon Conserve
-          /// There is something wrong with LUH transition data as all transition is zero at year 506
-          /// So I change the lu_year to the last second year than last year to avoid zero LU transtion. -- Lei
          lu_year = LANDUSE_END-LANDUSE_START-1;
       }
        
@@ -514,120 +494,8 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
             if (tlu != dlu) {
                /* v2s will be dealt with in harvesting. skip */
                if ( !((dlu == LU_NTRL) && (tlu == LU_SCND)) ) {
-                  double beta = currents->sdata->beta[dlu][tlu-1][lu_year];
-//#if 1
-//                   if (data->year > N_LANDUSE_YEARS) {
-//                       //printf("LU year exceeds 2005 %d %d, using 2005 LU transition instead\n",data->year,N_LANDUSE_YEARS);
-//                       beta=currents->sdata->beta[dlu][tlu-1][lu_year];
-//                   }
-//#endif
-                   
-#if CHECK_C_CONSERVE
-                   double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0;
-                   double all_tb_after = 0.0, all_sc_after =0.0, all_tc_after =0.0;
-                   double all_f_hrC_before = 0.0, all_p_hrC_before = 0.0, all_c_hrC_before = 0.0;
-                   double all_f_hrC_after = 0.0, all_p_hrC_after = 0.0, all_c_hrC_after = 0.0;
-                   for (int lu=0; lu<N_LANDUSE_TYPES; lu++)
-                   {
-                       currentp = currents->youngest_patch[lu];
-                       cohort* mlcc = NULL;
-                       while(currentp!=NULL)
-                       {
-                           mlcc = currentp->shortest;
-                           double tmp_tb = 0.0;
-                           while (mlcc!=NULL) {
-                               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-                               mlcc = mlcc->taller;
-                           }
-                           all_tb_before += tmp_tb*currentp->area/data->area;
-                           all_sc_before += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-                           all_f_hrC_before += currentp->forest_harvested_c * currentp->area/data->area;
-                           all_p_hrC_before += currentp->past_harvested_c * currentp->area/data->area;
-                           all_c_hrC_before += currentp->crop_harvested_c * currentp->area/data->area;
-//                           printf("ck old_patch_bf LU %d age %.4f area %.5f tc %.15f tb %.15f sc %.15f f_hr %.15f p_hr %.15f c_hr %.15f all_tc %.15f\n",currentp->landuse,currentp->age,currentp->area,
-//                                  currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C+tmp_tb,tmp_tb,
-//                                  currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C,currentp->forest_harvested_c,currentp->past_harvested_c,currentp->crop_harvested_c,all_sc_before);
-                           currentp = currentp->older;
-                       }
-                       currentp = currents->new_patch[lu];
-                       if (currentp!=NULL)
-                       {
-                           mlcc = currentp->shortest;
-                           double tmp_tb = 0.0;
-                           while (mlcc!=NULL) {
-                               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-                               mlcc = mlcc->taller;
-                           }
-                           all_tb_before += tmp_tb*currentp->area/data->area;
-                           all_sc_before += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-                           all_f_hrC_before += currentp->forest_harvested_c * currentp->area/data->area;
-                           all_p_hrC_before += currentp->past_harvested_c * currentp->area/data->area;
-                           all_c_hrC_before += currentp->crop_harvested_c * currentp->area/data->area;
-                           //                           printf("ck new_patch_bf LU %d age %.4f area %.5f tc %.15f tb %.15f sc %.15f f_hr %.15f p_hr %.15f c_hr %.15f all_tc %.15f\n",currentp->landuse,currentp->age,currentp->area,
-                           //                                  currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C+tmp_tb,tmp_tb,
-                           //                                  currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C,currentp->forest_harvested_c,currentp->past_harvested_c,currentp->crop_harvested_c,all_sc_before);
-                       }
-                   }
-                   all_tc_before = all_tb_before + all_sc_before + (all_f_hrC_before + all_p_hrC_before + all_c_hrC_before)*data->deltat;
-#endif
+                   double beta = currents->sdata->beta[dlu][tlu-1][lu_year];
                    landuse_transition(&currents, data, dlu, tlu, beta);
-                   
-#if CHECK_C_CONSERVE
-                   for (int lu=0; lu<N_LANDUSE_TYPES; lu++)
-                   {
-                       currentp = currents->youngest_patch[lu];
-                       cohort* mlcc = NULL;
-                       while(currentp!=NULL)
-                       {
-                           mlcc = currentp->shortest;
-                           double tmp_tb = 0.0;
-                           while (mlcc!=NULL) {
-                               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-                               mlcc = mlcc->taller;
-                           }
-                           all_tb_after += tmp_tb*currentp->area/data->area;
-                           all_sc_after += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-                           all_f_hrC_after += currentp->forest_harvested_c * currentp->area/data->area;
-                           all_p_hrC_after += currentp->past_harvested_c * currentp->area/data->area;
-                           all_c_hrC_after += currentp->crop_harvested_c * currentp->area/data->area;
-//                           printf("ck old_patch_af LU %d age %.4f area %.5f tc %.15f tb %.15f sc %.15f f_hr %.15f p_hr %.15f c_hr %.15f all_tc %.15f\n",currentp->landuse,currentp->age,currentp->area,
-//                                  currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C+tmp_tb,tmp_tb,
-//                                  currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C,currentp->forest_harvested_c,currentp->past_harvested_c,currentp->crop_harvested_c,all_sc_after);
-                           currentp = currentp->older;
-                       }
-                       currentp = currents->new_patch[lu];
-                       if (currentp!=NULL)
-                       {
-                           mlcc = currentp->shortest;
-                           double tmp_tb = 0.0;
-                           while (mlcc!=NULL) {
-                               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-                               mlcc = mlcc->taller;
-                           }
-                           all_tb_after += tmp_tb*currentp->area/data->area;
-                           all_sc_after += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-                           all_f_hrC_after += currentp->forest_harvested_c * currentp->area/data->area;
-                           all_p_hrC_after += currentp->past_harvested_c * currentp->area/data->area;
-                           all_c_hrC_after += currentp->crop_harvested_c * currentp->area/data->area;
-                           //                           printf("ck new_patch_af LU %d age %.4f area %.5f tc %.15f tb %.15f sc %.15f f_hr %.15f p_hr %.15f c_hr %.15f all_tc %.15f\n",currentp->landuse,currentp->age,currentp->area,
-                           //                                  currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C+tmp_tb,tmp_tb,
-                           //                                  currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C,currentp->forest_harvested_c,currentp->past_harvested_c,currentp->crop_harvested_c,all_sc_after);
-                       }
-                   }
-                   all_tc_after = all_tb_after + all_sc_after + (all_f_hrC_after + all_p_hrC_after + all_c_hrC_after)*data->deltat;
-                   
-                   if (abs(all_tc_after-all_tc_before)>1e-9)
-                   {
-                       printf("Carbon leakage in landuse_transition  : imbalance   %.15f site_tc_af %.15f site_tc_bf %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-                       printf("                                      : site_sc_bf  %.15f site_tb_bf %.15f \n",all_sc_before,all_tb_before);
-                       printf("                                      : site_sc_af  %.15f site_tb_af %.15f \n",all_sc_after,all_tb_after);
-                       printf("                                      : site_f_hr_bf  %.15f site_p_hr_bf %.15f site_c_hr_bf %.15f\n",all_f_hrC_before,all_p_hrC_before,all_c_hrC_before);
-                       printf("                                      : site_f_hr_af  %.15f site_p_hr_af %.15f site_c_hr_af %.15f\n",all_f_hrC_after,all_p_hrC_after,all_c_hrC_after);
-                       printf("                                      : dlu %2d tlu %2d beta %.15f\n",dlu,tlu,beta);
-                       printf(" --------------------------------------------------------------------------------------\n");
-                   }
-#endif
-                   
                }
             }
          }
@@ -664,113 +532,23 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
 
 #if 1
       //harvest_croplands(&currents, data);
-#if CHECK_C_CONSERVE
-      ///CarbonConserve
-       double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0;
-       double all_tb_after = 0.0, all_sc_after =0.0, all_tc_after =0.0;
-       double all_c_hrC_bf = 0.0, all_f_hrC_bf = 0.0, all_p_hrC_bf = 0.0;
-       double all_c_hrC_af = 0.0, all_f_hrC_af = 0.0, all_p_hrC_af = 0.0;
-       currentp = currents->youngest_patch[LU_PAST];
-       cohort* mlcc = NULL;
-       while(currentp!=NULL)
-       {
-           mlcc = currentp->shortest;
-           double tmp_tb = 0.0;
-           while (mlcc!=NULL) {
-               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-               mlcc = mlcc->taller;
-           }
-           all_tb_before += tmp_tb*currentp->area/data->area;
-           all_sc_before += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-           all_p_hrC_bf += currentp->past_harvested_c * currentp->area/data->area;
-           currentp = currentp->older;
-       }
-       all_tc_before = all_tb_before + all_sc_before;
-#endif
+
       graze_pastures(&currents, data);
 #endif
        
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       currentp = currents->youngest_patch[LU_PAST];
-       while(currentp!=NULL)
-       {
-           mlcc = currentp->shortest;
-           double tmp_tb = 0.0;
-           while (mlcc!=NULL) {
-               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-               mlcc = mlcc->taller;
-           }
-           all_tb_after += tmp_tb*currentp->area/data->area;
-           all_sc_after += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-           all_p_hrC_af += currentp->past_harvested_c * currentp->area/data->area;
-           currentp = currentp->older;
-       }
-       all_tc_after = all_tb_after + all_sc_after + all_p_hrC_af*data->deltat;
-       
-       if (abs(all_tc_after-all_tc_before)>1e-9)
-       {
-           printf("Carbon leakage in graze_pastures  : imbalance   %.15f past_tc_af %.15f past_tc_bf %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-           printf("                                  : past_sc_bf  %.15f past_tb_bf %.15f \n",all_sc_before,all_tb_before);
-           printf("                                  : past_sc_af  %.15f past_tb_af %.15f all_crop_harvest_af %.15f\n",all_sc_after,all_tb_after,all_c_hrC_af);
-           printf(" --------------------------------------------------------------------------------------\n");
-       }
-#endif
-
       /************************************************/
       /****     insert or delete new patches      *****/
       /************************************************/
       for (size_t lu=1; lu<N_LANDUSE_TYPES; lu++) {
-#if CHECK_C_CONSERVE
-          ///CarbonConserve
-          double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0;
-          double all_tb_after = 0.0, all_sc_after =0.0, all_tc_after =0.0;
-          double all_f_hrC_bf = 0.0, all_p_hrC_bf = 0.0, all_c_hrC_bf = 0.0;
-          double all_f_hrC_af = 0.0, all_p_hrC_af = 0.0, all_c_hrC_af = 0.0;
-          currentp = currents->youngest_patch[lu];
-          cohort* mlcc = NULL;
-          while(currentp!=NULL)
-          {
-              mlcc = currentp->shortest;
-              double tmp_tb = 0.0;
-              while (mlcc!=NULL) {
-                  tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-                  mlcc = mlcc->taller;
-              }
-              all_tb_before += tmp_tb*currentp->area/data->area;
-              all_sc_before += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-              all_f_hrC_bf += currentp->forest_harvested_c * currentp->area/data->area;
-              all_p_hrC_bf += currentp->past_harvested_c * currentp->area/data->area;
-              all_c_hrC_bf += currentp->crop_harvested_c*currentp->area/data->area;
-              currentp = currentp->older;
-          }
-          currentp = currents->new_patch[lu];
-          if (currentp!=NULL)
-          {
-              mlcc = currentp->shortest;
-              double tmp_tb = 0.0;
-              while (mlcc!=NULL) {
-                  tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-                  mlcc = mlcc->taller;
-              }
-              all_tb_before += tmp_tb*currentp->area/data->area;
-              all_sc_before += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-              all_f_hrC_bf += currentp->forest_harvested_c * currentp->area/data->area;
-              all_p_hrC_bf += currentp->past_harvested_c * currentp->area/data->area;
-              all_c_hrC_bf += currentp->crop_harvested_c*currentp->area/data->area;
-          }
-          all_tc_before = all_tb_before + all_sc_before;
-#endif
-          
          if (currents->new_patch[lu]->area > data->min_change_in_area)
          {
 #ifdef ED
             /* plant */
              //Only plant for non-crop types as crop is planted in plant_crops function which is called based on crop calendar.
-             if (lu != LU_CROP)
-             {
-                 init_cohorts(&(currents->new_patch[lu]), data);
-             }
+            if (lu != LU_CROP)
+            {
+               init_cohorts(&(currents->new_patch[lu]), data);
+            }
 
 #endif
             patch* target = currents->new_patch[lu];
@@ -803,50 +581,20 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
             }
             free(currents->new_patch[lu]);
          }
-          
-#if CHECK_C_CONSERVE
-          ///CarbonConserve
-          currentp = currents->youngest_patch[lu];
-          while(currentp!=NULL)
-          {
-              mlcc = currentp->shortest;
-              double tmp_tb = 0.0;
-              while (mlcc!=NULL) {
-                  tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-                  mlcc = mlcc->taller;
-              }
-              all_tb_after += tmp_tb*currentp->area/data->area;
-              all_sc_after += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-              all_f_hrC_af += currentp->forest_harvested_c * currentp->area/data->area;
-              all_p_hrC_af += currentp->past_harvested_c * currentp->area/data->area;
-              all_c_hrC_af += currentp->crop_harvested_c*currentp->area/data->area;
-              currentp = currentp->older;
-          }
-          all_tc_after = all_tb_after + all_sc_after;
-          
-          if (abs(all_tc_after-all_tc_before)>1e-9)
-          {
-              printf("Carbon leakage in ini_patch of LU-%d: imbalance   %.15f site_tc_af %.15f site_tc_bf %.15f\n",lu,all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-              printf("                                    : site_sc_bf  %.15f site_tb_bf %.15f all_f_hrC_bf %.15f all_p_hrC_bf %.15f all_c_hrC_bf %.15f\n",all_sc_before,all_tb_before,all_f_hrC_bf,all_p_hrC_bf,all_c_hrC_bf);
-              printf("                                    : site_sc_af  %.15f site_tb_af %.15f all_f_hrC_af %.15f all_p_hrC_af %.15f all_c_hrC_af %.15f\n",all_sc_after,all_tb_after,all_f_hrC_af,all_p_hrC_af,all_c_hrC_af);
-              printf(" --------------------------------------------------------------------------------------\n");
-          }
-#endif
       }
-//       wood_pool_decay(&currents, data);
    }
-    //test_crop, should uncomment the above line in the bracket
-    wood_pool_decay(&currents, data);
-    
-    if (data->planting_probability[data->time_period][currents->sdata->globY_][currents->sdata->globX_]>0.8)
-    {
-        plant_croplands(&currents, data);
-    }
 
-    if (data->harvest_probability[data->time_period][currents->sdata->globY_][currents->sdata->globX_]>0.8)
-    {
-        harvest_croplands(&currents, data);
-    }
+   wood_pool_decay(&currents, data);
+    
+   if (data->planting_probability[data->time_period][currents->sdata->globY_][currents->sdata->globX_]>0.8)
+   {
+      plant_croplands(&currents, data);
+   }
+
+   if (data->harvest_probability[data->time_period][currents->sdata->globY_][currents->sdata->globX_]>0.8)
+   {
+      harvest_croplands(&currents, data);
+   }
 }
 
 
@@ -897,66 +645,29 @@ void landuse_transition (site** siteptr, UserData* data,
    if ( (change_in_area > data->min_landuse_change_fraction * data->area) 
         && (total_area - change_in_area > data->min_landuse_area_fraction * data->area)) {
        
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0, all_f_harv_before = 0.0, all_p_harv_before = 0.0, all_c_harv_before = 0.0;
-       double all_tb_after = 0.0, all_sc_after =0.0, all_tc_after =0.0, all_f_harv_after = 0.0, all_p_harv_after = 0.0, all_c_harv_after = 0.0;
-       double tmp_sc1 = 0.0, tmp_sc2 = 0.0, tmp_sc3 = 0.0;
-       currentp = currents->youngest_patch[donor_lu];
-       cohort* mlcc = NULL;
-       while(currentp!=NULL)
-       {
-           mlcc = currentp->shortest;
-           double tmp_tb = 0.0;
-           while (mlcc!=NULL) {
-               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-               mlcc = mlcc->taller;
-           }
-           all_tb_before += tmp_tb*currentp->area/data->area;
-           all_sc_before += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-           all_f_harv_before += currentp->forest_harvested_c * currentp->area/data->area;
-           all_p_harv_before += currentp->past_harvested_c * currentp->area/data->area;
-           all_c_harv_before += currentp->crop_harvested_c * currentp->area/data->area;
-           currentp = currentp->older;
-       }
-       currentp = currents->new_patch[target_lu];
-       tmp_sc1 = all_sc_before;
-       double tmp_tb = 0.0;
-       mlcc = currentp->shortest;
-       while (mlcc!=NULL) {
-           tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-           mlcc = mlcc->taller;
-       }
-       all_tb_before += tmp_tb*currentp->area/data->area;
-       all_sc_before += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-       all_f_harv_before += currentp->forest_harvested_c * currentp->area/data->area;
-       all_p_harv_before += currentp->past_harvested_c * currentp->area/data->area;
-       all_c_harv_before += currentp->crop_harvested_c * currentp->area/data->area;
-       all_tc_before = all_tb_before + all_sc_before + (all_f_harv_before+all_p_harv_before+all_c_harv_before)*data->deltat;
-#endif
-       ///CarbonConserve
-       double old_fast_soil_C = (currents->new_patch[target_lu])->fast_soil_C;
-       double old_structural_soil_C = (currents->new_patch[target_lu])->structural_soil_C;
-       double old_fast_soil_N = (currents->new_patch[target_lu])->fast_soil_N;
-       double old_slow_soil_C = (currents->new_patch[target_lu])->slow_soil_C;
-       double old_passive_soil_C = (currents->new_patch[target_lu])->passive_soil_C;
-       double old_mineralized_soil_N = (currents->new_patch[target_lu])->mineralized_soil_N;
-       double old_structural_soil_L = (currents->new_patch[target_lu])->structural_soil_L;
-       double old_water = (currents->new_patch[target_lu])->water;
-       double old_theta = (currents->new_patch[target_lu])->theta;
-       double old_rh = (currents->new_patch[target_lu])->rh;
-       double old_area = (currents->new_patch[target_lu])->area;
-       double old_gpp_avg = (currents->new_patch[target_lu])->gpp_avg;
-       double old_npp_avg = (currents->new_patch[target_lu])->npp_avg;
-       double old_rh_avg = (currents->new_patch[target_lu])->rh_avg;
-       double old_fire_emission = (currents->new_patch[target_lu])->fire_emission;
-       double old_product_emission = (currents->new_patch[target_lu])->product_emission;
-       double old_forest_harvested_c = (currents->new_patch[target_lu])->forest_harvested_c;
-       double old_yr1_decay_product_pool = (currents->new_patch[target_lu])->yr1_decay_product_pool;
-       double old_yr10_decay_product_pool = (currents->new_patch[target_lu])->yr10_decay_product_pool;
-       double old_yr100_decay_product_pool = (currents->new_patch[target_lu])->yr100_decay_product_pool;
-       double old_past_harvested_c = (currents->new_patch[target_lu])->past_harvested_c;
-       double old_crop_harvested_c = (currents->new_patch[target_lu])->crop_harvested_c;
+      ///CarbonConserve
+      double old_fast_soil_C = (currents->new_patch[target_lu])->fast_soil_C;
+      double old_structural_soil_C = (currents->new_patch[target_lu])->structural_soil_C;
+      double old_fast_soil_N = (currents->new_patch[target_lu])->fast_soil_N;
+      double old_slow_soil_C = (currents->new_patch[target_lu])->slow_soil_C;
+      double old_passive_soil_C = (currents->new_patch[target_lu])->passive_soil_C;
+      double old_mineralized_soil_N = (currents->new_patch[target_lu])->mineralized_soil_N;
+      double old_structural_soil_L = (currents->new_patch[target_lu])->structural_soil_L;
+      double old_water = (currents->new_patch[target_lu])->water;
+      double old_theta = (currents->new_patch[target_lu])->theta;
+      double old_rh = (currents->new_patch[target_lu])->rh;
+      double old_area = (currents->new_patch[target_lu])->area;
+      double old_gpp_avg = (currents->new_patch[target_lu])->gpp_avg;
+      double old_npp_avg = (currents->new_patch[target_lu])->npp_avg;
+      double old_rh_avg = (currents->new_patch[target_lu])->rh_avg;
+      double old_fire_emission = (currents->new_patch[target_lu])->fire_emission;
+      double old_product_emission = (currents->new_patch[target_lu])->product_emission;
+      double old_forest_harvested_c = (currents->new_patch[target_lu])->forest_harvested_c;
+      double old_yr1_decay_product_pool = (currents->new_patch[target_lu])->yr1_decay_product_pool;
+      double old_yr10_decay_product_pool = (currents->new_patch[target_lu])->yr10_decay_product_pool;
+      double old_yr100_decay_product_pool = (currents->new_patch[target_lu])->yr100_decay_product_pool;
+      double old_past_harvested_c = (currents->new_patch[target_lu])->past_harvested_c;
+      double old_crop_harvested_c = (currents->new_patch[target_lu])->crop_harvested_c;
       currentp = currents->youngest_patch[donor_lu];
       while (currentp != NULL) {
          patch* nextp = currentp->older;
@@ -976,44 +687,44 @@ void landuse_transition (site** siteptr, UserData* data,
              * (to secondary) have complete survivorship. no litter to        *
              * accumulate. skip for any transition from crop, or any          *
              * transition from pasture except to crop                         */
-             if ( (donor_lu != LU_CROP) &&
+            if ( (donor_lu != LU_CROP) &&
                  ( (donor_lu != LU_PAST) || (target_lu == LU_CROP) ) )
             {
-                accumulate_litter_from_disturbance(&(currents->new_patch[target_lu]),
+               accumulate_litter_from_disturbance(&(currents->new_patch[target_lu]),
                                                   &currentp, change_in_area, 9, data);
             }
-             else
-             {
+            else
+            {
                  ///CarbonConserve
                  ///The original code does nonthing for transition from abondoned pasture and cropland,
                  ///but just reduce the cohort density in donor patch. I think this does not mean
                  /// "abondoned cropland (to pasture or secondary) abondoned pasture have complete survivorship" as the reduced cohort are not
                  /// put in new patch, and this will lead to carbon leakage.
                  /// The following code put the reduced cohort to new patch using the same way as patch_dynamic did.
-                 cohort* currentc = currentp->shortest;
-                 while (currentc != NULL) {
-                     // make new cohort
-                     cohort* newcohort = (cohort*) malloc(sizeof(cohort));
-                     if (newcohort == NULL) {
-                         printf("pd: out of memory\n");
-                         while(getchar() != '\n');
-                     }
+               cohort* currentc = currentp->shortest;
+               while (currentc != NULL) {
+                  // make new cohort
+                  cohort* newcohort = (cohort*) malloc(sizeof(cohort));
+                  if (newcohort == NULL) {
+                     printf("pd: out of memory\n");
+                     while(getchar() != '\n');
+                  }
                      
-                     // copy cohort
-                     copy_cohort(&currentc,&newcohort);
+                  // copy cohort
+                  copy_cohort(&currentc,&newcohort);
                      
-                     // surviving indivs
-                     newcohort->nindivs = currentc->nindivs * change_in_area / currentp->area;
-                     newcohort->dndt = newcohort->nindivs*currentc->dndt/currentc->nindivs;
-                     // insert
-                     insert_cohort(&newcohort, &currents->new_patch[target_lu]->tallest, &currents->new_patch[target_lu]->shortest, data);
-                     newcohort->patchptr = currents->new_patch[target_lu];
-                     currentc = currentc->taller;
+                  // surviving indivs
+                  newcohort->nindivs = currentc->nindivs * change_in_area / currentp->area;
+                  newcohort->dndt = newcohort->nindivs*currentc->dndt/currentc->nindivs;
+                  // insert
+                  insert_cohort(&newcohort, &currents->new_patch[target_lu]->tallest, &currents->new_patch[target_lu]->shortest, data);
+                  newcohort->patchptr = currents->new_patch[target_lu];
+                  currentc = currentc->taller;
                  } /* end loop over cohorts */
-                 for (size_t i=0;i<NSPECIES;i++) {
-                     currents->new_patch[target_lu]->repro[i] += currentp->repro[i]*change_in_area/currentp->area;
-                 }
-             }
+               for (size_t i=0;i<NSPECIES;i++) {
+                  currents->new_patch[target_lu]->repro[i] += currentp->repro[i]*change_in_area/currentp->area;
+               }
+            }
 
 #ifdef ED
             /* REDUCE DONOR COHORT DENSITY */
@@ -1047,17 +758,7 @@ void landuse_transition (site** siteptr, UserData* data,
       // Divide aggregate variables (soil C, N etc.) by area of new path 
       // to obtain averages
        /// This below code is problematic -- Lei
-//      (currents->new_patch[target_lu])->fast_soil_C /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->structural_soil_C /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->fast_soil_N /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->slow_soil_C /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->passive_soil_C /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->mineralized_soil_N /=(currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->structural_soil_L /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->water /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->theta /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->rh /= (currents->new_patch[target_lu])->area;
-       
+
        ///CarbonConserve
        /// The above code for averaging the lastes soil state is problematic,
        /// Because before accumualting new soil state from currentp, the unit of soil state in new_patch is density-based,
@@ -1087,52 +788,6 @@ void landuse_transition (site** siteptr, UserData* data,
        
        (currents->new_patch[target_lu])->past_harvested_c = (old_past_harvested_c*old_area+(currents->new_patch[target_lu]->past_harvested_c-old_past_harvested_c))/new_area;
        (currents->new_patch[target_lu])->crop_harvested_c = (old_crop_harvested_c*old_area+(currents->new_patch[target_lu]->crop_harvested_c-old_crop_harvested_c))/new_area;
-       
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       currentp = currents->youngest_patch[donor_lu];
-       mlcc = NULL;
-       while(currentp!=NULL)
-       {
-           mlcc = currentp->shortest;
-           double tmp_tb = 0.0;
-           while (mlcc!=NULL) {
-               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-               mlcc = mlcc->taller;
-           }
-           all_tb_after += tmp_tb*currentp->area/data->area;
-           all_sc_after += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-           all_f_harv_after += currentp->forest_harvested_c * currentp->area/data->area;
-           all_p_harv_after += currentp->past_harvested_c * currentp->area/data->area;
-           all_c_harv_after += currentp->crop_harvested_c * currentp->area/data->area;
-           currentp = currentp->older;
-       }
-       tmp_sc3 = all_sc_after;
-       currentp = currents->new_patch[target_lu];
-       tmp_tb = 0.0;
-       mlcc = currentp->shortest;
-       while (mlcc!=NULL) {
-           tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-           mlcc = mlcc->taller;
-       }
-       all_tb_after += tmp_tb*currentp->area/data->area;
-       all_sc_after += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-       all_f_harv_after += currentp->forest_harvested_c * currentp->area/data->area;
-       all_p_harv_after += currentp->past_harvested_c * currentp->area/data->area;
-       all_c_harv_after += currentp->crop_harvested_c * currentp->area/data->area;
-       all_tc_after = all_tb_after + all_sc_after + (all_f_harv_after+all_p_harv_after+all_c_harv_after)*data->deltat;
-       
-       if (abs(all_tc_after-all_tc_before)>1e-9)
-       {
-           printf("Carbon leakage in landuse_transition  : imbalance    %.15f site_tc_af %.15f site_tc_bf %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-           printf("                                      : site_sc_bf  %.15f site_tb_bf %.15f site_f_hrC_bf %.15f site_p_hrC_bf %.15f site_c_hrC_bf %.15f\n",all_sc_before,all_tb_before,all_f_harv_before,all_p_harv_before,all_c_harv_before);
-           printf("                                      : site_sc_af  %.15f site_tb_af %.15f site_f_hrC_af %.15f site_p_hrC_af %.15f site_c_hrC_af %.15f\n",all_sc_after,all_tb_after,all_f_harv_after,all_p_harv_after,all_c_harv_after);
-           printf(" --------------------------------------------------------------------------------------\n");
-       }
-#endif
-       
-
-       
    } else {
       /*printf("site transition too small %s %d %d->%d %e %e\n",
              currents->name, data->year, donor_lu, target_lu, 
@@ -1182,39 +837,6 @@ void cut_forest (site** siteptr, UserData* data,
 
    if ( (change_in_area > data->min_landuse_change_fraction * data->area) 
         && (total_area - change_in_area > data->min_landuse_area_fraction * data->area)) {
-       
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0, all_forest_harC_before = 0.0;
-       double all_tb_after = 0.0, all_sc_after =0.0, all_tc_after =0.0, all_forest_harC_after = 0.0;
-       currentp = currents->youngest_patch[donor_lu];
-       cohort* mlcc = NULL;
-       while(currentp!=NULL)
-       {
-           mlcc = currentp->shortest;
-           double tmp_tb = 0.0;
-           while (mlcc!=NULL) {
-               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-               mlcc = mlcc->taller;
-           }
-           all_tb_before += tmp_tb*currentp->area/data->area;
-           all_sc_before += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-           all_forest_harC_before += currentp->forest_harvested_c * currentp->area/data->area;
-           currentp = currentp->older;
-       }
-       currentp = currents->new_patch[target_lu];
-       double tmp_tb = 0.0;
-       mlcc = currentp->shortest;
-       while (mlcc!=NULL) {
-           tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-           mlcc = mlcc->taller;
-       }
-       all_tb_before += tmp_tb*currentp->area/data->area;
-       all_sc_before += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-       all_forest_harC_before += currentp->forest_harvested_c * currentp->area/data->area;
-       all_tc_before = all_tb_before + all_sc_before + all_forest_harC_before;
-#endif
-
        ///CarbonConserve
        double old_fast_soil_C = (currents->new_patch[target_lu])->fast_soil_C;
        double old_structural_soil_C = (currents->new_patch[target_lu])->structural_soil_C;
@@ -1289,17 +911,6 @@ void cut_forest (site** siteptr, UserData* data,
       
       // Divide aggregate variables (soil C, N etc.) by area of new path 
       // to obtain averages
-//      (currents->new_patch[target_lu])->fast_soil_C /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->structural_soil_C /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->fast_soil_N /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->slow_soil_C /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->passive_soil_C /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->mineralized_soil_N /=(currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->structural_soil_L /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->water /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->theta /= (currents->new_patch[target_lu])->area;
-//      (currents->new_patch[target_lu])->rh /= (currents->new_patch[target_lu])->area;
-       
        
        ///CarbonConserve
        ///CarbonConserve
@@ -1329,52 +940,6 @@ void cut_forest (site** siteptr, UserData* data,
        (currents->new_patch[target_lu])->yr100_decay_product_pool = (old_yr100_decay_product_pool*old_area+(currents->new_patch[target_lu]->yr100_decay_product_pool-old_yr100_decay_product_pool))/new_area;
        (currents->new_patch[target_lu])->past_harvested_c = (old_past_harvested_c*old_area+(currents->new_patch[target_lu]->past_harvested_c-old_past_harvested_c))/new_area;
        (currents->new_patch[target_lu])->crop_harvested_c = (old_crop_harvested_c*old_area+(currents->new_patch[target_lu]->crop_harvested_c-old_crop_harvested_c))/new_area;
-       
-//       (currents->new_patch[target_lu])->gpp_avg /= (currents->new_patch[target_lu])->area;
-//       (currents->new_patch[target_lu])->npp_avg /= (currents->new_patch[target_lu])->area;
-//       (currents->new_patch[target_lu])->rh_avg /= (currents->new_patch[target_lu])->area;
-//       (currents->new_patch[target_lu])->fire_emission /=(currents->new_patch[target_lu])->area;
-//       (currents->new_patch[target_lu])->forest_harvested_c /= (currents->new_patch[target_lu])->area;
-       
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       currentp = currents->youngest_patch[donor_lu];
-       mlcc = NULL;
-       while(currentp!=NULL)
-       {
-           mlcc = currentp->shortest;
-           double tmp_tb = 0.0;
-           while (mlcc!=NULL) {
-               tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-               mlcc = mlcc->taller;
-           }
-           all_tb_after += tmp_tb*currentp->area/data->area;
-           all_sc_after += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-           all_forest_harC_after += currentp->forest_harvested_c * currentp->area/data->area;
-           currentp = currentp->older;
-       }
-       currentp = currents->new_patch[target_lu];
-       tmp_tb = 0.0;
-       mlcc = currentp->shortest;
-       while (mlcc!=NULL) {
-           tmp_tb += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-           mlcc = mlcc->taller;
-       }
-       all_tb_after += tmp_tb*currentp->area/data->area;
-       all_sc_after += (currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C)*currentp->area/data->area;
-       all_forest_harC_after += currentp->forest_harvested_c * currentp->area/data->area;
-       all_tc_after = all_tb_after + all_sc_after + (all_forest_harC_after-all_forest_harC_before)*data->deltat;
-       
-       if (abs(all_tc_after-all_tc_before)>1e-9)
-       {
-           printf("Carbon leakage in cut_forest  : imbalance    %.15f site_tc_af %.15f site_tc_bf %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-           printf("                              : site_sc_bf  %.15f site_tb_bf %.15f site_f_hrC_bf %.15f\n",all_sc_before,all_tb_before,all_forest_harC_before);
-           printf("                              : site_sc_af  %.15f site_tb_af %.15f site_f_hrC_af %.15f\n",all_sc_after,all_tb_after,all_forest_harC_after);
-           printf("                              : site_lat %.3f site_lon %.3f\n",currents->sdata->lat_,currents->sdata->lon_);
-           printf(" --------------------------------------------------------------------------------------\n");
-       }
-#endif
-       
    } else {
       /*printf("site transition too small %s %d %d->%d %e %e\n",
              currents->name, data->year, donor_lu, target_lu, 
@@ -1422,47 +987,11 @@ void harvest_croplands (site** siteptr, UserData* data) {
 #if defined ED
       double harvested_fast_N       = 0.0;
        
-#if CHECK_C_CONSERVE
-       cohort* mlcc = NULL;
-       double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0;
-       double all_tb_after = 0.0, all_sc_after =0.0, all_tc_after =0.0, all_crop_harvest_af = 0.0;
-       double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
-       mlcc = currentp->shortest;
-       while (mlcc!=NULL) {
-           all_tb_before += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-           mlcc = mlcc->taller;
-       }
-       all_sc_before = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-       all_tc_before = all_tb_before + all_sc_before;
-#endif
-
-//      cohort* currentc = currentp->tallest;
-//      while (currentc != NULL) {
-//         /*harvest everything*/
-//         harvested_structural_C = currentc->bdead * currentc->nindivs;
-//         harvested_fast_C = currentc->balive * currentc->nindivs;
-//         harvested_fast_N = (1.0 / data->c2n_leaf[currentc->species])
-//            * currentc->balive * currentc->nindivs;
-//         currentc->nindivs = 0.00001;
-//
-//         currentc = currentc->shorter;
-//      }
-
        ///CarbonConserve
        /// The above commented block is problematic as it does not accumulate the carbon loss from all cohorts but just use the attribute of last cohort
        /// It is corrected in the following
        cohort* currentc = currentp->tallest;
        while (currentc != NULL) {
-           /*harvest everything*/
-//           harvested_structural_C += currentc->bdead * (currentc->nindivs-0.00001);
-//           harvested_fast_C += currentc->balive * (currentc->nindivs-0.00001);
-//           harvested_fast_N += (1.0 / data->c2n_leaf[currentc->species])
-//           * currentc->balive * (currentc->nindivs-0.00001);
-//           currentc->nindivs = 0.00001;
-//           currentc = currentc->shorter;
-           
-           //test_crop, should uncomment the above lines
-//           double mini_crop_nindiv = 5.0;
            if (currentc->nindivs > data->crop_mini_nindiv*currentp->area)
            {
                harvested_structural_C += currentc->bdead * (currentc->nindivs - data->crop_mini_nindiv*currentp->area);
@@ -1493,7 +1022,6 @@ void harvest_croplands (site** siteptr, UserData* data) {
        currentp->crop_harvested_c += N_CLIMATE*(1-data->crop_residue)*(harvested_structural_C+harvested_fast_C)/currentp->area;
        
       /*plant new crop*/
-      //init_cohorts(&currentp, data);
        //Terminate all cohorts and keep the land clear until planting
        terminate_cohorts(&currentp->tallest,&currentp->shortest, data);
 #elif defined MIAMI_LU
@@ -1509,26 +1037,6 @@ void harvest_croplands (site** siteptr, UserData* data) {
        update_patch (&currentp,data);  //Update patch as all cohorts were already terminated
 #endif /* ED V. MIAMI_LU */
        
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       mlcc = currentp->shortest;
-       while (mlcc!=NULL) {
-           all_tb_after += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-           mlcc = mlcc->taller;
-       }
-       all_sc_after = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-       all_crop_harvest_af = currentp->crop_harvested_c;
-       all_tc_after = all_tb_after + all_sc_after + all_crop_harvest_af * data->deltat;
-       
-       if (abs(all_tc_after-all_tc_before)>1e-9)
-       {
-           printf("Carbon leakage in harvest_croplands : imbalance   %.15f patch_tc_af %.15f patch_tc_bf %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-           printf("                                    : patch_sc_bf %.15f patch_tb_bf %.15f \n",all_sc_before,all_tb_before);
-           printf("                                    : patch_sc_af %.15f patch_tb_af %.15f all_crop_harvest_af %.15f\n",all_sc_after,all_tb_after,all_crop_harvest_af);
-           printf(" --------------------------------------------------------------------------------------\n");
-       }
-#endif
-
       currentp = currentp->older;
    }
 }
@@ -1541,49 +1049,12 @@ void harvest_croplands (site** siteptr, UserData* data) {
 ////////////////////////////////////////////////////////////////////////////////
 void plant_croplands(site** siteptr, UserData* data)
 {
-//    //plant the crops by initilizing all cohorts if crop calendar indicates
-//    site* currents = *siteptr;
-//    patch* currentp = currents->youngest_patch[LU_CROP];
-//    ///CarbonConserve
-//    /// As to initiliza cohorts in crop patches will cause carbon leakage, there the added total biomass will be deducted from harvested biomass to compensate the carbon leakage -- Lei
-//    double total_tb_beforePlanted = 0.0, total_tb_afterPlanted = 0.0;
-//    cohort* currentc = NULL;
-//    while (currentp != NULL)
-//    {
-//        /*resest total biomass*/
-//        currentp->total_biomass = 0.0;
-//        currentp->total_ag_biomass = 0.0;
-//
-//        ///CarbonConserve
-//        /// Here, calculate total biomass before planting new cohorts
-//        currentc = currentp->shortest;
-//        while(currentc!=NULL)
-//        {
-//            total_tb_beforePlanted += (currentc->balive+currentc->bdead)*currentc->nindivs/currentp->area;
-//            currentc = currentc->taller;
-//        }
-//
-//        init_cohorts(&currentp, data);
-//
-//        /// Here, calculate total biomass after planting new cohorts, the difference is the biomass of planted cohort and it will be deducted from harvested crop biomass -- Lei
-//        currentc = currentp->shortest;
-//        while(currentc!=NULL)
-//        {
-//            total_tb_afterPlanted += (currentc->balive+currentc->bdead)*currentc->nindivs/currentp->area;
-//            currentc = currentc->taller;
-//        }
-//        currentp->crop_harvested_c -= (total_tb_afterPlanted-total_tb_beforePlanted)*LANDUSE_FREQ;
-//
-//        currentp = currentp->older;
-//    }
-    
     //test_crop, should uncomment above entire block
     //plant the crops by initilizing all cohorts if crop calendar indicates
     site* currents = *siteptr;
     patch* currentp = currents->youngest_patch[LU_CROP];
     ///CarbonConserve
     /// As to initiliza cohorts in crop patches will cause carbon leakage, there the added total biomass will be deducted from harvested biomass to compensate the carbon leakage -- Lei
-//    double total_tb_beforePlanted = 0.0, total_tb_afterPlanted = 0.0;
     cohort* currentc = NULL;
     while (currentp != NULL)
     {
@@ -1629,41 +1100,7 @@ void graze_pastures (site** siteptr, UserData* data) {
 #if defined ED
       double grazed_fast_N       = 0.0;
        
-#if CHECK_C_CONSERVE
-       cohort* mlcc = NULL;
-       double all_tb_before = 0.0, all_sc_before =0.0, all_tc_before =0.0;
-       double all_tb_after = 0.0, all_sc_after =0.0, all_tc_after =0.0, all_crop_harvest_af = 0.0;
-       double actual_dt_tc = 0.0, esti_dt_tc = 0.0;
-       mlcc = currentp->shortest;
-       while (mlcc!=NULL) {
-           all_tb_before += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-           mlcc = mlcc->taller;
-       }
-       all_sc_before = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-       all_tc_before = all_tb_before + all_sc_before;
-#endif
 
-//      cohort* currentc = currentp->tallest;
-//      while (currentc != NULL) {
-//         /* 1. graze grasses */
-//         if (data->is_grass[currentc->species]) {
-//            grazed_structural_C = data->grazing_intensity * currentc->bdead * currentc->nindivs;
-//            grazed_fast_C = data->grazing_intensity * currentc->balive * currentc->nindivs;
-//            grazed_fast_N = (1.0 / data->c2n_leaf[currentc->species])
-//               * data->grazing_intensity * currentc->balive * currentc->nindivs;
-//            currentc->nindivs *= (1.0 - data->grazing_intensity);
-//         }
-//         /* 2. remove trees explicitly if primary vegetation forested*/
-//         if ( (currents->maintain_pasture_flag == 1) && (!data->is_grass[currentc->species]) ) {
-//            grazed_structural_C = currentc->bdead * currentc->nindivs;
-//            grazed_fast_C = currentc->balive * currentc->nindivs;
-//            grazed_fast_N = (1.0 / data->c2n_leaf[currentc->species])
-//               * currentc->balive * currentc->nindivs;
-//            currentc->nindivs = 0.000001;
-//         }
-//         currentc = currentc->shorter;
-//      }
-       
        ///CarbonConserve
        /// The above commmented block is from ED and it is problematic as grazed_structural_c should use += than =
        /// The below block corrent this problem -- Lei
@@ -1679,15 +1116,6 @@ void graze_pastures (site** siteptr, UserData* data) {
            }
            /* 2. remove trees explicitly if primary vegetation forested*/
            if ( (currents->maintain_pasture_flag == 1) && (!data->is_grass[currentc->species]) ) {
-               //test_mor
-               // below code is problematic when nindivs is less than 0.000001, this will cause negave grazed_fast_C
-//               grazed_structural_C += currentc->bdead * (currentc->nindivs-0.000001);
-//               grazed_fast_C += currentc->balive * (currentc->nindivs-0.000001);
-//               grazed_fast_N += (1.0 / data->c2n_leaf[currentc->species])
-//               * currentc->balive * (currentc->nindivs-0.000001);
-//               currentc->nindivs = 0.000001;
-               
-               //test_mor fixed above code by following
                double mini_nindiv_to_graze = 0.000001;
                if(currentc->nindivs > mini_nindiv_to_graze) //only graze cohorts with enough individuals
                {
@@ -1720,28 +1148,6 @@ void graze_pastures (site** siteptr, UserData* data) {
        ///Collect carbon loss back to past_harvested_c
        currentp->past_harvested_c += N_CLIMATE*(1.0-data->grazing_residue) * (grazed_fast_C+grazed_structural_C)/currentp->area;
        
-#if CHECK_C_CONSERVE
-       ///CarbonConserve
-       mlcc = currentp->shortest;
-       while (mlcc!=NULL) {
-           all_tb_after += (mlcc->balive+mlcc->bdead)*mlcc->nindivs/currentp->area;
-           mlcc = mlcc->taller;
-       }
-       all_sc_after = currentp->fast_soil_C+currentp->slow_soil_C+currentp->structural_soil_C+currentp->passive_soil_C;
-       all_crop_harvest_af = currentp->past_harvested_c;
-       all_tc_after = all_tb_after + all_sc_after + all_crop_harvest_af*data->deltat;
-       
-       if (abs(all_tc_after-all_tc_before)>1e-9)
-       {
-           printf("Carbon leakage in graze_pasture  : imbalance    %.15f patch_tc_af %.15f patch_tc_bf %.15f\n",all_tc_after-all_tc_before,all_tc_after,all_tc_before);
-           printf("                                 : patch_sc_bf  %.15f patch_tb_bf %.15f \n",all_sc_before,all_tb_before);
-           printf("                                 : patch_sc_af  %.15f patch_tb_af %.15f all_crop_harvest_af %.15f\n",all_sc_after,all_tb_after,all_crop_harvest_af);
-           printf("                                 : graed_fast_C %.15f grae_stru_C %.15f \n",grazed_fast_C,grazed_structural_C);
-           printf(" --------------------------------------------------------------------------------------\n");
-       }
-#endif
-
-
 #elif defined MIAMI_LU
       /* remove trees explicitly if primary vegetation forested */
       if (currents->maintain_pasture_flag == 1) 
@@ -1856,23 +1262,6 @@ void wood_pool_decay(site** siteptr, UserData* data)
         patch* currentp = currents->youngest_patch[lu];
         while(currentp!=NULL)
         {
-//            currentp->product_emission = 0.0;
-//
-//            decay = currentp->yr1_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr1_decay_rate));
-//            currentp->product_emission += decay*LANDUSE_FREQ;
-//            currentp->yr1_decay_product_pool -= decay;
-//
-//            decay = currentp->yr10_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr10_decay_rate));
-//            currentp->product_emission += decay*LANDUSE_FREQ;
-//            currentp->yr10_decay_product_pool -= decay;
-//
-//            decay = currentp->yr100_decay_product_pool * (1.0-exp(LANDUSE_FREQ*TIMESTEP*data->yr100_decay_rate));
-//            currentp->product_emission += decay*LANDUSE_FREQ;
-//            currentp->yr100_decay_product_pool -= decay;
-//
-//            currentp = currentp->older;
-            
-            //test_crop, should uncomment the above block
             currentp->product_emission = 0.0;
 
             decay = currentp->yr1_decay_product_pool * (1.0-exp(TIMESTEP*data->yr1_decay_rate));

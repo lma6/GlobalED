@@ -13,53 +13,6 @@
 #include "cohort.h"
 #endif
 
-///////////////////////////////////////////////////////////////////////////////
-//! read_gfed_bf
-//! Yannick GFED: function to read burned fraction from GFED
-//!
-//! @param  
-//! @return 
-////////////////////////////////////////////////////////////////////////////////
-/* Yannick GFED: function to read burned fraction from GFED */
-//void read_gfed_bf (UserData* data) {
-//   int rv, ncid, varid;
-//   size_t i,j;
-//   size_t index[2], count[2];
-//
-//   printf("read_gfed_bf...\n");
-//
-//   index[0] = data->start_lat;
-//   index[1] = data->start_lon;
-//
-//   count[0] = data->n_lat;
-//   count[1] = data->n_lon;
-//
-//   data->gfed_bf = (double **)malloc_2d(data->n_lat, data->n_lon, sizeof(double));
-//   printf("%s\n",data->gfedbf_file);
-//
-//   if ((rv = nc_open(data->gfedbf_file, NC_NOWRITE, &ncid))) {
-//      NCERR(data->gfedbf_file, rv);
-//   }
-//
-//   if ((rv = nc_inq_varid(ncid, "burnedfraction", &varid))) {
-//      NCERR("burnedfraction", rv);
-//   }
-//
-//   if ((rv = nc_get_vara_double(ncid, varid, index, count, &(data->gfed_bf[0][0])))) {
-//      NCERR("burnedfraction", rv);
-//   }
-//
-//   /* set all missing values to 0 */
-//   for (i=0; i<data->n_lat; i++) {
-//      for (j=0; j<data->n_lat; j++) {
-//         if (data->gfed_bf[i][j] < 0.0) {
-//            data->gfed_bf[i][j] = 0.0;
-//         }
-//      }
-//   }
-//
-//}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 //! fire
@@ -89,9 +42,6 @@ double fire (int t, patch** patchptr, UserData* data) {
        {
            for (size_t mon=0;mon<12;mon++)
            {
-//               fireterm += data->gfed_bf[data->time_period][cp->siteptr->sdata->globY_][cp->siteptr->sdata->globX_];
-               //test_larch
-               // above line seems problematic, fixed as below
                fireterm += data->gfed_bf[mon][cp->siteptr->sdata->globY_][cp->siteptr->sdata->globX_];
            }
            fireterm /=12.0;   // Lei- If raw GFED burned fraction is multiplied by 12 in load_GFED(), here to take a average than sum. If no, here take sum to get yearly total disturbance rate
@@ -228,7 +178,6 @@ void update_fuel (int t, patch** patchptr, UserData* data) {
    cs->ignition_rate[landuse] = cs->fuel[landuse] * data->fp1 
       * pow(cs->sdata->dryness_index_avg / 30000.0, 10.0);
     
-    //test_larch
     //Without the below cap, ignition_rate is overestimated in Amazon forest due to hight dryness and average temperature, howoever, this region
     // has much lower burned area than the sme latitude in Africa.
     if(cs->sdata->precip[data->time_period]>100.0)

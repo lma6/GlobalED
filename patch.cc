@@ -197,20 +197,20 @@ void create_patch (site** siteptr, patch** pnewp, int landuse,
    newpatch->rh               = 0.0;
    newpatch->nep              = 0.0;
    newpatch->npp              = 0.0;
-    ///CarbonConserve
-    newpatch->gpp_avg           = 0.0;
-    newpatch->npp_avg           = 0.0;
-    newpatch->rh_avg            = 0.0;
-    newpatch->fire_emission     = 0.0;
-    newpatch->fire_c_loss       = 0.0;
+   ///CarbonConserve
+   newpatch->gpp_avg           = 0.0;
+   newpatch->npp_avg           = 0.0;
+   newpatch->rh_avg            = 0.0;
+   newpatch->fire_emission     = 0.0;
+   newpatch->fire_c_loss       = 0.0;
 #if LANDUSE
-    newpatch->product_emission = 0.0;
-    newpatch->forest_harvested_c = 0.0;
-    newpatch->yr1_decay_product_pool = 0.0;
-    newpatch->yr10_decay_product_pool = 0.0;
-    newpatch->yr100_decay_product_pool = 0.0;
-    newpatch->past_harvested_c = 0.0;
-    newpatch->crop_harvested_c = 0.0;
+   newpatch->product_emission = 0.0;
+   newpatch->forest_harvested_c = 0.0;
+   newpatch->yr1_decay_product_pool = 0.0;
+   newpatch->yr10_decay_product_pool = 0.0;
+   newpatch->yr100_decay_product_pool = 0.0;
+   newpatch->past_harvested_c = 0.0;
+   newpatch->crop_harvested_c = 0.0;
 #endif
     
    newpatch->fire_dndt_factor = 0.0;
@@ -222,21 +222,19 @@ void create_patch (site** siteptr, patch** pnewp, int landuse,
    newpatch->total_ag_biomass   = 0.0;
    newpatch->total_biomass      = 0.0;
    newpatch->basal_area         = 0.0;    
-   newpatch->theta              = newpatch->water / (current_site->sdata->soil_depth 
-                                                     * current_site->sdata->theta_max);
+   newpatch->theta              = newpatch->water / (current_site->sdata->soil_depth * current_site->sdata->theta_max);
    newpatch->total_water_uptake = 0.0;
-    //test_larch
-    newpatch->total_water_demand = 0.0;
-    newpatch->soil_evap         = 0.0;
+   newpatch->total_water_demand = 0.0;
+   newpatch->soil_evap         = 0.0;
   
 //test_mor2
 #if SNOWPACK_SCHEME == 1
-    newpatch->snowpack = 0.0;
-    newpatch->snow_melt = 0.0;
+   newpatch->snowpack = 0.0;
+   newpatch->snow_melt = 0.0;
 #endif
     
     //CHANGE-ML ml-modified: Load restart files, pero is infinite sometimes
-    newpatch->perc=0.0;
+   newpatch->perc=0.0;
 
    /* assign elements of integration array */
    newpatch->fsc_e  = 1;
@@ -312,7 +310,7 @@ void create_patch_LU (site** siteptr, patch** pnewp, int landuse,
         newpatch->rh               = 0.0;
         newpatch->nep              = 0.0;
         newpatch->npp              = 0.0;
-        ///CarbonConserve
+
         newpatch->gpp_avg           = 0.0;
         newpatch->npp_avg           = 0.0;
         newpatch->rh_avg            = 0.0;
@@ -340,18 +338,14 @@ void create_patch_LU (site** siteptr, patch** pnewp, int landuse,
         newpatch->theta              = newpatch->water / (current_site->sdata->soil_depth
                                                           * current_site->sdata->theta_max);
         newpatch->total_water_uptake = 0.0;
-        //test_larch
         newpatch->total_water_demand = 0.0;
         newpatch->soil_evap         = 0.0;
         
-        //test_mor2
 #if SNOWPACK_SCHEME == 1
         newpatch->snowpack = 0.0;
         newpatch->snow_melt = 0.0;
 #endif
-        
-        //CHANGE-ML ml-modified: Load restart files, pero is infinite sometimes
-        newpatch->perc=0.0;
+        newpatch->perc = 0.0;
         
         /* assign elements of integration array */
         newpatch->fsc_e  = 1;
@@ -403,47 +397,40 @@ void update_patch (patch** current_patch, UserData* data) {
    cp->total_biomass    = 0.0;
    cp->basal_area       = 0.0;            
    cp->lai              = 0.0;
-    for (size_t i=0;i<N_LAI;i++)
-    {
-        cp->lai_profile[i]=0;
-    }
+   for (size_t i=0;i<N_LAI;i++)
+   {
+      cp->lai_profile[i]=0;
+   }
    cohort* cc = cp->shortest;
    while (cc != NULL) {
       if ((cc->dbh >= data->min_dbh_class) && (cc->hite > data->min_hgt_class)) {
          cp->total_spp_biomass[cc->species] +=cc->b * cc->nindivs;
          cp->total_spp_babove[cc->species]  +=cc->babove * cc->nindivs;
          cp->total_ag_biomass               += cc->babove * cc->nindivs;
-//         cp->total_biomass                  += cc->b * cc->nindivs;
-#if CHECK_C_CONSERVE
-          if(abs(cc->balive+cc->bdead-cc->b)>1e-9)
-          {
-              printf("Carbon leakage in update_patch: cc_spp %d cc_b %.15f cc_ba %.15f cc_bd %.15f cc_n %.15f \n",cc->species,cc->b,cc->balive,cc->bdead,cc->nindivs);
-          }
-#endif
-          ///CarbonConserve
-          if(abs(cc->balive+cc->bdead-cc->b)>1e-9)
-          {
-              cc->b = cc->balive + cc->bdead;
-          }
+
+         if(abs(cc->balive+cc->bdead-cc->b)>1e-9)
+         {
+            cc->b = cc->balive + cc->bdead;
+         }
          cp->total_biomass                  += cc->b * cc->nindivs;
          cp->basal_area                     += (M_PI/4.0) * pow(cc->dbh, 2.0) * cc->nindivs;
          cp->basal_area_spp[cc->species]    += (M_PI/4.0) * pow(cc->dbh, 2.0) * cc->nindivs;      
          cp->lai += cc->lai;
-          if (cc->hite>LAI_INTERVAL[N_LAI-1])
-          {
-              cp->lai_profile[N_LAI-1]+=cc->lai;
-          }
-          else
-          {
-              for (size_t i=0;i<N_LAI-1;i++)
-              {
-                  if (cc->hite>LAI_INTERVAL[i] && cc->hite<LAI_INTERVAL[i+1])
-                  {
-                      cp->lai_profile[i]+=cc->lai;
-                      break;
-                  }
-              }
-          }
+         if (cc->hite>LAI_INTERVAL[N_LAI-1])
+         {
+            cp->lai_profile[N_LAI-1]+=cc->lai;
+         }
+         else
+         {
+            for (size_t i=0;i<N_LAI-1;i++)
+            {
+               if (cc->hite>LAI_INTERVAL[i] && cc->hite<LAI_INTERVAL[i+1])
+               {
+                  cp->lai_profile[i]+=cc->lai;
+                  break;
+               }
+            }
+         }
       } /* end if */
       cc = cc->taller;
    } /* end loop over cohorts */
@@ -458,8 +445,7 @@ void update_patch (patch** current_patch, UserData* data) {
    cp->basal_area /= cp->area;
    
    /* soil_pools */
-   cp->total_soil_c = cp->fast_soil_C + cp->structural_soil_C 
-      + cp->slow_soil_C + cp->passive_soil_C;
+   cp->total_soil_c = cp->fast_soil_C + cp->structural_soil_C + cp->slow_soil_C + cp->passive_soil_C;
 
 #elif defined MIAMI_LU
    /* soil pools */
@@ -473,10 +459,10 @@ void update_patch (patch** current_patch, UserData* data) {
    /* c fluxes */
    if (data->time_period == 0) { /* reset annual averages */
       cp->aa_lai  = 0.0;
-       for (size_t i=0;i<N_LAI;i++)
-       {
-           cp->aa_lai_profile[i]=0;
-       }
+      for (size_t i=0;i<N_LAI;i++)
+      {
+         cp->aa_lai_profile[i]=0;
+      }
       cp->aa_npp  = 0.0; 
       cp->aa_nep  = 0.0; 
       cp->aa_rh   = 0.0;
@@ -491,12 +477,10 @@ void update_patch (patch** current_patch, UserData* data) {
    cp->nep     = 0.0;
    cp->npp2    = 0.0;
    cp->gpp     = 0.0;
-    cp->fs_open     = 0.0;
-    //checkstep
-    //cp->npp_avg = 0.0;
-    //cp->gpp_avg = 0.0;
+   cp->fs_open     = 0.0;
+
    cc = cp->shortest;
-    double tmp_nindiv_number=0;
+   double tmp_nindiv_number=0;
    while(cc != NULL){
       double hgtmin = data->hgtmin;
       if(data->allometry_type == 1 and !data->is_grass[cc->species] 
@@ -509,13 +493,8 @@ void update_patch (patch** current_patch, UserData* data) {
          cp->npp2 += cc->npp2 * cc->nindivs / cp->area;
          cp->gpp += cc->gpp * cc->nindivs / cp->area;
          cp->dndt += cc->dndt / cp->area;
-          //checkstep
-          /// Comment on this line, as npp and gpp of patch depends on cohort density which change in each substep in cm_sodeint function.
-          /// Thefore, the patch should be calculate in each integration substep.
-          //cp->gpp_avg +=cc->gpp_avg * cc->nindivs/cp->area;
-          //cp->npp_avg +=cc->npp_avg * cc->nindivs/cp->area;
-          cp->fs_open += cc->fs_open*cc->nindivs / cp->area;
-          tmp_nindiv_number += cc->nindivs / cp->area;
+         cp->fs_open += cc->fs_open*cc->nindivs / cp->area;
+         tmp_nindiv_number += cc->nindivs / cp->area;
       }
       cc = cc->taller;
    } /* end loop over cohorts */
@@ -523,7 +502,6 @@ void update_patch (patch** current_patch, UserData* data) {
         cp->fs_open /=tmp_nindiv_number;
     else
         cp->fs_open = 0.0;
-        
     
    cp->nep -= cp->rh;
 #elif defined MIAMI_LU
@@ -854,10 +832,6 @@ void patch_dynamics ( unsigned int t, patch** patchptr,
              /// be terminated, this results in no patches could be adjusted for compensating the carbon, area loss from terminated patches in function terminate_patches
              /// Therefore, the safeways is to only terminate small patch in natural landuse types which always has enough patches -- Lei
              terminate_patches(&youngest_patch, data);
-//            if (youngest_patch->landuse == LU_NTRL or youngest_patch->landuse == LU_SCND or youngest_patch->landuse == LU_PAST or youngest_patch->landuse == LU_CROP)
-//            {
-//                terminate_patches(&youngest_patch, data);
-//            }
          }
 
       }  /* end t%PATCH_FREQ */

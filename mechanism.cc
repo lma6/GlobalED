@@ -33,11 +33,11 @@ void cohort::plant_respiration(UserData* data){
 
     if (currents->sdata->tf_air[species][tindex]<-1000)
     {
-        currents->sdata->compute_mech(pt,species,Vm0,NUM_Vm0s-1,tindex,0,data);
+        currents->sdata->compute_mech(pt,species,Vm0,tindex,0,data);
     }
     if (currents->sdata->tf_soil[species][tindex]<-1000)
     {
-        currents->sdata->compute_mech(pt,species,Vm0,NUM_Vm0s-1,tindex,0,data);
+        currents->sdata->compute_mech(pt,species,Vm0,tindex,0,data);
     }
     double tf_air = currents->sdata->tf_air[species][tindex];
     double tf_soil = currents->sdata->tf_soil[species][tindex];
@@ -78,11 +78,6 @@ void cohort::npp_function(UserData* data){
    /*driver index index*/
    size_t time_index = data->time_period;
     
-#if !COUPLE_PFTspecific    //onLY COUPLE_PFTspecific is off, the mech variables are seperated by vcmax_bins, otherwise, by PFTs --Lei
-   get_cohort_vm0(data);   //And the downgrade if Vcmax by cumulative LAI is done in compute_mech function using cumuLAI derived from light level and Lloyd et al 2010
-   Vm0_bin= get_cohort_vm0_bin(Vm0, data);
-#endif
-      
    /* RESPIRATION */
    plant_respiration(data);
   
@@ -96,18 +91,18 @@ void cohort::npp_function(UserData* data){
    /*PHOTOSYNTHESIS**************************/
     if (cs->sdata->An[species][time_index][light_index]<-1000)
     {
-        cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,light_index,data);
+        cs->sdata->compute_mech(pt,species,Vm0,time_index,light_index,data);
     }
     if (cs->sdata->Anb[species][time_index][N_LIGHT-1]<-1000)
     {
-        cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,N_LIGHT-1,data);
+        cs->sdata->compute_mech(pt,species,Vm0,time_index,N_LIGHT-1,data);
     }
     if (cs->sdata->An[species][time_index][0]<-1000)
     {
-        cs->sdata->compute_mech(pt,species,Vm0,Vm0_bin,time_index,0,data);
+        cs->sdata->compute_mech(pt,species,Vm0,time_index,0,data);
     }
     An_pot = 0.001*cs->sdata->An[species][time_index][light_index];
-    An_max = 0.001*cs->sdata->An[species][time_index][0];  // TODO, should we use current Vm0_bin or 0
+    An_max = 0.001*cs->sdata->An[species][time_index][0];
     An_shut = 0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1];
     An_shut_max = 0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1];
 
@@ -134,11 +129,6 @@ void cohort::npp_function(UserData* data){
    /*must also elim leaf resp from below*/
    gpp =  fs_open*(An_pot) + (1-fs_open)*(An_shut);
    gpp_max =  fs_open*(An_max) + (1-fs_open)*(An_shut_max);
-    
-//    //test_larch
-//    if(data->time_period>5 and data->time_period<7)
-//        printf("test_larch t=%d spp=%d lite=%d hite=%f gpp=%f bl=%f lai=%f An_pot=%f An_shut=%f fs_open=%f\n",data->time_period,species,light_index,hite,gpp,bl,data->specific_leaf_area[species]*bl,0.001*cs->sdata->An[species][time_index][light_index],0.001*cs->sdata->Anb[species][time_index][N_LIGHT-1],fs_open);
-    
 
    npp_max =  gpp_max - resp;
    npp =  gpp - resp; /*where resp includes leaf resp*/
@@ -156,14 +146,5 @@ void cohort::npp_function(UserData* data){
    if(npp_max > 0.00) /*only subtract growth resp if growing*/
       npp_max *= (1.0-data->growth_resp);
     
-    
-//    printf("flag 1 spp %d hite %f light_index %d lite %f gpp %f\n",species,hite,light_index,lite,gpp);
-//    if (light_index==120)
-//    {
-//        printf("flag 1 exit\n");
-//        exit(0);
-//    }
-
-
 }
 /**************************************************************************/

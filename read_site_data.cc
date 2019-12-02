@@ -613,7 +613,6 @@ void reset_6d_float(float****** array_6d, size_t dim1, size_t dim2, size_t dim3,
 
 
 #if LANDUSE
-//test_larch
 bool setCropCalendar (site** sitrptr,UserData* data)
 {
     site* cs = *sitrptr;
@@ -658,17 +657,6 @@ bool setCropCalendar (site** sitrptr,UserData* data)
         {
             for (size_t mon=0;mon<N_CLIMATE-1;mon++)
             {
-//                if((cs->sdata->precip[mon] < precip_crit) && (cs->sdata->precip[mon] >= precip_crit))
-//                    data->planting_probability[mon][ilat][ilon] = 1.0;
-//                else
-//                    data->planting_probability[mon][ilat][ilon] = 0.0;
-//
-//                if((cs->sdata->precip[mon] > precip_crit) && (cs->sdata->precip[mon] <= precip_crit))
-//                    data->harvest_probability[mon][ilat][ilon] = 1.0;
-//                else
-//                    data->harvest_probability[mon][ilat][ilon] = 0.0;
-                
-                //test_crop
                 if((cs->sdata->precip[mon] < precip_crit) && (cs->sdata->precip[mon+1] >= precip_crit))
                     data->planting_probability[mon][ilat][ilon] = 1.0;
                 else
@@ -822,7 +810,6 @@ bool loadGlobalEnvironmentData(UserData* data)
                 strcpy(climatename, data->climate_file);
                 strcat(climatename, convert);
                 strcat(climatename, nc);
-//test_forecast
 #if FORECAST
                 if(abs(FORECAST_yr-data->mechanism_year)<0.5)
                 {
@@ -894,7 +881,6 @@ bool loadGlobalEnvironmentData(UserData* data)
     }
 
 #if SOILGRIDS_SCHEME
-    //test_soil
     if (data->MvG_soil_depth==NULL)
     {
         data->MvG_soil_depth=malloc_2d_float(360,720);
@@ -943,7 +929,6 @@ bool loadGlobalEnvironmentData(UserData* data)
     {
         reset_2d_float(data->MvG_theta_residual,360,720);
     }
-    //test_soil
     int ncid_soilGrids;
     char soil_file_soilGrids[256];
     strcpy(soil_file_soilGrids,data->soilgrids_file);
@@ -965,7 +950,6 @@ bool loadGlobalEnvironmentData(UserData* data)
     nc_inq_varid(ncid_soilGrids, "saturated_theta", &varid);
     nc_get_vara_float(ncid_soilGrids, varid, index1,count1, &data->MvG_theta_saturated[0][0]);
     ncclose(ncid_soilGrids);
-    //test_soil
 #endif
     
     
@@ -1229,8 +1213,7 @@ bool loadPREMECH (UserData* data)
             strcpy(premech_clim, data->PREMECH);
             sprintf(premech_clim, "%s%d", premech_clim, data->MERRA2_timestamp+MERRA2_START-1);
             strcat(premech_clim, ".nc");
-            
-            //test_forecast
+           
 #if FORECAST
             if(abs(FORECAST_yr-data->mechanism_year)<0.5)
             {
@@ -1314,8 +1297,7 @@ bool loadPREMECH (UserData* data)
             }
         }
     }
-    
-    
+   
     //load spatial CO2 data
     if ((rv = nc_inq_varid(ncid_co2, "co2_ambient", &varid_co2))) NCERR("co2_ambient", rv);
     if ((rv = nc_get_vara_double(ncid_co2, varid_co2, index3, count3, &data->global_CO2[0][0][0]))) NCERR("co2_ambient", rv);
@@ -1367,18 +1349,8 @@ bool load_GFED(UserData* data)
     }
     
     /* set all missing values to 0 */
-//    for (k=0;k<N_CLIMATE;k++){
-//        for (i=0; i<data->n_lat; i++) {
-//            for (j=0; j<data->n_lon; j++) {
-//                if (data->gfed_bf[k][i][j] < 0.0)
-//                {
-//                    data->gfed_bf[k][i][j] = 0.0;
-//                }
-//                data->gfed_bf[k][i][j] *= 12.0;  /// Lei - Convert monthly burned area fraction to yearly as all disturbance rate in para.cfg file is yearly based.
-//            }
-//        }
-//    }
-    //test_mor
+
+   // TODO: 360, 720 should be replaced by macro variables
     for (k=0;k<N_CLIMATE;k++){
         for (i=0; i<360; i++) {
             for (j=0; j<720; j++) {
@@ -1477,12 +1449,6 @@ bool SiteData::readSiteData (UserData& data) {
     if (!SetMECHdefault(data)) {
         return false;
     }
-    
-//#if COUPLE_MERRA2_LUT
-    if (! SetMERRA2_LUTdefault(data) ) {
-        return false;
-    }
-//#endif //COUPLE_MERRA2_LUT
 
 #elif defined MIAMI_LU
    // calculate miami npp
@@ -1827,33 +1793,6 @@ bool SiteData::SetMECHdefault(UserData& data)
     }
     return true;
 }
-//#if COUPLE_MERRA2_LUT
-bool SiteData::SetMERRA2_LUTdefault(UserData& data)
-{
-    for (size_t merra2_i=0;merra2_i<N_MERRA2;merra2_i++)
-    {
-        for (size_t mon=0;mon<N_CLIMATE;mon++)
-        {
-            for (size_t spp=0;spp<NSPECIES;spp++)
-            {
-                if(1-is_filled_LUT[merra2_i][spp][mon])
-                {
-                    for (size_t lite_i=0;lite_i<N_bins_LUT_LITE;lite_i++)
-                    {
-                        An_LUT[merra2_i][spp][mon][lite_i]=-9999.0;
-                        Anb_LUT[merra2_i][spp][mon][lite_i]=-9999.0;
-                        E_LUT[merra2_i][spp][mon][lite_i]=-9999.0;
-                        Eb_LUT[merra2_i][spp][mon][lite_i]=-9999.0;
-                    }
-                    tf_LUT_air[merra2_i][spp][mon]=-9999.0;
-                    tf_LUT_soil[merra2_i][spp][mon]=-9999.0;
-                }
-            }
-        }
-    }
-    return true;
-}
-//#endif //COUPLE_MERRA2_LUT
 
 ////////////////////////////////////////////////////////////////////////////////
 //! calcPETMonthly

@@ -78,7 +78,6 @@ struct cohort{
    int status;                ///< growth status of plant 
 
    double Vm0;                ///< vm for that cohort, called in mechanism code 
-   size_t Vm0_bin;            ///< Vm0 bin
 
    double gr_resp;            ///< kgC/yr per indiv 
 
@@ -135,7 +134,6 @@ struct cohort{
    
    // In cohort.cc 
    void get_cohort_vm0(UserData *data);
-   int get_cohort_vm0_bin(double Vm0, UserData* data);
 };
 
 
@@ -151,12 +149,7 @@ void init_cohorts(patch** patchptr, UserData* data);
 void create_cohort(unsigned int spp, double nindivs, double hite, double dbh, 
                    double balive, double bdead, patch** patchptr, 
                    UserData* data);
-//test_mor
-//void create_cohort_test_mor(unsigned int spp, double nindivs, double hite, double dbh,
-//                       double balive, double bdead, double bl, double br, double blv,
-//                       double bsw, patch** patchptr, UserData* data);
 
-//test_restart
 void create_cohort_test_mor(unsigned int spp, double nindivs, double hite, double dbh,
                             double balive, double bdead, double bl, double br, double blv,
                             double bsw, patch** patchptr, double cb[N_CLIMATE], double cb_toc[N_CLIMATE],UserData* data);

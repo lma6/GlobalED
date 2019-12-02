@@ -219,8 +219,6 @@ void initialize_model_params(UserData* data) {
 #if SOILGRIDS_SCHEME
     data->soilgrids_file = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "soilgrids_file");
 #endif
-    data->mech_c3_file      = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "mech_c3_file");
-    data->mech_c4_file      = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "mech_c4_file");      
     data->lu_file           = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "lu_file");
     data->lu_init_c_file    = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "lu_init_c_file");
     data->crop_calendar_file= get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "crop_calendar_file");
@@ -250,28 +248,12 @@ void initialize_model_params(UserData* data) {
 
     data->single_year       = get_val<int>(data, MODEL_IO, data->which_mech_to_use, "single_year");   
     data->do_yearly_mech    = get_val<int>(data, MODEL_IO, data->which_mech_to_use, "do_yearly_mech");
-    if (data->do_yearly_mech) {
-        get_list(data, MODEL_IO, data->which_mech_to_use, "mech_c3_file_avg", data->mech_c3_file_avg);
-        get_list(data, MODEL_IO, data->which_mech_to_use, "mech_c4_file_avg", data->mech_c4_file_avg);
-    }
     data->m_int             = get_val<int>(data, MODEL_IO, data->which_mech_to_use, "m_int");   
     data->m_string          = get_val<int>(data, MODEL_IO, data->which_mech_to_use, "m_string"); 
 
 
     /* MULTIPLE Vm0s*/
-    data->num_Vm0           = get_val<int>(data, PARAMS, "", "num_Vm0s"); 
-    get_list(data, MODEL_IO, data->which_mech_to_use, "Vm0_bins", data->Vm0_bins);
-    if(data->num_Vm0 > 1) {
-       if(data->num_Vm0 != NUM_Vm0s) {
-          printf("Number of Vm0s in config file does not match that in edmodels.h\n");
-          exit(0);
-       }
-       data->Vm0_basepath          = get_val<const char*>(data, MODEL_IO, data->which_mech_to_use, "Vm0_basepath");
-       get_list(data, MODEL_IO, data->which_mech_to_use, "list_c3_files", data->list_c3_files);
-       get_list(data, MODEL_IO, data->which_mech_to_use, "list_c4_files", data->list_c4_files);       
-    }
-
-
+    data->num_Vm0           = get_val<int>(data, PARAMS, "", "num_Vm0s");
     /* HURRICANES */
     data->hurricane            = get_val<int>(data, PARAMS, "", "hurricane");
     data->hurricane_file       = get_val<const char*>(data, PARAMS, "", "hurricane_file");
