@@ -240,6 +240,26 @@ int main (int ac, char *av[]) {
    }
    model(*data);
    ed_finalize(*data);
+   
+//   //test_FL, should uncommend the above code block
+//   if (ac == 1) { /* user did not supply experiment name */
+//      fprintf(stderr, "Usage: %s experiment-name [config-file-name]\n", av[0]);
+//      return 1;
+//   }
+//
+//   UserData* data = NULL;
+//   if (ac > 2)
+//   { // config file was specified on command line
+//      int deforestation_time = atoi(av[2]);
+//
+//      data = ed_initialize(av[1], NULL);
+//      data->deforestation_time = deforestation_time;
+//   }
+//   else {
+//      data = ed_initialize(av[1], NULL);
+//   }
+//   model(*data);
+//   ed_finalize(*data);
 }
 #endif
 
@@ -327,8 +347,17 @@ void model (UserData& data) {
    unsigned int tsteps = ((int)(data.tmax * N_SUB)) + 1;
    for (unsigned int t=data.start_time; t<tsteps; t++) { /* absolute time offset */
       if(data.print_output_files) {
+//          if (tsteps-t<36*N_SUB+1)
+         //test_init, should uncomend the above if
+#if SPINUP_BARE_FOREST
+          if (tsteps-t < tsteps)
+#elif SPINUP_FOREST_FOREST
+          if (tsteps-t < tsteps)
+#elif SPINUP_FOREST_NONFOREST
+          if (tsteps-t < tsteps)
+#else
           if (tsteps-t<36*N_SUB+1)
-//          if (tsteps-t<500*N_SUB+1)
+#endif
           {
               print_region_files(t,&data.first_site,&data);
           }

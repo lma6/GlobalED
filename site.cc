@@ -171,6 +171,9 @@ bool SiteData::compute_mech(int pt, int spp, double Vm0, int time_period, int li
       {
           CO2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
       }
+      
+//      //test_attri, should uncommend the above if...else...
+//      CO2=280.0/390.0*data->global_CO2[mon][globY_][globX_];
         
       //As growth temperature defined in Lombardozzi et all 2015 and Atkin et al 2008 is the preceding 10 days running mean of air temperature, here for simplicity, use mean temperature of current month
       Tg=0;
@@ -865,6 +868,21 @@ void update_site (site** current_site, UserData* data) {
    {
        cs->site_lai_profile[i]=0;
    }
+   //test_ht
+   for (size_t i=0;i<N_LAI_FINE;i++)
+   {
+      cs->site_lite_profile_fine[i] = 0.0;
+   }
+   cs->site_RH25 = 0.0;
+   cs->site_RH50 = 0.0;
+   cs->site_RH60 = 0.0;
+   cs->site_RH70 = 0.0;
+   cs->site_RH75 = 0.0;
+   cs->site_RH80 = 0.0;
+   cs->site_RH85 = 0.0;
+   cs->site_RH90 = 0.0;
+   cs->site_RH95 = 0.0;
+   cs->site_RH98 = 0.0;
 #endif
    /* soil pools */
    cs->site_total_soil_c            = 0.0;
@@ -1030,6 +1048,54 @@ void update_site (site** current_site, UserData* data) {
       {
           cs->site_lai_profile[i]+=cs->lai_profile[lu][i]*cs->area_fraction[lu];
       }
+      //test_ht
+      for (size_t i=0;i<N_LAI_FINE;i++)
+      {
+         cs->site_lite_profile_fine[i] += cs->lite_profile_fine[lu][i]*cs->area_fraction[lu];
+      }
+      
+      //test_ht, normalize light profile
+      double lite_top = cs->site_lite_profile_fine[N_LAI_FINE-1];
+      double lite_ground = cs->site_lite_profile_fine[0];
+      for (size_t i=0;i<N_LAI_FINE-1;i++)
+      {
+         cs->site_lite_profile_fine[i] = (cs->site_lite_profile_fine[i]-lite_ground)/(lite_top-lite_ground);
+      }
+      
+      //test_ht
+      for (size_t i=0;i<N_LAI_FINE-1;i++)
+      {
+         if ((cs->site_lite_profile_fine[i] <= RH98_PERCENT) && ((cs->site_lite_profile_fine[i+1] >= RH98_PERCENT)))
+            cs->site_RH98 = i*LAI_PROFILE_bins_width + LAI_PROFILE_bins_width/2.0;
+
+         if ((cs->site_lite_profile_fine[i] <= RH95_PERCENT) && ((cs->site_lite_profile_fine[i+1] >= RH95_PERCENT)))
+            cs->site_RH95 = i*LAI_PROFILE_bins_width + LAI_PROFILE_bins_width/2.0;
+
+         if ((cs->site_lite_profile_fine[i] <= RH90_PERCENT) && ((cs->site_lite_profile_fine[i+1] >= RH90_PERCENT)))
+            cs->site_RH90 = i*LAI_PROFILE_bins_width + LAI_PROFILE_bins_width/2.0;
+
+         if ((cs->site_lite_profile_fine[i] <= RH85_PERCENT) && ((cs->site_lite_profile_fine[i+1] >= RH85_PERCENT)))
+            cs->site_RH85 = i*LAI_PROFILE_bins_width + LAI_PROFILE_bins_width/2.0;
+
+         if ((cs->site_lite_profile_fine[i] <= RH80_PERCENT) && ((cs->site_lite_profile_fine[i+1] >= RH80_PERCENT)))
+            cs->site_RH80 = i*LAI_PROFILE_bins_width + LAI_PROFILE_bins_width/2.0;
+
+         if ((cs->site_lite_profile_fine[i] <= RH75_PERCENT) && ((cs->site_lite_profile_fine[i+1] >= RH75_PERCENT)))
+            cs->site_RH75 = i*LAI_PROFILE_bins_width + LAI_PROFILE_bins_width/2.0;
+
+         if ((cs->site_lite_profile_fine[i] <= RH70_PERCENT) && ((cs->site_lite_profile_fine[i+1] >= RH70_PERCENT)))
+            cs->site_RH70 = i*LAI_PROFILE_bins_width + LAI_PROFILE_bins_width/2.0;
+
+         if ((cs->site_lite_profile_fine[i] <= RH60_PERCENT) && ((cs->site_lite_profile_fine[i+1] >= RH60_PERCENT)))
+            cs->site_RH60 = i*LAI_PROFILE_bins_width + LAI_PROFILE_bins_width/2.0;
+
+         if ((cs->site_lite_profile_fine[i] <= RH50_PERCENT) && ((cs->site_lite_profile_fine[i+1] >= RH50_PERCENT)))
+            cs->site_RH50 = i*LAI_PROFILE_bins_width + LAI_PROFILE_bins_width/2.0;
+
+         if ((cs->site_lite_profile_fine[i] <= RH25_PERCENT) && ((cs->site_lite_profile_fine[i+1] >= RH25_PERCENT)))
+            cs->site_RH25 = i*LAI_PROFILE_bins_width + LAI_PROFILE_bins_width/2.0;
+      }
+      
       for(size_t i=0;i<NSPECIES;i++){
          cs->site_total_spp_biomass[i] += cs->total_spp_biomass[i][lu] * cs->area_fraction[lu];
          cs->site_total_spp_babove[i]  += cs->total_spp_babove[i][lu] * cs->area_fraction[lu];
@@ -1240,6 +1306,11 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
    {
       cs->lai_profile[lu][i]=0;
    }
+   //test_ht
+   for (size_t i=0;i<N_LAI_FINE;i++)
+   {
+      cs->lite_profile_fine[lu][i]=0;
+   }
    for (size_t i=0; i<NSPECIES; i++) {
       cs->total_spp_biomass[i][lu] = 0.0;
       cs->total_spp_babove[i][lu]  = 0.0;
@@ -1340,13 +1411,13 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
          if (cp->tallest != NULL)
             cs->lu_avg_height[lu]   += cp->tallest->hite * frac;
          
-         
          cohort* cc = cp->shortest;
          while (cc != NULL) {
             cs->lu_loreys_height[lu]   += cc->hite * cc->dbh * cc->dbh * cc->nindivs / data->area;
             tmp_height_weight += cc->dbh * cc->dbh * cc->nindivs / data->area;
             cc = cc->taller;
          }
+         
 
          cs->basal_area[lu]         += cp->basal_area * frac;
          cs->lai[lu]                += cp->lai * frac;
@@ -1354,6 +1425,12 @@ void update_site_landuse(site** siteptr, size_t lu, UserData* data) {
          {
             cs->lai_profile[lu][i]+=cp->lai_profile[i]*frac;
          }
+         //test_ht
+         for(size_t i=0;i<N_LAI_FINE;i++)
+         {
+            cs->lite_profile_fine[lu][i] += cp->lite_profile_fine[i]*frac;
+         }
+         
          for (size_t i=0; i<NSPECIES; i++) {
             cs->total_spp_biomass[i][lu] += cp->total_spp_biomass[i] * frac;
             cs->total_spp_babove[i][lu]  += cp->total_spp_babove[i] * frac;

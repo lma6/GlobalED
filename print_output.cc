@@ -130,6 +130,17 @@ float getBasalArea (site* cs)        { return cs->site_basal_area; }
 float getWater (site* cs)            { return cs->site_total_water; }
 float getPercolation (site* cs)      { return cs->site_total_perc; }
 float getEvaporation (site* cs)      { return cs->site_total_soil_evap; }
+//test_ht
+float getRH98 (site* cs)      { return cs->site_RH98; }
+float getRH95 (site* cs)      { return cs->site_RH95; }
+float getRH90 (site* cs)      { return cs->site_RH90; }
+float getRH85 (site* cs)      { return cs->site_RH85; }
+float getRH80 (site* cs)      { return cs->site_RH80; }
+float getRH75 (site* cs)      { return cs->site_RH75; }
+float getRH70 (site* cs)      { return cs->site_RH70; }
+float getRH60 (site* cs)      { return cs->site_RH60; }
+float getRH50 (site* cs)      { return cs->site_RH50; }
+float getRH25 (site* cs)      { return cs->site_RH25; }
 
 //test_mor2
 #if SNOWPACK_SCHEME == 1
@@ -346,6 +357,18 @@ void registerOutputVars(Outputter *o) {
    o->registerVar("percolation", &getPercolation, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("evaporation", &getEvaporation, "kg/m2", -9999.0F, ncFloat);
    o->registerVar("transpiration", &getTranspiration, "kg/m2", -9999.0F, ncFloat);
+   //test_ht
+   o->registerVar("RH98_height", &getRH98, "m", -9999.0F, ncFloat);
+   o->registerVar("RH95_height", &getRH95, "m", -9999.0F, ncFloat);
+   o->registerVar("RH90_height", &getRH90, "m", -9999.0F, ncFloat);
+   o->registerVar("RH85_height", &getRH85, "m", -9999.0F, ncFloat);
+   o->registerVar("RH80_height", &getRH80, "m", -9999.0F, ncFloat);
+   o->registerVar("RH75_height", &getRH75, "m", -9999.0F, ncFloat);
+   o->registerVar("RH70_height", &getRH70, "m", -9999.0F, ncFloat);
+   o->registerVar("RH60_height", &getRH60, "m", -9999.0F, ncFloat);
+   o->registerVar("RH50_height", &getRH50, "m", -9999.0F, ncFloat);
+   o->registerVar("RH25_height", &getRH25, "m", -9999.0F, ncFloat);
+   
 //test_mor2
 #if SNOWPACK_SCHEME == 1
    o->registerVar("snowpack", &getSnowpack, "", -9999.0F, ncFloat);
@@ -1003,7 +1026,7 @@ void print_biomass (unsigned int time, site** siteptr, UserData* data) {
    /* print to files */
    cp = *cs->oldest_patch;
 #if defined ED
-   fprintf(outfile, "%s t= %5.5f total_c %.20f tb %8.5f tagb %8.5f ba %8.5f lai %8.5f havg %8.5f 1yr_pool %.15f 10_yr_pool %.15f 100_yr_pool %.15f repro_pool %.15f ",
+   fprintf(outfile, "%s t= %5.5f total_c %.20f tb %8.5f tagb %8.5f ba %8.5f lai %8.5f havg %8.5f hloreys %8.5f h_RH98 %8.5f h_RH95 %8.5f h_RH90 %8.5f h_RH85 %8.5f h_RH80 %8.5f h_RH75 %8.5f h_RH70 %8.5f h_RH60 %8.5f h_RH50 %8.5f h_RH25 %8.5f 1yr_pool %.15f 10_yr_pool %.15f 100_yr_pool %.15f repro_pool %.15f ", //test_ht, should remove h_RH %8.5f
            cs->sdata->name_,
            time * TIMESTEP,
            cs->site_total_c,
@@ -1012,6 +1035,17 @@ void print_biomass (unsigned int time, site** siteptr, UserData* data) {
            cs->site_basal_area,
            cs->site_lai,
            cs->site_avg_height,
+           cs->site_loreys_height,
+           cs->site_RH98, //test_ht
+           cs->site_RH95, //test_ht
+           cs->site_RH90, //test_ht
+           cs->site_RH85, //test_ht
+           cs->site_RH80, //test_ht
+           cs->site_RH75, //test_ht
+           cs->site_RH70, //test_ht
+           cs->site_RH60, //test_ht
+           cs->site_RH50, //test_ht
+           cs->site_RH25, //test_ht
            cs->site_yr1_decay_product_pool,
            cs->site_yr10_decay_product_pool,
            cs->site_yr100_decay_product_pool,

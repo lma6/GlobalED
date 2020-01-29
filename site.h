@@ -69,6 +69,9 @@ struct site {
                                                      ///< area for each spp (cm2/m2)
    double lai[N_LANDUSE_TYPES];                      ///< site-level leaf area index
    double lai_profile[N_LANDUSE_TYPES][N_LAI];       ///LAI profile --Lei
+   //test_ht
+   double lite_profile_fine[N_LANDUSE_TYPES][N_LAI_FINE];
+   
 #endif
    double site_lai;
    double site_aa_lai;             ///< annual average LAI
@@ -77,6 +80,18 @@ struct site {
    double site_lai_profile[N_LAI];   ///LAI profile --Lei
    double site_aa_lai_profile[N_LAI];
    double aa_lai_profile[N_LAI];
+   //test_ht
+   double site_lite_profile_fine[N_LAI_FINE];
+   double site_RH98;
+   double site_RH95;
+   double site_RH90;
+   double site_RH85;
+   double site_RH80;
+   double site_RH75;
+   double site_RH70;
+   double site_RH60;
+   double site_RH50;
+   double site_RH25;
   
    // cfluxes
    double site_npp;                ///< total npp (kgC/m2/yr)

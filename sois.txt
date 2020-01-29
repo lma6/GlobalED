@@ -1,9 +1,24 @@
-NUM_SOIS   6
+NUM_SOIS   2
 
 
-Fire_Rh    70.25  102.72
-Fire_Rh    55.25  32.75
-Fire_Rh    27.25  112.75
-Fire_Rh    63.25  16.75
-Fire_Rh    -6.25  -60.75
-Fire_Rh    7.25  23.75
+test_height1    3.25    -58.25
+test_height1    -4.646443    -57.620462
+test_height1    57.75    100.25
+test_height1    26.206938    115.596708
+test_height1    58.819393    96.533310
+test_height1    66.129210    104.703823
+test_height1    58.038364    58.995522
+test_height1    -0.241916    22.353051
+test_height1    -8.278647    25.678273
+test_height1    -16.149928    -51.951458
+test_height1    38.032564    -81.093447
+test_height1    49.206423    -82.691788
+
+
+Fire_Rh    63.25  70.25
+Fire_Rh    64.75  70.25
+LIU_WRC    47.093519  -122.692744
+Fire_Rh    43.75  -72.75
+Fire_Rh    -1.75  -65.25
+Fire_Rh    -1.75  -65.25
+Fire_Rh    -12.25  15.75

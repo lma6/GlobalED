@@ -52,6 +52,7 @@
 /* Begin PBXFileReference section */
 		AB21E3E220EE78AD00105332 /* libtbb.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtbb.dylib; path = ../../../../../usr/local/Cellar/IntelTBB/2017U3/lib/libtbb.dylib; sourceTree = "<group>"; };
 		AB21E3E420EE7FEE00105332 /* libtbb.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtbb.dylib; path = ../../../../../usr/local/Cellar/tbb/2018_U5/lib/libtbb.dylib; sourceTree = "<group>"; };
+		AB535F6923D526BF00ECBE95 /* ED_params.defaults.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ED_params.defaults.txt; sourceTree = "<group>"; };
 		ABC2121020D2EBBB00FE4234 /* GlobalED */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GlobalED; sourceTree = BUILT_PRODUCTS_DIR; };
 		ABC2121A20D2ECD000FE4234 /* miami.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = miami.cc; sourceTree = "<group>"; };
 		ABC2121B20D2ECD000FE4234 /* edmodels.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = edmodels.h; sourceTree = "<group>"; };
@@ -140,6 +141,7 @@
 				ABC2122120D2ECD000FE4234 /* disturbance.h */,
 				ABC2123E20D2ECD200FE4234 /* ED_io.defaults.cfg */,
 				ABC2121D20D2ECD000FE4234 /* ED_params.defaults.cfg */,
+				AB535F6923D526BF00ECBE95 /* ED_params.defaults.txt */,
 				ABC2122020D2ECD000FE4234 /* ED_pft.defaults.cfg */,
 				ABC2121B20D2ECD000FE4234 /* edmodels.h */,
 				ABC2122420D2ECD000FE4234 /* fire.cc */,

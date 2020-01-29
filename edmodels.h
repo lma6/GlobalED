@@ -17,17 +17,22 @@
 /// Lei - All changes from original ED model are flaged as "CHANGE-ML". Search this keyword to locate them
 
 /// CHANGE-ML
-#define LOCAL_MACHINE 0  ///change it to 0 when copy to cluster.
-#define NUMBER_THREADS 41
+#define LOCAL_MACHINE 1  ///change it to 0 when copy to cluster.
+#define NUMBER_THREADS 40
 // THREADING: CHOOSE ONE OR NEITHER OF THE FOLLOWING TWO
 // Buggy with landuse
 
-// test_forecast
+// test_forecasts
 #define RESTART_FROM_LU 0 ///< if restart from results which are from one with landuse and product pool variables in pss files.
-#define RESTART_FROM_REPRO 1 ///< if restart from results that export reproduction pool in .pss file. Shoule be 0 if .pss do not have any repro outputs
+#define RESTART_FROM_REPRO 1 ///< if restart from results  that export reproduction pool in .pss file. Shoule be 0 if .pss do not have any repro outputs
 #define FORECAST 0
 #define FORECAST_yr 2016
 #define FORECAST_ENS "ens4"
+
+// test_init, should remove the below Macro, only one of the below should be set as 1
+#define SPINUP_BARE_FOREST 1  //spin up from bare ground without any veg and carbon in soil
+#define SPINUP_FOREST_FOREST 0  //spin up from newly deforested land to mature forest. Soil pools do have carbon
+#define SPINUP_FOREST_NONFOREST 0  //spin up from newly deforested land to non-forest site (e.g. cropland, pasture), Soil pools do have carbon
 
 #if 1-LOCAL_MACHINE
 #define MODEL_CONFIG_FILE "models.cfg"
@@ -37,7 +42,7 @@
 
 #if LOCAL_MACHINE
 /// Turn off above 1, then type the below command in local terminal
-//// scp -r /Users/lei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_gsapp5/
+///  scp -r /Users/lei/Documents/GitHub/GlobalED2 mal@gsapp5.umd.edu:/gpfs/data1/hurttgp/gel1/leima/AssignTask/gED/Code/ED/github/GlobalED2/GlobalED_gsapp12/
 #define MODEL_CONFIG_FILE "models_local.cfg"
 #define TBB 1 ///< Intel Thread Building Blocks
 #define GCD 0 ///< Grand Central Dispatch. Works on Mac only
@@ -50,7 +55,7 @@
 ////////////////////////////////////////
 //    LAND USE
 ////////////////////////////////////////
-#define LANDUSE 1 ///< Flag to turn on land use dynamics
+#define LANDUSE 0 ///< Flag to turn on land use dynamics
 #define FASTLOAD 2
 #define COUPLE_FAR 1
 //#define COUPLE_PFTspecific 1
@@ -60,6 +65,20 @@
 #define SNOWPACK_SCHEME 1
 #define INI_Year 851  //In LANDUSE, it should be 1501; For spin-up. it is 791;  With LUH2, it should be 851, and running years should be 1165  ## 851  826
 #define N_LAI 6
+//test_ht
+#define N_LAI_FINE 80
+#define LAI_PROFILE_bins_width 40.0f/N_LAI_FINE
+#define RH98_PERCENT 0.98
+#define RH95_PERCENT 0.95
+#define RH90_PERCENT 0.90
+#define RH85_PERCENT 0.85
+#define RH80_PERCENT 0.80
+#define RH75_PERCENT 0.75
+#define RH70_PERCENT 0.70
+#define RH60_PERCENT 0.60
+#define RH50_PERCENT 0.50
+#define RH25_PERCENT 0.25
+
 #define WT_Abg_PROFILE 0
 #define CO2_START_VARY 1850 // When global average of CO2 concentration start increasing from 280 ppm. From this year, An, En variables will be calculated annual based on new CO2
 #define MERRA2_YEAR_START_USE 1980   // When ED starts using MERRA2 yearly data, previously using 1980, using 1945 may cause high NBP in 1980s due to legency effect from 1970 when use 2000s climate -- test_larch
@@ -560,6 +579,9 @@ struct UserData {
     double  fraction_clearing_to_1yr_pool_temp[NSPECIES];          ///< Fraction of vegetation biomass assigned to 1-year decay product pool at clearing
     double  fraction_clearing_to_10yr_pool_temp[NSPECIES];          ///< Fraction of vegetation biomass assigned to 10-year decay product pool at clearing
     double  fraction_clearing_to_100yr_pool_temp[NSPECIES];          ///< Fraction of vegetation biomass assigned to 100-year decay product pool at clearing
+   
+////   //test_FL
+//   int deforestation_time;
 
 #endif // ED
 

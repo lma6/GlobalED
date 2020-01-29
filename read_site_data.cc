@@ -804,7 +804,7 @@ bool loadGlobalEnvironmentData(UserData* data)
                 {
                     data->MERRA2_timestamp=data->mechanism_year-MERRA2_START+1;
                 }
-                
+
                 printf("mechanism_year %d MERRA2_timestamp %d\n",data->mechanism_year,data->MERRA2_timestamp);
                 sprintf(convert, "%s%d", base, data->MERRA2_timestamp+MERRA2_START-1);
                 strcpy(climatename, data->climate_file);
@@ -827,6 +827,10 @@ bool loadGlobalEnvironmentData(UserData* data)
             {
                 strcpy(climatename, data->climate_file_avg);
             }
+           
+//           //test_attri, should uncommend the abve if...else...
+//           strcpy(climatename, data->climate_file_avg);
+           
             printf("Loading Environmental data from %s\n",climatename);
         }
         
@@ -1213,7 +1217,7 @@ bool loadPREMECH (UserData* data)
             strcpy(premech_clim, data->PREMECH);
             sprintf(premech_clim, "%s%d", premech_clim, data->MERRA2_timestamp+MERRA2_START-1);
             strcat(premech_clim, ".nc");
-           
+
 #if FORECAST
             if(abs(FORECAST_yr-data->mechanism_year)<0.5)
             {
@@ -1223,12 +1227,16 @@ bool loadPREMECH (UserData* data)
                 strcat(premech_clim, ".nc");
             }
 #endif
-            
+
         }
         else
         {
             strcpy(premech_clim, data->PREMECH_avg);
         }
+       
+//       //test_attri, should uncommend the above if...else...
+//       strcpy(premech_clim, data->PREMECH_avg);
+       
         printf("Loading premech file from %s\n",premech_clim);
         
         if(data->mechanism_year<=2000) //before 2001, using average climatology co2 and scaling factor
@@ -1250,6 +1258,11 @@ bool loadPREMECH (UserData* data)
             strcat(premech_co2, ".nc");
             printf("Loading CO2 premech file from %s\n",premech_co2);
         }
+       
+//       //test_attri, should uncommend the above if...else_if...else
+//       strcpy(premech_co2, data->PREMECH_CO2_avg);
+//       printf("Loading CO2 premech file from %s\n",premech_co2);
+       
     } else if(data->single_year)
     {
         strcpy(premech_clim, data->PREMECH_avg);
@@ -1554,7 +1567,7 @@ bool SiteData::readEnvironmentalData (UserData& data)
     MvG_theta_saturated = data.MvG_theta_saturated[globY_][globX_];
     MvG_theta_residual = data.MvG_theta_residual[globY_][globX_];
 #endif
-    
+
     if ( (soil_depth <= 0) || (theta_max == -9999.0)
         || (k_sat == -9999.0) || (tau == -9999.0) ) {
         //fprintf(stderr, "No soil char data found for site lat %f lon %f\n", cs->lat, cs->lon);

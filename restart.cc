@@ -380,8 +380,8 @@ void print_system_state (unsigned int time, site** siteptr,
    site* cs = *siteptr;
   
    char basename[STR_LEN];
-   sprintf(basename, "%s/RESTART/%s.%s", 
-           data->outdir, data->expname, cs->sdata->name_);   
+   sprintf(basename, "%s/RESTART/%s.%s",
+           data->outdir, data->expname, cs->sdata->name_);
 
    /* patch distribution file */
    char pfilename[STR_LEN];
@@ -703,7 +703,112 @@ void read_patch_distribution (site** siteptr, UserData* data) {
          cs->youngest_patch[lu] = newp;
       }
 #ifdef ED
+//      read_cohort_distribution(filename, &cs,&newp,old_address,data);
+      
+      //test_init, should uncommend above read_cohort_distribution(); and remove the below until read_cohort_distribution()
+#if SPINUP_FOREST_FOREST
+      //Load cohorts from RESTART files
       read_cohort_distribution(filename, &cs,&newp,old_address,data);
+      
+      //Remove all cohorts and move associated carbon into soil pools
+      cohort* currentc = newp->tallest;
+      patch* currentp = newp;
+      double fast_litter = 0.0,fast_litter_n=0.0,struct_litter=0.0;
+
+      while (currentc != NULL)
+      {
+         cohort* nextc = currentc->shorter;
+            
+         /// Collect carbon back to soil when cohort is terminating
+         double tmp_sd_mort = data->sd_mort;
+                 
+         fast_litter += data->fraction_balive_2_fast*currentc->balive*currentc->nindivs/currentp->area;
+         fast_litter += (currentc->p[0]+currentc->p[1])*(1-tmp_sd_mort)*(data->deltat*COHORT_FREQ)*currentc->nindivs/currentp->area;
+         fast_litter_n += data->fraction_balive_2_fast*(1.0/data->c2n_leaf[currentc->species])*currentc->balive*currentc->nindivs/currentp->area;
+         fast_litter_n +=(1.0/data->c2n_leaf[currentc->species])*(currentc->p[0]+currentc->p[1])*(1-tmp_sd_mort)*(data->deltat*COHORT_FREQ)*currentc->nindivs/currentp->area;
+         struct_litter += currentc->bdead*currentc->nindivs/currentp->area;
+         struct_litter +=(1.0-data->fraction_balive_2_fast)*currentc->balive*currentc->nindivs/currentp->area;
+                 
+              
+         if (currentc->taller == NULL) currentp->tallest = currentc->shorter;
+         else (currentc->taller)->shorter = currentc->shorter;
+         if (currentc->shorter == NULL) currentp->shortest = currentc->taller;
+         else (currentc->shorter)->taller = currentc->taller;
+         free (currentc);
+      
+         currentc = nextc;
+      }
+      
+      if (currentp!=NULL)
+      {
+         currentp->litter +=  fast_litter + struct_litter;
+         currentp->fast_soil_C       += fast_litter;
+         currentp->structural_soil_C += struct_litter;
+         currentp->structural_soil_L += (data->l2n_stem/data->c2n_stem ) * struct_litter;
+         currentp->fast_soil_N       += fast_litter_n;
+      }
+      
+      //Add new seedling cohorts
+      init_cohorts(&newp, data);
+      
+#elif SPINUP_FOREST_NONFOREST
+      //Load cohorts from RESTART files
+      read_cohort_distribution(filename, &cs,&newp,old_address,data);
+      
+      //Remove all cohorts and move associated carbon into soil pools
+      cohort* currentc = newp->tallest;
+      patch* currentp = newp;
+      double fast_litter = 0.0,fast_litter_n=0.0,struct_litter=0.0;
+
+      while (currentc != NULL)
+      {
+         cohort* nextc = currentc->shorter;
+            
+         /// Collect carbon back to soil when cohort is terminating
+         double tmp_sd_mort = data->sd_mort;
+                 
+         fast_litter += data->fraction_balive_2_fast*currentc->balive*currentc->nindivs/currentp->area;
+         fast_litter += (currentc->p[0]+currentc->p[1])*(1-tmp_sd_mort)*(data->deltat*COHORT_FREQ)*currentc->nindivs/currentp->area;
+         fast_litter_n += data->fraction_balive_2_fast*(1.0/data->c2n_leaf[currentc->species])*currentc->balive*currentc->nindivs/currentp->area;
+         fast_litter_n +=(1.0/data->c2n_leaf[currentc->species])*(currentc->p[0]+currentc->p[1])*(1-tmp_sd_mort)*(data->deltat*COHORT_FREQ)*currentc->nindivs/currentp->area;
+         struct_litter += currentc->bdead*currentc->nindivs/currentp->area;
+         struct_litter +=(1.0-data->fraction_balive_2_fast)*currentc->balive*currentc->nindivs/currentp->area;
+                 
+              
+         if (currentc->taller == NULL) currentp->tallest = currentc->shorter;
+         else (currentc->taller)->shorter = currentc->shorter;
+         if (currentc->shorter == NULL) currentp->shortest = currentc->taller;
+         else (currentc->shorter)->taller = currentc->taller;
+         free (currentc);
+      
+         currentc = nextc;
+      }
+      
+      if (currentp!=NULL)
+      {
+         currentp->litter +=  fast_litter + struct_litter;
+         currentp->fast_soil_C       += fast_litter;
+         currentp->structural_soil_C += struct_litter;
+         currentp->structural_soil_L += (data->l2n_stem/data->c2n_stem ) * struct_litter;
+         currentp->fast_soil_N       += fast_litter_n;
+      }
+      
+      //Add new seedling cohorts
+      init_cohorts(&newp, data);
+      
+      //Remove any tree-type cohorts
+      cohort* cc = newp->shortest;
+      while(cc != NULL)
+      {
+         if(cc->species>1)
+            cc->nindivs = 0.000001;
+         
+         cc = cc->taller;
+      }
+#else
+      read_cohort_distribution(filename, &cs,&newp,old_address,data);
+#endif
+      
 #endif
 
       count++;

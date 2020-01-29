@@ -401,6 +401,13 @@ void update_patch (patch** current_patch, UserData* data) {
    {
       cp->lai_profile[i]=0;
    }
+   //test_ht
+   for (size_t i=0;i<N_LAI_FINE;i++)
+   {
+      cp->lai_profile_fine[i] = 0.0;
+      cp->lite_profile_fine[i] = 0.0;
+   }
+   
    cohort* cc = cp->shortest;
    while (cc != NULL) {
       if ((cc->dbh >= data->min_dbh_class) && (cc->hite > data->min_hgt_class)) {
@@ -431,6 +438,17 @@ void update_patch (patch** current_patch, UserData* data) {
                }
             }
          }
+         
+         //test_ht
+         if (cc->hite > LAI_PROFILE_bins_width*N_LAI_FINE)
+         {
+            cp->lai_profile_fine[N_LAI_FINE-1] += cc->lai;
+         }
+         else
+         {
+            cp->lai_profile_fine[int(floor(cc->hite/(40.0/N_LAI_FINE)))] += cc->lai;
+         }
+         
       } /* end if */
       cc = cc->taller;
    } /* end loop over cohorts */
@@ -521,7 +539,16 @@ void update_patch (patch** current_patch, UserData* data) {
 #ifdef ED
    cp->aa_npp2 += cp->npp2 * data->deltat;
    cp->aa_gpp  += cp->gpp * data->deltat;
-#endif 
+#endif
+   
+   //test_ht
+   double tmp_cumulative_lai = 0.0;
+   double L_top = cp->siteptr->sdata->L_top;
+   for (size_t i=0;i<N_LAI_FINE+1;i++)
+   {
+      cp->lite_profile_fine[N_LAI_FINE-i] = L_top*exp(-data->L_extinct*data->cohort_shading*tmp_cumulative_lai);
+      tmp_cumulative_lai += cp->lai_profile_fine[N_LAI_FINE-i];
+   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

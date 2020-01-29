@@ -103,7 +103,10 @@ struct patch {
 
    double lai;               ///< leaf area index of patch dimensionless
    double lai_profile[N_LAI];
-
+   //test_ht
+   double lai_profile_fine[N_LAI_FINE];
+   double lite_profile_fine[N_LAI_FINE];
+   
    // profiles of various quantities
    double spp_density_profile[NSPECIES][N_DBH_BINS];
    double spp_basal_area_profile[NSPECIES][N_DBH_BINS];

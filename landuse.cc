@@ -13,6 +13,7 @@
 #endif
 #include "disturbance.h"
 
+
 #if LANDUSE
 void landuse_transition (site** siteptr, UserData* data, 
                          int donor_lu, int target_lu, double beta);
@@ -430,7 +431,7 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
       } else {
          currents->forest_harvest_flag = 0;
       }
-      
+
       //Above code line 430-436 where use t=0 to determine maintain_pasture_flag is a bug. As when restart from midpoint of a run, t is usually not zero, resulting fail to determine maintain_pasture_flag and fail to clear trees in pasture pataches
       if (currents->total_ag_biomass[0] > data->forest_definition) {
          currents->maintain_pasture_flag = 1;
@@ -447,7 +448,7 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
          currentp->age += data->deltat * LANDUSE_FREQ; /* patch aging */
          currentp = currentp->younger;
       }
-       
+
       ///CarbonConserve
       /// Reset carbon emission variables in patches as zero
       for (int lu=0; lu<N_LANDUSE_TYPES; lu++)
@@ -468,11 +469,11 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
       /************************************************/
       for (int lu=1; lu<N_LANDUSE_TYPES; lu++) {
 #if defined ED
-         create_patch(&currents, &(currents->new_patch[lu]), lu, 
+         create_patch(&currents, &(currents->new_patch[lu]), lu,
                       0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                       data);
 #elif defined MIAMI_LU
-         create_patch(&currents, &(currents->new_patch[lu]), lu, 
+         create_patch(&currents, &(currents->new_patch[lu]), lu,
                       0, 0.0, 0.0, 0.0, 0.0, 0.0, data);
 #endif
       }
@@ -485,7 +486,7 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
          /* TODO: probably not the right assumption for all transitions. -justin */
          lu_year = LANDUSE_END-LANDUSE_START-1;
       }
-       
+
       /************************************************/
       /*****            lu transistions            ****/
       /************************************************/
@@ -500,7 +501,7 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
             }
          }
       }
-       
+
 #if 1
       for (int i=0; i<N_VBH_TYPES; i++) {
          cut_forest(&currents, data, LU_NTRL, currents->sdata->vbh[i][lu_year], i);
@@ -535,7 +536,7 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
 
       graze_pastures(&currents, data);
 #endif
-       
+
       /************************************************/
       /****     insert or delete new patches      *****/
       /************************************************/
@@ -585,7 +586,7 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
    }
 
    wood_pool_decay(&currents, data);
-    
+
    if (data->planting_probability[data->time_period][currents->sdata->globY_][currents->sdata->globX_]>0.8)
    {
       plant_croplands(&currents, data);
@@ -595,6 +596,37 @@ void landuse_dynamics (unsigned int t, site** siteptr, UserData* data) {
    {
       harvest_croplands(&currents, data);
    }
+   
+//   //test_FL, should uncommend the above code block
+//   site* currents = *siteptr;
+//
+//   if ((t % LANDUSE_FREQ == 0) && (t == (data->deforestation_time-850)*12))
+//   {
+//      create_patch(&currents, &(currents->new_patch[LU_NTRL]), LU_NTRL,0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, data);
+//
+////      cut_forest(&currents, data, LU_NTRL, 1-data->min_landuse_area_fraction*2, 1);
+//      cut_forest(&currents, data, LU_NTRL, 0.1, 1);
+//      init_cohorts(&(currents->new_patch[LU_NTRL]), data);
+//
+//      patch* target = currents->new_patch[LU_NTRL];
+//      patch* currentp = currents->youngest_patch[LU_NTRL];
+//      if (currentp == NULL)
+//         currents->oldest_patch[LU_NTRL] = target;
+//      else
+//         currentp->younger = target;
+//
+//      target->older = currentp;
+//      target->younger = NULL;
+//      currents->youngest_patch[LU_NTRL] = target;
+//
+//      if(data->patch_fusion)
+//      {
+//         if(currents->youngest_patch[LU_NTRL] != currents->oldest_patch[LU_NTRL])
+//            fuse_2_patches(&(currents->youngest_patch[LU_NTRL]),
+//                           &(currents->youngest_patch[LU_NTRL]->older), 1, data);
+//      }
+//   }
+      
 }
 
 
@@ -800,6 +832,9 @@ void cut_forest (site** siteptr, UserData* data,
                  int donor_lu, double beta, int bh_type) {
 
    int target_lu = LU_SCND;
+   
+//   //test_FL, should uncommend the above line
+//   int target_lu = LU_NTRL;
 
    site* currents=*siteptr;
 
